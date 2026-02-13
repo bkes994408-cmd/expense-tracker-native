@@ -1,0 +1,28 @@
+import SwiftUI
+
+/// Simple routing sample for MVP-0.
+struct RootView: View {
+    enum Route: Hashable {
+        case settings
+    }
+
+    @State private var path: [Route] = []
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            HomeView(
+                onOpenSettings: { path.append(.settings) }
+            )
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .settings:
+                    SettingsView()
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    RootView()
+}
