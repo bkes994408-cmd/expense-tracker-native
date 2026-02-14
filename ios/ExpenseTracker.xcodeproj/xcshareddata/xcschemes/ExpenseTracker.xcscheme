@@ -39,6 +39,28 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "57D33CD2557AF6CBD29C5143"
+               BuildableName = "ExpenseTrackerTests.xctest"
+               BlueprintName = "ExpenseTrackerTests"
+               ReferencedContainer = "container:ExpenseTracker.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FAE447B0F6A25C597A4F159B"
+               BuildableName = "ExpenseTrackerUITests.xctest"
+               BlueprintName = "ExpenseTrackerUITests"
+               ReferencedContainer = "container:ExpenseTracker.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

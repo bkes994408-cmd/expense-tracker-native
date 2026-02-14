@@ -7,33 +7,84 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		101B1DC30F9B7A87E5098E21 /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0563F450E19FA14E2270BE /* SmokeTests.swift */; };
+		107BDCF7E02BB5039EE56953 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 27FD1B861F6040771576F03D /* GRDB */; };
 		139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27C06AA410A67CC036F2582 /* LocalStore.swift */; };
 		19909A3B4971190C3712D358 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA172C7B9651C727DD14A205 /* SettingsView.swift */; };
+		41AEF9FE46B0508487272933 /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78F430400B20F67D27B519 /* Transaction.swift */; };
+		464B15917CAB6AC303795B25 /* AddTransactionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BC2263E9D4622673A3DA8A /* AddTransactionView.swift */; };
+		4E8EB5C680D9DF19F298236B /* DeleteTransactionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B96A86416B85E0D5DD703747 /* DeleteTransactionUseCase.swift */; };
 		708D87CF377ED53A57320BC4 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FBFDF58B41D5F08C05857E /* Expense.swift */; };
+		8A30F59075A6B362C2E7AF2D /* AddTransactionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7DBC1DDB9558ECC29B2B013 /* AddTransactionUseCase.swift */; };
 		8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */; };
 		9D81C6107482764585B3B7DA /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 998393A7C7FB120F61EC4FDD /* APIClient.swift */; };
+		A84DA766DC0B831715B918C0 /* ListTransactionsUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D27C2EBD629ADE5F50259D0 /* ListTransactionsUseCase.swift */; };
 		B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46EFDA8D7DCED1725934DEE3 /* RootView.swift */; };
+		BEAB83C3BF0856374D1EC905 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55945CA8F2ABF8A88320287A /* HomeViewModel.swift */; };
+		BF796BFF0F2F3E642B7857F6 /* AddTransactionUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D75242291BBF5A93AA62FF3 /* AddTransactionUseCaseTests.swift */; };
 		C22C8B690213C7B0A29EEE95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C47014370B7F790330BA2FFD /* Assets.xcassets */; };
+		D13A3AF1145BA6E5CD6EEB75 /* TransactionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A176CA29D7763BEADACB20 /* TransactionRepository.swift */; };
 		D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		785AD1DA5EC8894F37DC3DB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FCF189F5D2D9FC3BB06449CE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3513847C6F92D3754D258074;
+			remoteInfo = ExpenseTracker;
+		};
+		E004C049BAC6B826666E4902 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FCF189F5D2D9FC3BB06449CE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3513847C6F92D3754D258074;
+			remoteInfo = ExpenseTracker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		0D27C2EBD629ADE5F50259D0 /* ListTransactionsUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListTransactionsUseCase.swift; sourceTree = "<group>"; };
+		14A176CA29D7763BEADACB20 /* TransactionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRepository.swift; sourceTree = "<group>"; };
+		1CA5EFF6D176A32D81D63B92 /* ExpenseTrackerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExpenseTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseTrackerApp.swift; sourceTree = "<group>"; };
 		2C126B9E82517DFD361B9A71 /* ExpenseTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExpenseTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C0563F450E19FA14E2270BE /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
 		46EFDA8D7DCED1725934DEE3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		55945CA8F2ABF8A88320287A /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		5D75242291BBF5A93AA62FF3 /* AddTransactionUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionUseCaseTests.swift; sourceTree = "<group>"; };
 		998393A7C7FB120F61EC4FDD /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		9E78F430400B20F67D27B519 /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
 		A27C06AA410A67CC036F2582 /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
+		ABA313E8FC7FA9C94B2E57B5 /* ExpenseTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExpenseTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0BC2263E9D4622673A3DA8A /* AddTransactionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionView.swift; sourceTree = "<group>"; };
 		B5FBFDF58B41D5F08C05857E /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
+		B96A86416B85E0D5DD703747 /* DeleteTransactionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteTransactionUseCase.swift; sourceTree = "<group>"; };
 		BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		C47014370B7F790330BA2FFD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C7DBC1DDB9558ECC29B2B013 /* AddTransactionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionUseCase.swift; sourceTree = "<group>"; };
 		FA172C7B9651C727DD14A205 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3A90A877BE7F15F58CB43D84 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				107BDCF7E02BB5039EE56953 /* GRDB in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		11C3AA57D80675D1695DD8D5 = {
 			isa = PBXGroup;
 			children = (
 				E38F2C82473CC4C2FA574079 /* ExpenseTracker */,
+				689A254C07534E43144D2934 /* ExpenseTrackerTests */,
+				202C19A89DF21F44FF1925D6 /* ExpenseTrackerUITests */,
 				1E51660FCE3C646E1767767C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -42,8 +93,18 @@
 			isa = PBXGroup;
 			children = (
 				2C126B9E82517DFD361B9A71 /* ExpenseTracker.app */,
+				ABA313E8FC7FA9C94B2E57B5 /* ExpenseTrackerTests.xctest */,
+				1CA5EFF6D176A32D81D63B92 /* ExpenseTrackerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		202C19A89DF21F44FF1925D6 /* ExpenseTrackerUITests */ = {
+			isa = PBXGroup;
+			children = (
+				3C0563F450E19FA14E2270BE /* SmokeTests.swift */,
+			);
+			path = ExpenseTrackerUITests;
 			sourceTree = "<group>";
 		};
 		386AB1725855BDDF91220B81 /* App */ = {
@@ -52,6 +113,14 @@
 				1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		689A254C07534E43144D2934 /* ExpenseTrackerTests */ = {
+			isa = PBXGroup;
+			children = (
+				5D75242291BBF5A93AA62FF3 /* AddTransactionUseCaseTests.swift */,
+			);
+			path = ExpenseTrackerTests;
 			sourceTree = "<group>";
 		};
 		A22A9EE3AEE58AE3F5E1E382 /* Resources */ = {
@@ -65,7 +134,12 @@
 		A744E00684729854438F5739 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				C7DBC1DDB9558ECC29B2B013 /* AddTransactionUseCase.swift */,
+				B96A86416B85E0D5DD703747 /* DeleteTransactionUseCase.swift */,
 				B5FBFDF58B41D5F08C05857E /* Expense.swift */,
+				0D27C2EBD629ADE5F50259D0 /* ListTransactionsUseCase.swift */,
+				9E78F430400B20F67D27B519 /* Transaction.swift */,
+				14A176CA29D7763BEADACB20 /* TransactionRepository.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -94,7 +168,9 @@
 		E7BC55A93E236C86B9D5E56C /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				B0BC2263E9D4622673A3DA8A /* AddTransactionView.swift */,
 				BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */,
+				55945CA8F2ABF8A88320287A /* HomeViewModel.swift */,
 				46EFDA8D7DCED1725934DEE3 /* RootView.swift */,
 				FA172C7B9651C727DD14A205 /* SettingsView.swift */,
 			);
@@ -118,6 +194,7 @@
 			buildPhases = (
 				38F7F2BFF52A041C3B0EEC03 /* Sources */,
 				4756DB68F54EC8BD6B64F4D2 /* Resources */,
+				3A90A877BE7F15F58CB43D84 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -125,10 +202,47 @@
 			);
 			name = ExpenseTracker;
 			packageProductDependencies = (
+				27FD1B861F6040771576F03D /* GRDB */,
 			);
 			productName = ExpenseTracker;
 			productReference = 2C126B9E82517DFD361B9A71 /* ExpenseTracker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		57D33CD2557AF6CBD29C5143 /* ExpenseTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1A88672132A012BE0B77B23 /* Build configuration list for PBXNativeTarget "ExpenseTrackerTests" */;
+			buildPhases = (
+				D12DED7841085682F833861E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF4493E823BE82F3C44BE0CB /* PBXTargetDependency */,
+			);
+			name = ExpenseTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = ExpenseTrackerTests;
+			productReference = ABA313E8FC7FA9C94B2E57B5 /* ExpenseTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FAE447B0F6A25C597A4F159B /* ExpenseTrackerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 657C4A8432B7568FF08DF8B1 /* Build configuration list for PBXNativeTarget "ExpenseTrackerUITests" */;
+			buildPhases = (
+				C491C410EB336F6432B3AF55 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22B88136889D53DA4A5EE990 /* PBXTargetDependency */,
+			);
+			name = ExpenseTrackerUITests;
+			packageProductDependencies = (
+			);
+			productName = ExpenseTrackerUITests;
+			productReference = 1CA5EFF6D176A32D81D63B92 /* ExpenseTrackerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -143,6 +257,15 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
+					57D33CD2557AF6CBD29C5143 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					FAE447B0F6A25C597A4F159B = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 3513847C6F92D3754D258074;
+					};
 				};
 			};
 			buildConfigurationList = 77CF17364857E655D9A461FA /* Build configuration list for PBXProject "ExpenseTracker" */;
@@ -155,11 +278,16 @@
 			);
 			mainGroup = 11C3AA57D80675D1695DD8D5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1637BFC0B18F64397DF65F17 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				3513847C6F92D3754D258074 /* ExpenseTracker */,
+				57D33CD2557AF6CBD29C5143 /* ExpenseTrackerTests */,
+				FAE447B0F6A25C597A4F159B /* ExpenseTrackerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -181,16 +309,52 @@
 			buildActionMask = 2147483647;
 			files = (
 				9D81C6107482764585B3B7DA /* APIClient.swift in Sources */,
+				8A30F59075A6B362C2E7AF2D /* AddTransactionUseCase.swift in Sources */,
+				464B15917CAB6AC303795B25 /* AddTransactionView.swift in Sources */,
+				4E8EB5C680D9DF19F298236B /* DeleteTransactionUseCase.swift in Sources */,
 				708D87CF377ED53A57320BC4 /* Expense.swift in Sources */,
 				D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */,
 				8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */,
+				BEAB83C3BF0856374D1EC905 /* HomeViewModel.swift in Sources */,
+				A84DA766DC0B831715B918C0 /* ListTransactionsUseCase.swift in Sources */,
 				139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */,
 				B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */,
 				19909A3B4971190C3712D358 /* SettingsView.swift in Sources */,
+				41AEF9FE46B0508487272933 /* Transaction.swift in Sources */,
+				D13A3AF1145BA6E5CD6EEB75 /* TransactionRepository.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C491C410EB336F6432B3AF55 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				101B1DC30F9B7A87E5098E21 /* SmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D12DED7841085682F833861E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF796BFF0F2F3E642B7857F6 /* AddTransactionUseCaseTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		22B88136889D53DA4A5EE990 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3513847C6F92D3754D258074 /* ExpenseTracker */;
+			targetProxy = E004C049BAC6B826666E4902 /* PBXContainerItemProxy */;
+		};
+		EF4493E823BE82F3C44BE0CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3513847C6F92D3754D258074 /* ExpenseTracker */;
+			targetProxy = 785AD1DA5EC8894F37DC3DB7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0122C88A3CB23C016B2FD719 /* Debug */ = {
@@ -303,6 +467,66 @@
 			};
 			name = Debug;
 		};
+		5E9DBCE0CD47A0A11231539F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ExpenseTracker;
+			};
+			name = Debug;
+		};
+		699085F7A9D5C3B6F0DCCE01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ExpenseTracker;
+			};
+			name = Release;
+		};
+		6BAF994A3E23BAB9ADEFF2EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExpenseTracker.app/ExpenseTracker";
+			};
+			name = Debug;
+		};
+		93AF139AEAEC96AF67E93EBC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ExpenseTracker.app/ExpenseTracker";
+			};
+			name = Release;
+		};
 		E6CDF28B0EC8603E89C4B00C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -371,11 +595,29 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		657C4A8432B7568FF08DF8B1 /* Build configuration list for PBXNativeTarget "ExpenseTrackerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E9DBCE0CD47A0A11231539F /* Debug */,
+				699085F7A9D5C3B6F0DCCE01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		77CF17364857E655D9A461FA /* Build configuration list for PBXProject "ExpenseTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0122C88A3CB23C016B2FD719 /* Debug */,
 				E6CDF28B0EC8603E89C4B00C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D1A88672132A012BE0B77B23 /* Build configuration list for PBXNativeTarget "ExpenseTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6BAF994A3E23BAB9ADEFF2EA /* Debug */,
+				93AF139AEAEC96AF67E93EBC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -390,6 +632,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1637BFC0B18F64397DF65F17 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.29.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		27FD1B861F6040771576F03D /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1637BFC0B18F64397DF65F17 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FCF189F5D2D9FC3BB06449CE /* Project object */;
 }

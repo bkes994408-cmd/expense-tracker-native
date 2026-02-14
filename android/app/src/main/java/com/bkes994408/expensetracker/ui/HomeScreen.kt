@@ -1,29 +1,101 @@
 package com.bkes994408.expensetracker.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.bkes994408.expensetracker.domain.Transaction
+import java.text.NumberFormat
+import java.util.Date
 
 @Composable
 fun HomeScreen(
-    onOpenSettings: () -> Unit,
+    viewModel: AppViewModel,
+    onAdd: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(text = "Expense Tracker")
-        Text(text = "MVP-0: empty home screen")
-        Button(onClick = onOpenSettings) {
-            Text(text = "Go to Settings")
+    val list by viewModel.transactions.collectAsState()
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Transactions") }) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAdd) {
+                Icon(Icons.Filled.Add, contentDescription = "Add")
+            }
+        }
+    ) { innerPadding ->
+        if (list.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("No transactions yet", style = MaterialTheme.typography.bodyLarge)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(items = list, key = { it.id }) { item ->
+                    TransactionRow(
+                        item = item,
+                        onDelete = { viewModel.delete(item.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionRow(
+    item: Transaction,
+    onDelete: () -> Unit,
+) {
+    val currency = NumberFormat.getCurrencyInstance().format(item.amountCents / 100.0)
+    val dateText = Date(item.occurredAtEpochMillis).toString()
+
+    androidx.compose.material3.Card {
+        Box(modifier = Modifier.padding(16.dp)) {
+            androidx.compose.foundation.layout.Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(currency, style = MaterialTheme.typography.titleMedium)
+                if (item.note.isNotBlank()) {
+                    Text(item.note, style = MaterialTheme.typography.bodyMedium)
+                }
+                Text(dateText, style = MaterialTheme.typography.bodySmall)
+            }
+
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "Delete")
+            }
         }
     }
 }

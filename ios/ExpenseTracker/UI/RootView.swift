@@ -1,24 +1,57 @@
 import SwiftUI
 
-/// Simple routing sample for MVP-0.
 struct RootView: View {
     enum Route: Hashable {
-        case settings
+        case add
     }
 
+    @MainActor
+    final class StoreHolder: ObservableObject {
+        let repository: TransactionRepository?
+        @Published var errorMessage: String?
+
+        init() {
+            do {
+                self.repository = try LocalStore()
+                self.errorMessage = nil
+            } catch {
+                self.repository = nil
+                self.errorMessage = String(describing: error)
+            }
+        }
+    }
+
+    @StateObject private var holder = StoreHolder()
     @State private var path: [Route] = []
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(
-                onOpenSettings: { path.append(.settings) }
-            )
-            .navigationDestination(for: Route.self) { route in
-                switch route {
-                case .settings:
-                    SettingsView()
+            if let repository = holder.repository {
+                HomeView(repository: repository) {
+                    path.append(.add)
                 }
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .add:
+                        AddTransactionView(repository: repository, onSaved: {})
+                    }
+                }
+            } else {
+                Text("Failed to open database")
+                    .foregroundStyle(.secondary)
+                    .navigationTitle("Home")
             }
+        }
+        .alert(
+            "DB Error",
+            isPresented: Binding(
+                get: { holder.errorMessage != nil },
+                set: { _ in holder.errorMessage = nil }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(holder.errorMessage ?? "")
         }
     }
 }
