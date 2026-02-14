@@ -68,15 +68,16 @@ struct HomeView: View {
     }
 }
 
-#Preview {
-    // Preview uses a dummy in-memory repo.
-    struct DummyRepo: TransactionRepository {
-        func list() throws -> [Transaction] { [] }
-        func add(amountCents: Int64, note: String, occurredAt: Date) throws -> Int64 { 1 }
-        func delete(id: Int64) throws {}
-    }
+#if DEBUG
+private struct HomeView_DummyRepo: TransactionRepository {
+    func list() throws -> [Transaction] { [] }
+    func add(amountCents: Int64, note: String, occurredAt: Date) throws -> Int64 { 1 }
+    func delete(id: Int64) throws {}
+}
+#endif
 
+#Preview {
     NavigationStack {
-        HomeView(repository: DummyRepo(), onAdd: {})
+        HomeView(repository: HomeView_DummyRepo(), onAdd: {})
     }
 }
