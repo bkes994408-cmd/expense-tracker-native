@@ -16,4 +16,4 @@ ANDROID_HOME="$HOME/Library/Android/sdk" \
 ## 架構說明
 - `docs/ARCHITECTURE.md`
 
-Docs: 見 `docs/ROADMAP.md`
+Docs: 見 `docs/ROADMAP.md`、`docs/ARCHITECTURE.md`
