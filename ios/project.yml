@@ -18,12 +18,20 @@ settings:
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     PRODUCT_BUNDLE_IDENTIFIER: com.bkes994408.expensetracker
 
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 6.29.3
+
 targets:
   ExpenseTracker:
     type: application
     platform: iOS
     sources:
       - path: ExpenseTracker
+    dependencies:
+      - package: GRDB
+        product: GRDB
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1,2"
