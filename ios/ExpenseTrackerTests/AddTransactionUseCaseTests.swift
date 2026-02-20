@@ -27,4 +27,13 @@ final class AddTransactionUseCaseTests: XCTestCase {
         XCTAssertEqual(repo.lastAdd?.1, "lunch")
         XCTAssertEqual(repo.lastAdd?.2, now)
     }
+
+    func testThrowsWhenAmountIsZero() throws {
+        let repo = FakeRepo()
+        let useCase = AddTransactionUseCase(repository: repo)
+
+        XCTAssertThrowsError(try useCase(amountCents: 0, note: "bad", occurredAt: .now)) { error in
+            XCTAssertEqual(error as? AddTransactionValidationError, .zeroAmount)
+        }
+    }
 }

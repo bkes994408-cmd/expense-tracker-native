@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 private class FakeRepo : TransactionRepository {
@@ -29,5 +30,17 @@ class AddTransactionUseCaseTest {
 
         assertEquals(123L, id)
         assertEquals(Triple(1000L, "lunch", 1L), repo.lastAdd)
+    }
+
+    @Test
+    fun throwsWhenAmountIsZero() {
+        val repo = FakeRepo()
+        val useCase = AddTransactionUseCase(repo)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                useCase(amountCents = 0L, note = "bad", occurredAtEpochMillis = 1L)
+            }
+        }
     }
 }

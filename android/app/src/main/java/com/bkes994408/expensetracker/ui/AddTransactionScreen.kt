@@ -22,17 +22,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
     onBack: () -> Unit,
     onSave: (amountCents: Long, note: String, occurredAtEpochMillis: Long) -> Unit,
+    externalErrorMessage: String?,
+    onClearExternalError: () -> Unit,
 ) {
     var amountText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var localError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -56,7 +62,11 @@ fun AddTransactionScreen(
         ) {
             OutlinedTextField(
                 value = amountText,
-                onValueChange = { amountText = it },
+                onValueChange = {
+                    amountText = it
+                    localError = null
+                    onClearExternalError()
+                },
                 label = { Text("Amount (e.g. 12.34)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
@@ -64,16 +74,32 @@ fun AddTransactionScreen(
 
             OutlinedTextField(
                 value = note,
-                onValueChange = { note = it },
+                onValueChange = {
+                    note = it
+                    onClearExternalError()
+                },
                 label = { Text("Note") },
                 singleLine = true,
             )
 
+            val shownError = localError ?: externalErrorMessage
+            if (shownError != null) {
+                Text(shownError, color = MaterialTheme.colorScheme.error)
+            }
+
             Button(
                 enabled = amountText.isNotBlank(),
                 onClick = {
-                    val parsed = amountText.trim().toDoubleOrNull() ?: return@Button
-                    val cents = (parsed * 100).toLong()
+                    val cents = parseAmountToCents(amountText)
+                    if (cents == null) {
+                        localError = "Please enter a valid amount"
+                        return@Button
+                    }
+                    if (cents == 0L) {
+                        localError = "Amount must not be zero"
+                        return@Button
+                    }
+                    localError = null
                     val now = System.currentTimeMillis()
                     onSave(cents, note, now)
                 }
@@ -81,5 +107,19 @@ fun AddTransactionScreen(
                 Text("Save")
             }
         }
+    }
+}
+
+private fun parseAmountToCents(text: String): Long? {
+    return try {
+        val normalized = text.trim().replace(',', '.')
+        if (normalized.isBlank()) return null
+        val parsed = BigDecimal(normalized)
+        parsed
+            .movePointRight(2)
+            .setScale(0, RoundingMode.HALF_UP)
+            .longValueExact()
+    } catch (_: Throwable) {
+        null
     }
 }

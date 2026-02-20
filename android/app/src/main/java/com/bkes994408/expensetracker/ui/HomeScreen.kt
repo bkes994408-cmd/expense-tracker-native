@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.bkes994408.expensetracker.domain.Transaction
+import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Date
 
@@ -35,6 +36,7 @@ fun HomeScreen(
     onAdd: () -> Unit,
 ) {
     val list by viewModel.transactions.collectAsState()
+    val error by viewModel.errorMessage.collectAsState()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Transactions") }) },
@@ -61,6 +63,15 @@ fun HomeScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                item {
+                    if (error != null) {
+                        Text(
+                            text = error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
                 items(items = list, key = { it.id }) { item ->
                     TransactionRow(
                         item = item,
@@ -77,7 +88,8 @@ private fun TransactionRow(
     item: Transaction,
     onDelete: () -> Unit,
 ) {
-    val currency = NumberFormat.getCurrencyInstance().format(item.amountCents / 100.0)
+    val amount = BigDecimal.valueOf(item.amountCents, 2)
+    val currency = NumberFormat.getCurrencyInstance().format(amount)
     val dateText = Date(item.occurredAtEpochMillis).toString()
 
     androidx.compose.material3.Card {

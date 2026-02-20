@@ -1,6 +1,8 @@
 package com.bkes994408.expensetracker.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,12 +25,18 @@ fun AppNav(
             )
         }
         composable(Routes.Add) {
+            val error by viewModel.errorMessage.collectAsState()
             AddTransactionScreen(
                 onBack = { navController.popBackStack() },
                 onSave = { amountCents, note, occurredAt ->
-                    viewModel.add(amountCents, note, occurredAt)
-                    navController.popBackStack()
-                }
+                    viewModel.add(amountCents, note, occurredAt) { success ->
+                        if (success) {
+                            navController.popBackStack()
+                        }
+                    }
+                },
+                externalErrorMessage = error,
+                onClearExternalError = viewModel::clearError,
             )
         }
     }

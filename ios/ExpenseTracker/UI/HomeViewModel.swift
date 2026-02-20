@@ -14,19 +14,35 @@ final class HomeViewModel: ObservableObject {
     }
 
     func load() {
-        do {
-            transactions = try listUseCase()
-        } catch {
-            errorMessage = String(describing: error)
+        Task.detached(priority: .userInitiated) { [listUseCase] in
+            do {
+                let loaded = try listUseCase()
+                await MainActor.run {
+                    self.transactions = loaded
+                    self.errorMessage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = String(describing: error)
+                }
+            }
         }
     }
 
     func delete(id: Int64) {
-        do {
-            try deleteUseCase(id: id)
-            load()
-        } catch {
-            errorMessage = String(describing: error)
+        Task.detached(priority: .userInitiated) { [deleteUseCase, listUseCase] in
+            do {
+                try deleteUseCase(id: id)
+                let loaded = try listUseCase()
+                await MainActor.run {
+                    self.transactions = loaded
+                    self.errorMessage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = String(describing: error)
+                }
+            }
         }
     }
 }

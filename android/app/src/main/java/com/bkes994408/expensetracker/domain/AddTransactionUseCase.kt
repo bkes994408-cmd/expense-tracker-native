@@ -8,7 +8,9 @@ class AddTransactionUseCase(
         note: String,
         occurredAtEpochMillis: Long,
     ): Long {
-        require(amountCents != 0L) { "amountCents must not be 0" }
+        if (amountCents == 0L) {
+            throw IllegalArgumentException("Amount must not be zero")
+        }
         return repository.add(
             amountCents = amountCents,
             note = note.trim(),

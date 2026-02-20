@@ -1,0 +1,39 @@
+[2026-02-21 02:29 GMT+8] Task start: handle all BLOCKING review comments for PR #2.
+1) Cloned repo and checked out branch feature/mvp1-transactions-crud.
+2) Inspected code paths in iOS/Android for:
+   - precondition/require crash validation
+   - amount parsing/rounding
+   - gradle wrapper risk
+   - iOS HomeViewModel main-thread DB I/O
+   - Android AppViewModel error handling and UI surfacing
+3) iOS changes made:
+   - Replaced precondition in AddTransactionUseCase with throwing validation error (AddTransactionValidationError.zeroAmount).
+   - AddTransactionView amount parsing switched from Double to Decimal-based parser.
+     * Input normalized by replacing ',' with '.'
+     * Decimal -> cents via NSDecimalRound(.plain) at scale 0
+     * Added range validation against Int64 bounds
+   - AddTransactionView now shows localized error messages from parsing/validation.
+   - HomeViewModel list/delete DB operations moved to Task.detached and results marshaled back on MainActor.
+   - Added test: AddTransactionUseCase throws when amount is zero.
+4) Android changes made:
+   - Replaced require in AddTransactionUseCase with explicit IllegalArgumentException throw.
+   - AddTransactionScreen amount parsing switched from Double to BigDecimal.
+     * normalized input ',' -> '.'
+     * cents computed via movePointRight(2).setScale(0, HALF_UP).longValueExact()
+   - AddTransactionScreen now keeps local error state and displays parse/validation errors.
+   - AppViewModel add()/delete() wrapped in try/catch and exposes errorMessage StateFlow.
+   - AppNav updated so add flow pops back only on success.
+   - Add screen can show external ViewModel error and clear it on input edits.
+   - HomeScreen now subscribes to errorMessage and renders error text.
+   - Added test: AddTransactionUseCase throws when amount is zero.
+5) Gradle wrapper hardening:
+   - Replaced custom/simplified android/gradlew with standard GradleWrapperMain entry using only gradle-wrapper.jar classpath.
+   - Verified repository has no android/gradle/wrapper/gradle-cli.jar tracked file.
+6) Environment/test execution:
+   - Ensured JDK17 available and configured JAVA_HOME.
+   - Android unit tests run: ./gradlew testDebugUnitTest (PASS).
+   - iOS tests run: xcodebuild ... test on iPhone 17 simulator (PASS for unit + UI smoke).
+7) Next steps pending in this log:
+   - Update PR #2 description with validation/risk/rollback sections.
+   - Commit and push branch.
+   - Post gh pr comment replies for each BLOCKING review comment with commit SHA.

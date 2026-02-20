@@ -37,17 +37,55 @@ struct AddTransactionView: View {
 
     private func save() {
         do {
-            let amount = Double(amountText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
-            let cents = Int64((amount * 100).rounded())
+            let cents = try parseAmountToCents(amountText)
             _ = try AddTransactionUseCase(repository: repository)(
                 amountCents: cents,
                 note: note,
                 occurredAt: .now
             )
+            errorMessage = nil
             onSaved()
             dismiss()
         } catch {
-            errorMessage = String(describing: error)
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+        }
+    }
+
+    private func parseAmountToCents(_ input: String) throws -> Int64 {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw AmountParseError.invalidNumber
+        }
+
+        let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        guard let decimal = Decimal(string: normalized, locale: Locale(identifier: "en_US_POSIX")) else {
+            throw AmountParseError.invalidNumber
+        }
+
+        var centsDecimal = decimal * 100
+        var rounded = Decimal()
+        NSDecimalRound(&rounded, &centsDecimal, 0, .plain) // round half up
+
+        let number = NSDecimalNumber(decimal: rounded)
+        let max = NSDecimalNumber(value: Int64.max)
+        let min = NSDecimalNumber(value: Int64.min)
+        guard number.compare(max) != .orderedDescending, number.compare(min) != .orderedAscending else {
+            throw AmountParseError.outOfRange
+        }
+        return number.int64Value
+    }
+}
+
+private enum AmountParseError: LocalizedError {
+    case invalidNumber
+    case outOfRange
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidNumber:
+            return "Please enter a valid amount."
+        case .outOfRange:
+            return "Amount is out of supported range."
         }
     }
 }
