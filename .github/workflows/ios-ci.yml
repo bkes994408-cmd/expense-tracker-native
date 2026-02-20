@@ -1,0 +1,53 @@
+name: iOS CI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/**
+  pull_request:
+
+jobs:
+  ios-build:
+    name: iOS build
+    runs-on: macos-15
+    if: ${{ hashFiles('ios/*.xcodeproj/project.pbxproj', 'ios/*.xcworkspace/contents.xcworkspacedata') != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Resolve project/workspace and scheme
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ls ios/*.xcworkspace >/dev/null 2>&1; then
+            workspace=$(ls ios/*.xcworkspace | head -n1)
+            scheme=$(xcodebuild -list -workspace "$workspace" | awk '/Schemes:/{getline; gsub(/^ +| +$/, "", $0); print; exit}')
+            echo "target_flag=-workspace $workspace" >> "$GITHUB_OUTPUT"
+          else
+            project=$(ls ios/*.xcodeproj | head -n1)
+            scheme=$(xcodebuild -list -project "$project" | awk '/Schemes:/{getline; gsub(/^ +| +$/, "", $0); print; exit}')
+            echo "target_flag=-project $project" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -z "${scheme:-}" ]; then
+            echo "Unable to detect iOS build scheme automatically." >&2
+            exit 1
+          fi
+          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
+
+      - name: Build for iOS Simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            ${{ steps.config.outputs.target_flag }} \
+            -scheme "${{ steps.config.outputs.scheme }}" \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
