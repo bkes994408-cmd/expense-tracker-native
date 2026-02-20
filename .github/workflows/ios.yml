@@ -17,7 +17,7 @@ jobs:
             -project ios/ExpenseTracker.xcodeproj \
             -scheme ExpenseTracker \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             build
