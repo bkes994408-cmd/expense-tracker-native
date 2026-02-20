@@ -31,7 +31,9 @@ targets:
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         ENABLE_PREVIEWS: YES
         SWIFTUI_PREVIEWS: YES
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
     scheme:
       testTargets: []
       gatherCoverageData: false

@@ -279,7 +279,6 @@
 				);
 				SDKROOT = iphoneos;
 				SWIFTUI_PREVIEWS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
