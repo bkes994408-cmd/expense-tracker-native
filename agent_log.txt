@@ -37,3 +37,15 @@
    - Update PR #2 description with validation/risk/rollback sections.
    - Commit and push branch.
    - Post gh pr comment replies for each BLOCKING review comment with commit SHA.
+8) Updated PR description via `gh pr edit 2 --body-file /tmp/pr2_body.md` with validation/risk/rollback details.
+9) Commit created and pushed:
+   - Commit: fedf9f2
+   - Branch: feature/mvp1-transactions-crud
+10) Posted 6 PR comments for each BLOCKING category using `gh pr comment 2 --body-file ...`.
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492031
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492111
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492197
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492259
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492365
+    - https://github.com/bkes994408-cmd/expense-tracker-native/pull/2#issuecomment-3936492468
+11) Final PR URL: https://github.com/bkes994408-cmd/expense-tracker-native/pull/2
