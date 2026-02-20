@@ -24,5 +24,8 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
       - name: Gradle build
         run: ./gradlew :app:assembleDebug
