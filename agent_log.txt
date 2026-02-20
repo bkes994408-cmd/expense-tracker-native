@@ -26,3 +26,9 @@
 [2026-02-21 03:24:48 +0800] Verification attempt android tests failed second due missing sdk.dir. Added android/local.properties with sdk.dir=/Users/bkes994104/Library/Android/sdk.
 [2026-02-21 03:25:37 +0800] Final verification: ./gradlew testDebugUnitTest passed successfully.
 [2026-02-21 03:26:10 +0800] Pending: stage changes, commit to feat/issue-11-category-management, create PR for Issue #11 with gh pr create, capture PR URL.
+[2026-02-21 03:27:22 +0800] Committed implementation as: feat: add category management with archive and ordering.
+[2026-02-21 03:27:45 +0800] Noted commit accidentally landed on existing branch chore/mvp0-native-skeleton due current branch context; corrected by checking out feat/issue-11-category-management and cherry-picking commit hash 4b81312.
+[2026-02-21 03:28:03 +0800] Pushed branch to origin: feat/issue-11-category-management.
+[2026-02-21 03:28:31 +0800] Created PR #12 via gh pr create. Initial command used markdown backticks in zsh command string causing shell interpolation warnings; PR still created.
+[2026-02-21 03:28:56 +0800] Corrected PR body with safe --body-file flow to preserve markdown formatting and code spans.
+[2026-02-21 03:29:02 +0800] Final PR URL: https://github.com/bkes994408-cmd/expense-tracker-native/pull/12
