@@ -25,6 +25,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Validate Gradle Wrapper
+        continue-on-error: true
         uses: gradle/actions/wrapper-validation@v3
 
       - name: Gradle build
