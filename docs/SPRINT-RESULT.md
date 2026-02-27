@@ -1,40 +1,38 @@
-# Sprint Result - MVP-1（核心功能第一階段）
+# Sprint Result - MVP-1（核心功能第二階段）
 
-日期：2026-02-27
+日期：2026-02-28
 
 ## 完成項目
 
-1. **帳目 CRUD 最小可用（新增 / 列表 / 刪除）**
-   - 建立 `ExpenseStore` 介面與 `GRDBExpenseStore` 實作。
-   - 資料表：`expenses(id, title, amount, createdAt, categoryId)`。
-   - App 首頁改為可直接輸入標題與金額新增帳目，並在列表中刪除。
-   - `update(...)` 已先在介面與 store 留下實作入口（UI 後補）。
+1. **每月總覽（收入 / 支出 / 分類彙總）**
+   - `ExpenseStore` 新增 `fetchMonthlyOverview(for:)`。
+   - `GRDBExpenseStore` 實作當月彙總查詢（收入、支出、淨額、分類彙總）。
+   - 首頁新增「每月總覽」區塊，顯示收入/支出/淨額與分類金額。
+   - 新增帳目支援「收入 / 支出」切換（支出以負數入帳）。
 
-2. **分類管理最小可用（新增 + 列表）**
-   - 延續既有 `CategoryStore`/`CategoryManagementViewModel`。
-   - Settings 畫面提供分類新增與列表。
-   - 封存/排序能力仍保留介面（`archive`/`move`），並加上 TODO 註記後續 UX 強化。
+2. **訂閱管理基礎功能**
+   - 新增 `SubscriptionPlan`、`SubscriptionStore`、`GRDBSubscriptionStore`。
+   - 本機 DB 新增 `subscriptions` 表（名稱、金額、週期天數、下次扣款、提醒設定）。
+   - 設定頁新增「訂閱管理」：可新增訂閱並顯示下次扣款日期與提醒文字。
 
-3. **列表篩選 / 搜尋（先落地搜尋）**
-   - 新增 `ExpenseListViewModel.searchText`。
-   - 首頁使用 `.searchable(...)`，可依標題即時過濾帳目。
-   - GRDB 查詢支援 `title LIKE` 模糊搜尋。
+3. **分期管理基礎功能**
+   - 新增 `InstallmentPlan`、`InstallmentStore`、`GRDBInstallmentStore`。
+   - 本機 DB 新增 `installments` 表（總期數、已繳期數、每期金額）。
+   - 設定頁新增「分期管理」：可新增分期並顯示已繳 / 剩餘期數。
 
-4. **最小測試與 CI**
-   - 新增 `ExpenseListViewModelTests`（新增/刪除/搜尋）。
-   - 保留並修正 `CategoryManagementViewModelTests`（型別命名衝突）。
-   - iOS CI workflow 更新為：
-     - 先 `xcodegen generate`
-     - 再執行 `xcodebuild ... test`
+4. **最小測試 / UI 驗證**
+   - 擴充 `ExpenseListViewModelTests`：驗證月總覽計算與收入/支出符號。
+   - 新增 `SubscriptionManagementViewModelTests`：驗證新增訂閱與提醒文字。
+   - 新增 `InstallmentManagementViewModelTests`：驗證剩餘期數計算。
 
 ## 驗證結果
 
-- 本機測試指令：
+- 測試指令：
+  - `xcodegen generate --spec ios/project.yml`
   - `xcodebuild -project ios/ExpenseTracker.xcodeproj -scheme ExpenseTracker -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' CODE_SIGNING_ALLOWED=NO test`
-- 結果：`TEST SUCCEEDED`（5 tests, 0 failure）
+- 本輪新增測試覆蓋：月總覽、訂閱管理、分期管理核心行為。
 
-## 風險 / 後續
+## 備註
 
-- 帳目「更新」目前只有資料層入口，尚未接 UI（MVP-1.2）。
-- 分類封存/排序雖有能力，但互動體驗仍偏工程版（MVP-1.2 可優化）。
-- Android 端尚未同步補齊同等功能，下一階段需補平台一致性。
+- 本輪維持離線優先（僅本機 SQLite，未涉及雲端同步）。
+- 僅做 MVP-1 第二階段必要改動，未進行額外重構。

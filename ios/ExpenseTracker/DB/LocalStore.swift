@@ -6,6 +6,8 @@ final class LocalStore {
 
     let categoryStore: CategoryStore
     let expenseStore: ExpenseStore
+    let subscriptionStore: SubscriptionStore
+    let installmentStore: InstallmentStore
 
     private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -16,6 +18,8 @@ final class LocalStore {
             let dbQueue = try DatabaseQueue(path: dbPath)
             self.categoryStore = try GRDBCategoryStore(dbQueue: dbQueue)
             self.expenseStore = try GRDBExpenseStore(dbQueue: dbQueue)
+            self.subscriptionStore = try GRDBSubscriptionStore(dbQueue: dbQueue)
+            self.installmentStore = try GRDBInstallmentStore(dbQueue: dbQueue)
         } catch {
             fatalError("Failed to initialize local stores: \(error)")
         }

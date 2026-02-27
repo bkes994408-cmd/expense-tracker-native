@@ -17,7 +17,11 @@ struct RootView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .settings:
-                    SettingsView(store: LocalStore.shared.categoryStore)
+                    SettingsView(
+                        categoryStore: LocalStore.shared.categoryStore,
+                        subscriptionStore: LocalStore.shared.subscriptionStore,
+                        installmentStore: LocalStore.shared.installmentStore
+                    )
                 }
             }
         }

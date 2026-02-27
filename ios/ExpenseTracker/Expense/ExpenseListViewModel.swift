@@ -3,8 +3,10 @@ import Foundation
 @MainActor
 final class ExpenseListViewModel: ObservableObject {
     @Published var expenses: [Expense] = []
+    @Published var monthlyOverview: MonthlyOverview = .empty(month: Date())
     @Published var newTitle = ""
     @Published var newAmount = ""
+    @Published var isIncome = false
     @Published var searchText = "" {
         didSet { reload() }
     }
@@ -18,14 +20,17 @@ final class ExpenseListViewModel: ObservableObject {
 
     func reload() {
         expenses = (try? store.fetchAll(searchText: searchText)) ?? []
+        monthlyOverview = (try? store.fetchMonthlyOverview(for: Date())) ?? .empty(month: Date())
     }
 
     func addExpense() {
         let trimmedTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTitle.isEmpty, let amount = Decimal(string: newAmount), amount > 0 else { return }
+        guard !trimmedTitle.isEmpty, let rawAmount = Decimal(string: newAmount), rawAmount > 0 else { return }
+
+        let signedAmount = isIncome ? rawAmount : -rawAmount
 
         do {
-            try store.add(title: trimmedTitle, amount: amount, categoryId: nil)
+            try store.add(title: trimmedTitle, amount: signedAmount, categoryId: nil)
             newTitle = ""
             newAmount = ""
             reload()

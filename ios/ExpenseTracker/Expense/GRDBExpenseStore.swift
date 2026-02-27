@@ -29,16 +29,7 @@ final class GRDBExpenseStore: ExpenseStore {
                 """, arguments: [keyword])
             }
 
-            return rows.map {
-                let amountString: String = $0["amount"]
-                return Expense(
-                    id: $0["id"],
-                    title: $0["title"],
-                    amount: Decimal(string: amountString) ?? 0,
-                    createdAt: Date(timeIntervalSince1970: $0["createdAt"]),
-                    categoryId: $0["categoryId"]
-                )
-            }
+            return rows.map(Self.mapExpense)
         }
     }
 
@@ -60,6 +51,41 @@ final class GRDBExpenseStore: ExpenseStore {
         }
     }
 
+    func fetchMonthlyOverview(for month: Date) throws -> MonthlyOverview {
+        let calendar = Calendar.current
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
+        let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+
+        return try dbQueue.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT
+                    COALESCE(c.name, '未分類') AS categoryName,
+                    SUM(CAST(e.amount AS REAL)) AS totalAmount
+                FROM expenses e
+                LEFT JOIN categories c ON c.id = e.categoryId
+                WHERE e.createdAt >= ? AND e.createdAt < ?
+                GROUP BY COALESCE(c.name, '未分類')
+                ORDER BY totalAmount ASC
+            """, arguments: [monthStart.timeIntervalSince1970, monthEnd.timeIntervalSince1970])
+
+            var income: Decimal = 0
+            var expense: Decimal = 0
+            let categories: [MonthlyOverview.CategoryTotal] = rows.compactMap { row in
+                let name: String = row["categoryName"]
+                let amountDouble: Double = row["totalAmount"]
+                let amount = Decimal(amountDouble)
+                if amount >= 0 {
+                    income += amount
+                } else {
+                    expense += -amount
+                }
+                return MonthlyOverview.CategoryTotal(id: name, name: name, amount: amount)
+            }
+
+            return MonthlyOverview(month: monthStart, income: income, expense: expense, categoryTotals: categories)
+        }
+    }
+
     func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {
         // TODO(MVP-1.2): wire edit flow in UI.
         try dbQueue.write { db in
@@ -68,6 +94,17 @@ final class GRDBExpenseStore: ExpenseStore {
                 arguments: [title, NSDecimalNumber(decimal: amount).stringValue, categoryId, id]
             )
         }
+    }
+
+    private static func mapExpense(_ row: Row) -> Expense {
+        let amountString: String = row["amount"]
+        return Expense(
+            id: row["id"],
+            title: row["title"],
+            amount: Decimal(string: amountString) ?? 0,
+            createdAt: Date(timeIntervalSince1970: row["createdAt"]),
+            categoryId: row["categoryId"]
+        )
     }
 
     private var migrator: DatabaseMigrator {
