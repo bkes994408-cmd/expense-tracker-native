@@ -1,0 +1,23 @@
+name: iOS Build
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode build (iOS Simulator)
+        run: |
+          xcodebuild \
+            -project ios/ExpenseTracker.xcodeproj \
+            -scheme ExpenseTracker \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build

@@ -3,10 +3,10 @@
 > 目標：先達成「可用 MVP」+ 完整功能測試基礎，再談進階同步/效能。
 
 ## MVP-0：專案初始化（門檻）
-- [ ] iOS 專案建立（Xcode / Swift）可編譯執行
-- [ ] Android 專案建立（Gradle / Kotlin）可編譯執行
-- [ ] 基礎架構：網路層、資料層（本機 DB）、Domain 層、UI 層
-- [ ] CI：iOS build + Android build（GitHub Actions）
+- [x] iOS 專案建立（Xcode / Swift）可編譯執行
+- [x] Android 專案建立（Gradle / Kotlin）可編譯執行
+- [x] 基礎架構：網路層、資料層（本機 DB）、Domain 層、UI 層
+- [x] CI：iOS build + Android build（GitHub Actions）
 
 ## MVP-1：核心功能（離線優先）
 - [ ] 帳目 CRUD（收入/支出）
