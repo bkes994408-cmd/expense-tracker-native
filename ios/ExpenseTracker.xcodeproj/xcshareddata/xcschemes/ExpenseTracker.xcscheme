@@ -21,6 +21,20 @@
                ReferencedContainer = "container:ExpenseTracker.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "57D33CD2557AF6CBD29C5143"
+               BuildableName = "ExpenseTrackerTests.xctest"
+               BlueprintName = "ExpenseTrackerTests"
+               ReferencedContainer = "container:ExpenseTracker.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,6 +53,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "57D33CD2557AF6CBD29C5143"
+               BuildableName = "ExpenseTrackerTests.xctest"
+               BlueprintName = "ExpenseTrackerTests"
+               ReferencedContainer = "container:ExpenseTracker.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
@@ -63,8 +88,6 @@
             ReferencedContainer = "container:ExpenseTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -82,8 +105,6 @@
             ReferencedContainer = "container:ExpenseTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

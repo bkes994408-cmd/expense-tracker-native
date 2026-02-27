@@ -4,8 +4,8 @@ import GRDB
 final class GRDBCategoryStore: CategoryStore {
     private let dbQueue: DatabaseQueue
 
-    init(path: String) throws {
-        dbQueue = try DatabaseQueue(path: path)
+    init(dbQueue: DatabaseQueue) throws {
+        self.dbQueue = dbQueue
         try migrator.migrate(dbQueue)
     }
 
