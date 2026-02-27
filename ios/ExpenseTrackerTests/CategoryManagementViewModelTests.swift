@@ -24,6 +24,19 @@ final class CategoryManagementViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.categories.map(\.name), ["Transport"])
     }
+
+    func testMoveCategoryUpdatesOrder() {
+        let store = FakeCategoryStore(seed: [
+            ExpenseTracker.Category(id: 1, name: "Food", isArchived: false, sortOrder: 0),
+            ExpenseTracker.Category(id: 2, name: "Transport", isArchived: false, sortOrder: 1),
+            ExpenseTracker.Category(id: 3, name: "Utility", isArchived: false, sortOrder: 2),
+        ])
+        let vm = CategoryManagementViewModel(store: store)
+
+        vm.move(from: IndexSet(integer: 2), to: 0)
+
+        XCTAssertEqual(vm.categories.map(\.name), ["Utility", "Food", "Transport"])
+    }
 }
 
 private final class FakeCategoryStore: CategoryStore {
