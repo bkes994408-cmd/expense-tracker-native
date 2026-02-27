@@ -38,4 +38,8 @@ cd android
 - iOS build：`.github/workflows/ios.yml`（macos runner）
 - Android build：`.github/workflows/android.yml`（ubuntu runner）
 
-Docs: 見 Downloads/ChatGPT專案/記帳APP（SRS/API/簡報）
+Docs:
+- `docs/ARCHITECTURE.md`（MVP-0 分層基礎）
+- `docs/ROADMAP.md`（整體路線圖）
+- `docs/SPRINT-RESULT.md`（最新開發進度）
+- 另見 Downloads/ChatGPT專案/記帳APP（SRS/API/簡報）
