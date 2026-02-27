@@ -11,6 +11,7 @@ struct RootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             HomeView(
+                store: LocalStore.shared.expenseStore,
                 onOpenSettings: { path.append(.settings) }
             )
             .navigationDestination(for: Route.self) { route in

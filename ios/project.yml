@@ -42,7 +42,26 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
-    scheme:
-      testTargets: []
-      gatherCoverageData: false
 
+  ExpenseTrackerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ExpenseTrackerTests
+    dependencies:
+      - target: ExpenseTracker
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ExpenseTracker.app/ExpenseTracker"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  ExpenseTracker:
+    build:
+      targets:
+        ExpenseTracker: all
+        ExpenseTrackerTests: [test]
+    test:
+      targets:
+        - name: ExpenseTrackerTests
+      gatherCoverageData: false
