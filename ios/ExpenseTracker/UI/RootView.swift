@@ -20,7 +20,8 @@ struct RootView: View {
                     SettingsView(
                         categoryStore: LocalStore.shared.categoryStore,
                         subscriptionStore: LocalStore.shared.subscriptionStore,
-                        installmentStore: LocalStore.shared.installmentStore
+                        installmentStore: LocalStore.shared.installmentStore,
+                        expenseStore: LocalStore.shared.expenseStore
                     )
                 }
             }
