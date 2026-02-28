@@ -7,8 +7,19 @@ struct RootView: View {
     }
 
     @State private var path: [Route] = []
+    @StateObject private var authViewModel = AuthViewModel(service: LocalStore.shared.authService)
 
     var body: some View {
+        Group {
+            if authViewModel.isAuthenticated {
+                appContent
+            } else {
+                AuthView(viewModel: authViewModel)
+            }
+        }
+    }
+
+    private var appContent: some View {
         NavigationStack(path: $path) {
             HomeView(
                 store: LocalStore.shared.expenseStore,
@@ -22,6 +33,11 @@ struct RootView: View {
                         subscriptionStore: LocalStore.shared.subscriptionStore,
                         installmentStore: LocalStore.shared.installmentStore
                     )
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("登出") { authViewModel.logout() }
                 }
             }
         }

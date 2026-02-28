@@ -1,38 +1,40 @@
-# Sprint Result - MVP-1（核心功能第二階段）
+# Sprint Result - MVP-1 收斂 + MVP-2 骨架啟動
 
 日期：2026-02-28
 
 ## 完成項目
 
-1. **每月總覽（收入 / 支出 / 分類彙總）**
-   - `ExpenseStore` 新增 `fetchMonthlyOverview(for:)`。
-   - `GRDBExpenseStore` 實作當月彙總查詢（收入、支出、淨額、分類彙總）。
-   - 首頁新增「每月總覽」區塊，顯示收入/支出/淨額與分類金額。
-   - 新增帳目支援「收入 / 支出」切換（支出以負數入帳）。
+1. **MVP-1：CSV 匯出補齊（含 ROADMAP 勾選）**
+   - `ExpenseListViewModel` 新增 `exportCSV()`，輸出欄位：`id,title,amount,createdAt,categoryId`。
+   - 加入 CSV escape（逗號/換行/雙引號）處理。
+   - `HomeView` 新增「匯出CSV」按鈕與 `ShareLink`。
+   - `docs/ROADMAP.md` 將 CSV 匯出改為已完成並補驗證證據。
 
-2. **訂閱管理基礎功能**
-   - 新增 `SubscriptionPlan`、`SubscriptionStore`、`GRDBSubscriptionStore`。
-   - 本機 DB 新增 `subscriptions` 表（名稱、金額、週期天數、下次扣款、提醒設定）。
-   - 設定頁新增「訂閱管理」：可新增訂閱並顯示下次扣款日期與提醒文字。
+2. **MVP-2：Auth 最小骨架（本地 mock）**
+   - 新增 `AuthService` 介面、`MockAuthService`、`AuthViewModel`、`AuthView`。
+   - 支援註冊 / 登入 / 登出（純本地記憶體流程，不接真後端）。
+   - `RootView` 加入 auth gate：未登入先顯示 Auth，登入後進入主畫面。
 
-3. **分期管理基礎功能**
-   - 新增 `InstallmentPlan`、`InstallmentStore`、`GRDBInstallmentStore`。
-   - 本機 DB 新增 `installments` 表（總期數、已繳期數、每期金額）。
-   - 設定頁新增「分期管理」：可新增分期並顯示已繳 / 剩餘期數。
+3. **MVP-2：Delta sync 資料結構骨架**
+   - 新增 `SyncMutationType`、`SyncMutation`、`SyncCursor`。
+   - 新增 `SyncStateStore` 與 `InMemorySyncStateStore`（enqueue / peek / drain / cursor）。
+   - 僅完成資料模型與本地佇列，不含網路同步。
 
-4. **最小測試 / UI 驗證**
-   - 擴充 `ExpenseListViewModelTests`：驗證月總覽計算與收入/支出符號。
-   - 新增 `SubscriptionManagementViewModelTests`：驗證新增訂閱與提醒文字。
-   - 新增 `InstallmentManagementViewModelTests`：驗證剩餘期數計算。
+4. **最小測試補齊（Auth / Sync 至少各 1）**
+   - `AuthViewModelTests.testRegisterThenLogoutFlow`
+   - `SyncStateStoreTests.testEnqueueDrainAndCursorUpdate`
+   - 另外補 `ExpenseListViewModelTests.testExportCSVIncludesHeaderAndEscapedTitle`
 
-## 驗證結果
+## 驗證方式
 
-- 測試指令：
+- 產生專案：
   - `xcodegen generate --spec ios/project.yml`
+- 執行測試：
   - `xcodebuild -project ios/ExpenseTracker.xcodeproj -scheme ExpenseTracker -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' CODE_SIGNING_ALLOWED=NO test`
-- 本輪新增測試覆蓋：月總覽、訂閱管理、分期管理核心行為。
 
 ## 備註
 
-- 本輪維持離線優先（僅本機 SQLite，未涉及雲端同步）。
-- 僅做 MVP-1 第二階段必要改動，未進行額外重構。
+- 本輪刻意維持最小可行範圍：
+  - Auth 為 mock，不含 token / keychain。
+  - Sync 僅資料結構，不含 API、衝突解決。
+- 既有 MVP-1 功能維持可編譯、可測試。

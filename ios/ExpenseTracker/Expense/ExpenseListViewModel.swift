@@ -46,4 +46,35 @@ final class ExpenseListViewModel: ObservableObject {
         }
         reload()
     }
+
+    func exportCSV() -> (filename: String, content: String)? {
+        guard let all = try? store.fetchAll(searchText: nil), !all.isEmpty else { return nil }
+
+        let formatter = ISO8601DateFormatter()
+        let header = "id,title,amount,createdAt,categoryId"
+        let rows = all.map { expense in
+            let title = Self.csvEscaped(expense.title)
+            let amount = NSDecimalNumber(decimal: expense.amount).stringValue
+            let createdAt = formatter.string(from: expense.createdAt)
+            let categoryId = expense.categoryId.map(String.init) ?? ""
+            return "\(expense.id),\(title),\(amount),\(createdAt),\(categoryId)"
+        }
+
+        let filename = "expenses-\(Self.fileTimestamp()).csv"
+        return (filename, ([header] + rows).joined(separator: "\n"))
+    }
+
+    private static func csvEscaped(_ raw: String) -> String {
+        var escaped = raw.replacingOccurrences(of: "\"", with: "\"\"")
+        if escaped.contains(",") || escaped.contains("\n") || escaped.contains("\"") {
+            escaped = "\"\(escaped)\""
+        }
+        return escaped
+    }
+
+    private static func fileTimestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter.string(from: Date())
+    }
 }

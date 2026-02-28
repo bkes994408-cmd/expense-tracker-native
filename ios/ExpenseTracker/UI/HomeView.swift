@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
+    @State private var csvExport: CSVExport?
+    @State private var exportNotice: String?
     let onOpenSettings: () -> Void
 
     init(store: ExpenseStore, onOpenSettings: @escaping () -> Void) {
@@ -63,12 +65,43 @@ struct HomeView: View {
         }
         .searchable(text: $viewModel.searchText, prompt: "搜尋標題")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if let csvExport {
+                    ShareLink(
+                        item: csvExport.content,
+                        preview: SharePreview(csvExport.filename)
+                    ) {
+                        Label("CSV", systemImage: "square.and.arrow.up")
+                    }
+                }
+
+                Button("匯出CSV") {
+                    guard let exported = viewModel.exportCSV() else {
+                        exportNotice = "目前沒有可匯出的資料"
+                        return
+                    }
+                    csvExport = CSVExport(filename: exported.filename, content: exported.content)
+                    exportNotice = "已準備匯出檔案：\(exported.filename)"
+                }
+
                 Button("設定", action: onOpenSettings)
             }
         }
+        .alert("CSV 匯出", isPresented: Binding(
+            get: { exportNotice != nil },
+            set: { if !$0 { exportNotice = nil } }
+        )) {
+            Button("確定", role: .cancel) { exportNotice = nil }
+        } message: {
+            Text(exportNotice ?? "")
+        }
         .navigationTitle("Expense Tracker")
     }
+}
+
+private struct CSVExport {
+    let filename: String
+    let content: String
 }
 
 #Preview {

@@ -41,6 +41,19 @@ final class ExpenseListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.expenses.map(\.title), ["Breakfast"])
     }
 
+    func testExportCSVIncludesHeaderAndEscapedTitle() {
+        let store = FakeExpenseStore(seed: [
+            Expense(id: 1, title: "Dinner,\"hotpot\"", amount: -250, createdAt: Date(timeIntervalSince1970: 0), categoryId: nil),
+        ])
+        let vm = ExpenseListViewModel(store: store)
+
+        let exported = vm.exportCSV()
+
+        XCTAssertNotNil(exported)
+        XCTAssertTrue(exported?.content.contains("id,title,amount,createdAt,categoryId") == true)
+        XCTAssertTrue(exported?.content.contains("\"Dinner,\"\"hotpot\"\"\"") == true)
+    }
+
     func testMonthlyOverviewCalculated() {
         let store = FakeExpenseStore(seed: [
             Expense(id: 1, title: "Salary", amount: 50000, createdAt: Date(), categoryId: nil),
