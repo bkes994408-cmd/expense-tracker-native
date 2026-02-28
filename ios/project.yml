@@ -28,7 +28,14 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: ExpenseTracker
+      - path: ExpenseTracker/App
+      - path: ExpenseTracker/Category
+      - path: ExpenseTracker/ContentView.swift
+      - path: ExpenseTracker/DB
+      - path: ExpenseTracker/Domain
+      - path: ExpenseTracker/Network
+      - path: ExpenseTracker/Resources
+      - path: ExpenseTracker/UI
     dependencies:
       - package: GRDB
         product: GRDB

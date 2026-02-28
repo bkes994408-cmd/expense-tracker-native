@@ -8,39 +8,36 @@
 
 /* Begin PBXBuildFile section */
 		00D9ED2059F793A872D7BFA0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3004F35FAAC8FA02A8183900 /* ContentView.swift */; };
+		012EDB06A5E944386242239F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B97E20FC56A77E81EFE19F5 /* SettingsView.swift */; };
+		099FCCB99435AD6CFD76F391 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 10271AA97D3174F9DDA37A7C /* Assets.xcassets */; };
+		0B3CDA84A1AB7C3752EB1631 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856AD5FBFE65037A0B4E021F /* HomeView.swift */; };
 		107BDCF7E02BB5039EE56953 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 27FD1B861F6040771576F03D /* GRDB */; };
-		139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A27C06AA410A67CC036F2582 /* LocalStore.swift */; };
-		19909A3B4971190C3712D358 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA172C7B9651C727DD14A205 /* SettingsView.swift */; };
-		708D87CF377ED53A57320BC4 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FBFDF58B41D5F08C05857E /* Expense.swift */; };
-		7946C13B9CC48C6CEFAB946D /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFC184F315BCCFFB5F598B7 /* Category.swift */; };
-		794C165237D202A80ECDA435 /* GRDBCategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0639A8B435881EF652177 /* GRDBCategoryStore.swift */; };
-		7A73343DACE1BE8009D4617F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7BB09075D54A99B83C25DFDB /* Assets.xcassets */; };
-		8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */; };
-		8BAF99B2A8AE47A8154884DE /* CategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 051AECCBF3231565B38B1AE1 /* CategoryStore.swift */; };
-		9B5915835B67F6D7EBA7609F /* CategoryManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFD0C3015345E94958050D3 /* CategoryManagementViewModel.swift */; };
-		9D81C6107482764585B3B7DA /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 998393A7C7FB120F61EC4FDD /* APIClient.swift */; };
-		B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46EFDA8D7DCED1725934DEE3 /* RootView.swift */; };
-		C22C8B690213C7B0A29EEE95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C47014370B7F790330BA2FFD /* Assets.xcassets */; };
-		D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */; };
+		3828F8A5058D838207B54E45 /* CategoryManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A684F9F4D2559D409301A8 /* CategoryManagementViewModel.swift */; };
+		4F9CCE6B886A847CE4C8B7AA /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88754DC8D9F4C1BB271956F4 /* Category.swift */; };
+		5A26C51467290B2BA9EE65DD /* ExpenseTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB050E8CF2088D46A38BFF2 /* ExpenseTrackerApp.swift */; };
+		C424C766A64EFCFEE6ABCA9C /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08135614E7440C3DE5AC1B3C /* LocalStore.swift */; };
+		C81126D7FF5FFFAD8C91E4BB /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED3205908FF778F3A0C8650 /* APIClient.swift */; };
+		D27A665C6576ECDB2F8CF2E6 /* GRDBCategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94089CE556E8C4AEBBFAB9A2 /* GRDBCategoryStore.swift */; };
+		E770F6CE24579C032276E87C /* CategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5CAED430DC76C32CAFB000E /* CategoryStore.swift */; };
+		F51F2770C4D4B62541938B8F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E1CE21F5E2DF75BEF98BA6 /* RootView.swift */; };
+		F782B9472C3BF04388963FE8 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60253B76869618A3C6DCE2AB /* Expense.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		051AECCBF3231565B38B1AE1 /* CategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStore.swift; sourceTree = "<group>"; };
-		1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseTrackerApp.swift; sourceTree = "<group>"; };
+		00A684F9F4D2559D409301A8 /* CategoryManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryManagementViewModel.swift; sourceTree = "<group>"; };
+		08135614E7440C3DE5AC1B3C /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
+		0CB050E8CF2088D46A38BFF2 /* ExpenseTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseTrackerApp.swift; sourceTree = "<group>"; };
+		10271AA97D3174F9DDA37A7C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2C126B9E82517DFD361B9A71 /* ExpenseTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExpenseTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3004F35FAAC8FA02A8183900 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		46EFDA8D7DCED1725934DEE3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		4FFC184F315BCCFFB5F598B7 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
-		7BB09075D54A99B83C25DFDB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		998393A7C7FB120F61EC4FDD /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		A27C06AA410A67CC036F2582 /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
-		B5FBFDF58B41D5F08C05857E /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
-		BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		C3C0639A8B435881EF652177 /* GRDBCategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBCategoryStore.swift; sourceTree = "<group>"; };
-		C47014370B7F790330BA2FFD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		CBFD0C3015345E94958050D3 /* CategoryManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryManagementViewModel.swift; sourceTree = "<group>"; };
-		EAF35A88661C2C25280D8DF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		FA172C7B9651C727DD14A205 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		48E1CE21F5E2DF75BEF98BA6 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		4B97E20FC56A77E81EFE19F5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		60253B76869618A3C6DCE2AB /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
+		856AD5FBFE65037A0B4E021F /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		88754DC8D9F4C1BB271956F4 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
+		94089CE556E8C4AEBBFAB9A2 /* GRDBCategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBCategoryStore.swift; sourceTree = "<group>"; };
+		CED3205908FF778F3A0C8650 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		F5CAED430DC76C32CAFB000E /* CategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,7 +55,14 @@
 		11C3AA57D80675D1695DD8D5 = {
 			isa = PBXGroup;
 			children = (
+				31390E24F982883165ABF46A /* App */,
+				76FA804D001C76BB37BC1347 /* Category */,
+				6CF6B10CD5F43B0634D495BA /* DB */,
+				772D0626A5B185F5FA4FB776 /* Domain */,
 				E38F2C82473CC4C2FA574079 /* ExpenseTracker */,
+				4D3CE53882BD1DF1FCE3D679 /* Network */,
+				52DCC419A9B7AC7A236791BA /* Resources */,
+				6F115BC42E80A4FAA9A99709 /* UI */,
 				1E51660FCE3C646E1767767C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,82 +75,80 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		386AB1725855BDDF91220B81 /* App */ = {
+		31390E24F982883165ABF46A /* App */ = {
 			isa = PBXGroup;
 			children = (
-				1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */,
+				0CB050E8CF2088D46A38BFF2 /* ExpenseTrackerApp.swift */,
 			);
-			path = App;
+			name = App;
+			path = ExpenseTracker/App;
 			sourceTree = "<group>";
 		};
-		A22A9EE3AEE58AE3F5E1E382 /* Resources */ = {
+		4D3CE53882BD1DF1FCE3D679 /* Network */ = {
 			isa = PBXGroup;
 			children = (
-				C47014370B7F790330BA2FFD /* Assets.xcassets */,
+				CED3205908FF778F3A0C8650 /* APIClient.swift */,
 			);
-			path = Resources;
+			name = Network;
+			path = ExpenseTracker/Network;
 			sourceTree = "<group>";
 		};
-		A744E00684729854438F5739 /* Domain */ = {
+		52DCC419A9B7AC7A236791BA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B5FBFDF58B41D5F08C05857E /* Expense.swift */,
+				10271AA97D3174F9DDA37A7C /* Assets.xcassets */,
 			);
-			path = Domain;
+			name = Resources;
+			path = ExpenseTracker/Resources;
 			sourceTree = "<group>";
 		};
-		A90EF31CB865AC764A1ACD37 /* Network */ = {
+		6CF6B10CD5F43B0634D495BA /* DB */ = {
 			isa = PBXGroup;
 			children = (
-				998393A7C7FB120F61EC4FDD /* APIClient.swift */,
+				08135614E7440C3DE5AC1B3C /* LocalStore.swift */,
 			);
-			path = Network;
+			name = DB;
+			path = ExpenseTracker/DB;
 			sourceTree = "<group>";
 		};
-		C64137D84810A93DDE47C5F2 /* Category */ = {
+		6F115BC42E80A4FAA9A99709 /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				4FFC184F315BCCFFB5F598B7 /* Category.swift */,
-				CBFD0C3015345E94958050D3 /* CategoryManagementViewModel.swift */,
-				051AECCBF3231565B38B1AE1 /* CategoryStore.swift */,
-				C3C0639A8B435881EF652177 /* GRDBCategoryStore.swift */,
+				856AD5FBFE65037A0B4E021F /* HomeView.swift */,
+				48E1CE21F5E2DF75BEF98BA6 /* RootView.swift */,
+				4B97E20FC56A77E81EFE19F5 /* SettingsView.swift */,
 			);
-			path = Category;
+			name = UI;
+			path = ExpenseTracker/UI;
+			sourceTree = "<group>";
+		};
+		76FA804D001C76BB37BC1347 /* Category */ = {
+			isa = PBXGroup;
+			children = (
+				88754DC8D9F4C1BB271956F4 /* Category.swift */,
+				00A684F9F4D2559D409301A8 /* CategoryManagementViewModel.swift */,
+				F5CAED430DC76C32CAFB000E /* CategoryStore.swift */,
+				94089CE556E8C4AEBBFAB9A2 /* GRDBCategoryStore.swift */,
+			);
+			name = Category;
+			path = ExpenseTracker/Category;
+			sourceTree = "<group>";
+		};
+		772D0626A5B185F5FA4FB776 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				60253B76869618A3C6DCE2AB /* Expense.swift */,
+			);
+			name = Domain;
+			path = ExpenseTracker/Domain;
 			sourceTree = "<group>";
 		};
 		E38F2C82473CC4C2FA574079 /* ExpenseTracker */ = {
 			isa = PBXGroup;
 			children = (
-				7BB09075D54A99B83C25DFDB /* Assets.xcassets */,
 				3004F35FAAC8FA02A8183900 /* ContentView.swift */,
-				EAF35A88661C2C25280D8DF3 /* Info.plist */,
-				386AB1725855BDDF91220B81 /* App */,
-				C64137D84810A93DDE47C5F2 /* Category */,
-				E93DA613DC8C3BF9BFC7998A /* DB */,
-				A744E00684729854438F5739 /* Domain */,
-				A90EF31CB865AC764A1ACD37 /* Network */,
-				A22A9EE3AEE58AE3F5E1E382 /* Resources */,
-				E7BC55A93E236C86B9D5E56C /* UI */,
 			);
 			path = ExpenseTracker;
-			sourceTree = "<group>";
-		};
-		E7BC55A93E236C86B9D5E56C /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */,
-				46EFDA8D7DCED1725934DEE3 /* RootView.swift */,
-				FA172C7B9651C727DD14A205 /* SettingsView.swift */,
-			);
-			path = UI;
-			sourceTree = "<group>";
-		};
-		E93DA613DC8C3BF9BFC7998A /* DB */ = {
-			isa = PBXGroup;
-			children = (
-				A27C06AA410A67CC036F2582 /* LocalStore.swift */,
-			);
-			path = DB;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -214,8 +216,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A73343DACE1BE8009D4617F /* Assets.xcassets in Resources */,
-				C22C8B690213C7B0A29EEE95 /* Assets.xcassets in Resources */,
+				099FCCB99435AD6CFD76F391 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,18 +227,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D81C6107482764585B3B7DA /* APIClient.swift in Sources */,
-				7946C13B9CC48C6CEFAB946D /* Category.swift in Sources */,
-				9B5915835B67F6D7EBA7609F /* CategoryManagementViewModel.swift in Sources */,
-				8BAF99B2A8AE47A8154884DE /* CategoryStore.swift in Sources */,
+				C81126D7FF5FFFAD8C91E4BB /* APIClient.swift in Sources */,
+				4F9CCE6B886A847CE4C8B7AA /* Category.swift in Sources */,
+				3828F8A5058D838207B54E45 /* CategoryManagementViewModel.swift in Sources */,
+				E770F6CE24579C032276E87C /* CategoryStore.swift in Sources */,
 				00D9ED2059F793A872D7BFA0 /* ContentView.swift in Sources */,
-				708D87CF377ED53A57320BC4 /* Expense.swift in Sources */,
-				D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */,
-				794C165237D202A80ECDA435 /* GRDBCategoryStore.swift in Sources */,
-				8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */,
-				139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */,
-				B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */,
-				19909A3B4971190C3712D358 /* SettingsView.swift in Sources */,
+				F782B9472C3BF04388963FE8 /* Expense.swift in Sources */,
+				5A26C51467290B2BA9EE65DD /* ExpenseTrackerApp.swift in Sources */,
+				D27A665C6576ECDB2F8CF2E6 /* GRDBCategoryStore.swift in Sources */,
+				0B3CDA84A1AB7C3752EB1631 /* HomeView.swift in Sources */,
+				C424C766A64EFCFEE6ABCA9C /* LocalStore.swift in Sources */,
+				F51F2770C4D4B62541938B8F /* RootView.swift in Sources */,
+				012EDB06A5E944386242239F /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,7 +323,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = ExpenseTracker/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -341,7 +341,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = ExpenseTracker/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				LD_RUNPATH_SEARCH_PATHS = (
