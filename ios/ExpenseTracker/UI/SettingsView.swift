@@ -4,11 +4,21 @@ struct SettingsView: View {
     @StateObject private var categoryViewModel: CategoryManagementViewModel
     @StateObject private var subscriptionViewModel: SubscriptionManagementViewModel
     @StateObject private var installmentViewModel: InstallmentManagementViewModel
+    private let expenseStore: ExpenseStore
 
-    init(categoryStore: CategoryStore, subscriptionStore: SubscriptionStore, installmentStore: InstallmentStore) {
+    @State private var exportedCSVURL: URL?
+    @State private var exportStatusMessage: String?
+
+    init(
+        categoryStore: CategoryStore,
+        subscriptionStore: SubscriptionStore,
+        installmentStore: InstallmentStore,
+        expenseStore: ExpenseStore
+    ) {
         _categoryViewModel = StateObject(wrappedValue: CategoryManagementViewModel(store: categoryStore))
         _subscriptionViewModel = StateObject(wrappedValue: SubscriptionManagementViewModel(store: subscriptionStore))
         _installmentViewModel = StateObject(wrappedValue: InstallmentManagementViewModel(store: installmentStore))
+        self.expenseStore = expenseStore
     }
 
     var body: some View {
@@ -77,12 +87,44 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Export") {
+                Button("匯出 CSV") {
+                    exportCSV()
+                }
+
+                if let exportedCSVURL {
+                    ShareLink(item: exportedCSVURL) {
+                        Label("分享最近匯出檔", systemImage: "square.and.arrow.up")
+                    }
+                    Text(exportedCSVURL.lastPathComponent)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let exportStatusMessage {
+                    Text(exportStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("About") {
                 LabeledContent("Version", value: "0.0.1")
             }
         }
         .toolbar { EditButton() }
         .navigationTitle("Settings")
+    }
+
+    private func exportCSV() {
+        do {
+            let expenses = try expenseStore.fetchAll(searchText: nil)
+            let url = try ExpenseCSVExporter.exportToTemporaryFile(expenses: expenses)
+            exportedCSVURL = url
+            exportStatusMessage = "已匯出 \(expenses.count) 筆資料"
+        } catch {
+            exportStatusMessage = "匯出失敗：\(error.localizedDescription)"
+        }
     }
 }
 
@@ -91,7 +133,8 @@ struct SettingsView: View {
         SettingsView(
             categoryStore: PreviewCategoryStore(),
             subscriptionStore: PreviewSubscriptionStore(),
-            installmentStore: PreviewInstallmentStore()
+            installmentStore: PreviewInstallmentStore(),
+            expenseStore: PreviewExpenseStore()
         )
     }
 }
@@ -124,4 +167,18 @@ private final class PreviewInstallmentStore: InstallmentStore {
     }
 
     func add(name: String, periodAmount: Decimal, totalPeriods: Int, paidPeriods: Int) throws {}
+}
+
+private final class PreviewExpenseStore: ExpenseStore {
+    func fetchAll(searchText: String?) throws -> [Expense] {
+        [
+            Expense(id: 1, title: "Lunch", amount: 120, createdAt: Date(), categoryId: nil),
+            Expense(id: 2, title: "MRT", amount: 35, createdAt: Date(), categoryId: nil),
+        ]
+    }
+
+    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+    func delete(id: Int64) throws {}
+    func fetchMonthlyOverview(for month: Date) throws -> MonthlyOverview { .empty(for: month) }
+    func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {}
 }
