@@ -17,8 +17,11 @@ final class CategoryManagementViewModel: ObservableObject {
     }
 
     func addCategory() {
+        let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
         do {
-            try store.add(name: newCategoryName)
+            try store.add(name: trimmedName)
             newCategoryName = ""
             reload()
         } catch {
