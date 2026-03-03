@@ -37,10 +37,33 @@ final class CategoryManagementViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.categories.map(\.name), ["Utility", "Food", "Transport"])
     }
+
+    func testAddCategoryWithEmptyNameDoesNotCallStore() {
+        let store = FakeCategoryStore()
+        let vm = CategoryManagementViewModel(store: store)
+
+        vm.newCategoryName = ""
+        vm.addCategory()
+
+        XCTAssertEqual(store.addCallCount, 0)
+        XCTAssertTrue(vm.categories.isEmpty)
+    }
+
+    func testAddCategoryWithWhitespaceOnlyNameDoesNotCallStore() {
+        let store = FakeCategoryStore()
+        let vm = CategoryManagementViewModel(store: store)
+
+        vm.newCategoryName = "   \n  "
+        vm.addCategory()
+
+        XCTAssertEqual(store.addCallCount, 0)
+        XCTAssertTrue(vm.categories.isEmpty)
+    }
 }
 
 private final class FakeCategoryStore: CategoryStore {
     private var categories: [ExpenseTracker.Category]
+    private(set) var addCallCount = 0
 
     init(seed: [ExpenseTracker.Category] = []) {
         self.categories = seed
@@ -51,6 +74,7 @@ private final class FakeCategoryStore: CategoryStore {
     }
 
     func add(name: String) throws {
+        addCallCount += 1
         let nextId = (categories.map(\.id).max() ?? 0) + 1
         let nextOrder = (categories.map(\.sortOrder).max() ?? -1) + 1
         categories.append(ExpenseTracker.Category(id: nextId, name: name, isArchived: false, sortOrder: nextOrder))
