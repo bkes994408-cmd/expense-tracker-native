@@ -8,6 +8,7 @@ final class AuthViewModel: ObservableObject {
     @Published var displayName = ""
     @Published var currentUser: AuthUser?
     @Published var statusMessage: String?
+    @Published var auditLogMessage: String?
 
     private let service: AuthService
 
@@ -28,9 +29,19 @@ final class AuthViewModel: ObservableObject {
                 currentUser = try service.login(email: email, password: password)
                 statusMessage = "登入成功"
             }
+            auditLogMessage = SecurityLogRedactor.redact(
+                "auth success for \(email) token=\(password)",
+                email: email,
+                token: password
+            )
             password = ""
         } catch {
             statusMessage = (error as? LocalizedError)?.errorDescription ?? "驗證失敗"
+            auditLogMessage = SecurityLogRedactor.redact(
+                "auth failed for \(email) token=\(password)",
+                email: email,
+                token: password
+            )
         }
     }
 
@@ -38,5 +49,6 @@ final class AuthViewModel: ObservableObject {
         service.logout()
         currentUser = nil
         statusMessage = "已登出"
+        auditLogMessage = "auth logout"
     }
 }
