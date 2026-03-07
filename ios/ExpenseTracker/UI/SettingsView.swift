@@ -152,8 +152,11 @@ struct SettingsView: View {
             try data.write(to: url)
             exportedCSVURL = url
             exportStatusMessage = "已匯出 \(expenses.count) 筆資料"
+            Telemetry.shared.track(.csvExported, metadata: ["count": "\(expenses.count)"])
         } catch {
             exportStatusMessage = "匯出失敗：\(error.localizedDescription)"
+            Telemetry.shared.track(.csvExportFailed)
+            Telemetry.shared.record(error: error, metadata: ["operation": "export_csv"])
         }
     }
 }
