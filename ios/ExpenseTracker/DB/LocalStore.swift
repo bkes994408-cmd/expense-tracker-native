@@ -4,26 +4,55 @@ import GRDB
 final class LocalStore {
     static let shared = LocalStore()
 
-    let categoryStore: CategoryStore
-    let expenseStore: ExpenseStore
-    let subscriptionStore: SubscriptionStore
-    let installmentStore: InstallmentStore
-    let authService: AuthService
+    /// Auth 不依賴 DB，避免啟動就初始化整個資料層。
+    let authService: AuthService = MockAuthService()
 
-    private init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
-        let dbPath = appSupport.appendingPathComponent("expense-tracker.sqlite").path
-
+    lazy var categoryStore: CategoryStore = {
         do {
-            let dbQueue = try DatabaseQueue(path: dbPath)
-            self.categoryStore = try GRDBCategoryStore(dbQueue: dbQueue)
-            self.expenseStore = try GRDBExpenseStore(dbQueue: dbQueue)
-            self.subscriptionStore = try GRDBSubscriptionStore(dbQueue: dbQueue)
-            self.installmentStore = try GRDBInstallmentStore(dbQueue: dbQueue)
-            self.authService = MockAuthService()
+            return try GRDBCategoryStore(dbQueue: dbQueue)
         } catch {
-            fatalError("Failed to initialize local stores: \(error)")
+            fatalError("Failed to initialize category store: \(error)")
         }
-    }
+    }()
+
+    lazy var expenseStore: ExpenseStore = {
+        do {
+            return try GRDBExpenseStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize expense store: \(error)")
+        }
+    }()
+
+    lazy var subscriptionStore: SubscriptionStore = {
+        do {
+            return try GRDBSubscriptionStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize subscription store: \(error)")
+        }
+    }()
+
+    lazy var installmentStore: InstallmentStore = {
+        do {
+            return try GRDBInstallmentStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize installment store: \(error)")
+        }
+    }()
+
+    private lazy var dbQueue: DatabaseQueue = {
+        do {
+            if ProcessInfo.processInfo.arguments.contains("UITEST_IN_MEMORY_DB") {
+                return try DatabaseQueue()
+            }
+
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
+            let dbPath = appSupport.appendingPathComponent("expense-tracker.sqlite").path
+            return try DatabaseQueue(path: dbPath)
+        } catch {
+            fatalError("Failed to initialize database queue: \(error)")
+        }
+    }()
+
+    private init() {}
 }

@@ -1,6 +1,7 @@
 package com.bkes994408.expensetracker
 
 import android.os.Bundle
+import androidx.core.view.doOnPreDraw
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,10 +26,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.bkes994408.expensetracker.telemetry.AnalyticsEvent
+import com.bkes994408.expensetracker.telemetry.Telemetry
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.decorView.doOnPreDraw {
+            Telemetry.markFirstFrameDrawn()
+        }
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -42,7 +49,7 @@ class MainActivity : ComponentActivity() {
 private fun ExpenseTrackerScreen() {
     val expenses = remember { mutableStateListOf<Int>() }
     var amountInput by remember { mutableStateOf("") }
-    val monthlyTotal = expenses.sum()
+    val monthlyTotal by remember(expenses) { derivedStateOf { expenses.sum() } }
 
     Column(
         modifier = Modifier
@@ -72,8 +79,13 @@ private fun ExpenseTrackerScreen() {
 
             Button(
                 onClick = {
-                    val amount = amountInput.toIntOrNull() ?: return@Button
+                    val amount = amountInput.toIntOrNull()
+                    if (amount == null) {
+                        Telemetry.track(AnalyticsEvent.EXPENSE_ADD_INVALID)
+                        return@Button
+                    }
                     expenses.add(amount)
+                    Telemetry.track(AnalyticsEvent.EXPENSE_ADDED, mapOf("amount" to amount.toString()))
                     amountInput = ""
                 },
                 modifier = Modifier.testTag("add_expense_button")
