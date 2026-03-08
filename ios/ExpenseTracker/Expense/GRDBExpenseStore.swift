@@ -57,16 +57,17 @@ final class GRDBExpenseStore: ExpenseStore {
         let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
 
         return try dbQueue.read { db in
+            let uncategorized = String(localized: "common.uncategorized")
             let rows = try Row.fetchAll(db, sql: """
                 SELECT
-                    COALESCE(c.name, '未分類') AS categoryName,
+                    COALESCE(c.name, ?) AS categoryName,
                     SUM(CAST(e.amount AS REAL)) AS totalAmount
                 FROM expenses e
                 LEFT JOIN categories c ON c.id = e.categoryId
                 WHERE e.createdAt >= ? AND e.createdAt < ?
-                GROUP BY COALESCE(c.name, '未分類')
+                GROUP BY COALESCE(c.name, ?)
                 ORDER BY totalAmount ASC
-            """, arguments: [monthStart.timeIntervalSince1970, monthEnd.timeIntervalSince1970])
+            """, arguments: [uncategorized, monthStart.timeIntervalSince1970, monthEnd.timeIntervalSince1970, uncategorized])
 
             var income: Decimal = 0
             var expense: Decimal = 0

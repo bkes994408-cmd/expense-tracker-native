@@ -91,7 +91,7 @@ private final class FakeExpenseStore: ExpenseStore {
             month: month,
             income: income,
             expense: expense,
-            categoryTotals: [.init(id: "未分類", name: "未分類", amount: income - expense)]
+            categoryTotals: [.init(id: String(localized: "common.uncategorized"), name: String(localized: "common.uncategorized"), amount: income - expense)]
         )
     }
 

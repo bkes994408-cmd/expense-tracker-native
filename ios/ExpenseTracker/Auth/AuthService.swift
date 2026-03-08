@@ -15,10 +15,10 @@ enum AuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidInput: return "請輸入有效帳號密碼"
-        case .userExists: return "此 Email 已註冊"
-        case .userNotFound: return "找不到使用者"
-        case .wrongPassword: return "密碼錯誤"
+        case .invalidInput: return String(localized: "auth.error.invalidInput")
+        case .userExists: return String(localized: "auth.error.userExists")
+        case .userNotFound: return String(localized: "auth.error.userNotFound")
+        case .wrongPassword: return String(localized: "auth.error.wrongPassword")
         }
     }
 }

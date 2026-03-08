@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bkes994408.expensetracker.telemetry.AnalyticsEvent
 import com.bkes994408.expensetracker.telemetry.Telemetry
@@ -58,7 +59,7 @@ private fun ExpenseTrackerScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "本月總覽：$monthlyTotal",
+            text = stringResource(R.string.monthly_overview, monthlyTotal),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.testTag("monthly_total")
         )
@@ -70,7 +71,7 @@ private fun ExpenseTrackerScreen() {
             OutlinedTextField(
                 value = amountInput,
                 onValueChange = { amountInput = it },
-                label = { Text("金額") },
+                label = { Text(stringResource(R.string.amount)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .weight(1f)
@@ -90,7 +91,7 @@ private fun ExpenseTrackerScreen() {
                 },
                 modifier = Modifier.testTag("add_expense_button")
             ) {
-                Text("新增帳目")
+                Text(stringResource(R.string.add_expense))
             }
         }
     }
