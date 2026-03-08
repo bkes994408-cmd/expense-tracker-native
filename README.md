@@ -42,4 +42,8 @@ Docs:
 - `docs/ARCHITECTURE.md`（MVP-0 分層基礎）
 - `docs/ROADMAP.md`（整體路線圖）
 - `docs/SPRINT-RESULT.md`（最新開發進度）
+- `docs/PRIVACY_POLICY.md`（隱私政策）
+- `docs/DATA_DELETION_PROCESS.md`（資料刪除流程）
+- `docs/CRASH_ANALYTICS.md`（Crash/analytics 骨架與上線建議）
+- `docs/RELEASE_CHECKLIST.md`（MVP-4 上架前檢查清單）
 - 另見 Downloads/ChatGPT專案/記帳APP（SRS/API/簡報）
