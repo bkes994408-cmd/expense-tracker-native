@@ -2,10 +2,15 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
+    @ObservedObject var proEntitlementStore: ProEntitlementStore
     let onOpenSettings: () -> Void
 
-    init(store: ExpenseStore, onOpenSettings: @escaping () -> Void) {
+    @State private var paywallTrigger: String = ""
+    @State private var isPaywallPresented = false
+
+    init(store: ExpenseStore, proEntitlementStore: ProEntitlementStore, onOpenSettings: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
+        self.proEntitlementStore = proEntitlementStore
         self.onOpenSettings = onOpenSettings
     }
 
@@ -29,6 +34,23 @@ struct HomeView: View {
                         }
                         .font(.caption)
                     }
+                }
+            }
+
+            Section("Pro 功能") {
+                LabeledContent("方案狀態", value: proEntitlementStore.isPro ? "Pro（\(proEntitlementStore.tier.rawValue)）" : "Free")
+                    .font(.caption)
+
+                Button("建立第 3 個分類預算（示範）") {
+                    openProFeature(trigger: "budget_limit")
+                }
+
+                Button("查看 3 個月以上趨勢圖（示範）") {
+                    openProFeature(trigger: "advanced_report_3m")
+                }
+
+                Button("匯出 PDF 報表（示範）") {
+                    openProFeature(trigger: "report_pdf_export")
                 }
             }
 
@@ -67,13 +89,85 @@ struct HomeView: View {
                 Button("設定", action: onOpenSettings)
             }
         }
+        .sheet(isPresented: $isPaywallPresented) {
+            PaywallView(trigger: paywallTrigger, entitlementStore: proEntitlementStore) {
+                isPaywallPresented = false
+            }
+        }
         .navigationTitle("Expense Tracker")
+    }
+
+    private func openProFeature(trigger: String) {
+        if !proEntitlementStore.isPro {
+            paywallTrigger = trigger
+            isPaywallPresented = true
+        }
     }
 }
 
 #Preview {
     NavigationStack {
-        HomeView(store: PreviewExpenseStore(), onOpenSettings: {})
+        HomeView(store: PreviewExpenseStore(), proEntitlementStore: ProEntitlementStore(), onOpenSettings: {})
+    }
+}
+
+struct PaywallView: View {
+    let trigger: String
+    @ObservedObject var entitlementStore: ProEntitlementStore
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("升級 Pro，解鎖進階理財能力")
+                    .font(.title3.bold())
+
+                Text("觸發來源：\(trigger)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("可建立不限數量分類預算", systemImage: "checkmark.circle.fill")
+                    Label("可查看 3/6/12 個月趨勢圖", systemImage: "chart.xyaxis.line")
+                    Label("可匯出 PDF 進階報表", systemImage: "doc.richtext")
+                }
+                .font(.subheadline)
+
+                VStack(spacing: 10) {
+                    Button("開始 7 天免費試用（年付）") {
+                        entitlementStore.startTrial()
+                        onDismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("月付 NT$90") {
+                        entitlementStore.subscribeMonthly()
+                        onDismiss()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("年付 NT$790") {
+                        entitlementStore.subscribeYearly()
+                        onDismiss()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("恢復購買") {
+                        entitlementStore.restorePurchase()
+                        onDismiss()
+                    }
+                    .font(.footnote)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("關閉", action: onDismiss)
+                }
+            }
+        }
     }
 }
 

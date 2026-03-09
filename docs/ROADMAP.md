@@ -38,6 +38,7 @@
 ## MVP-5：用戶體驗與增長
 - [x] 使用者回饋系統 (App 內建)
 - [x] Pro 版本功能規劃 (如預算、進階報表)
+- [x] 付費牆機制 (Paywall) 實作
 - [ ] Web/Desktop 版本規劃 (跨平台擴展)
 
 ## 驗證證據（本輪）
@@ -55,3 +56,4 @@
 - 多語言支援：Android 新增 `values/strings.xml` + `values-zh-rTW/strings.xml` 並將 UI 改為 `stringResource`；iOS 新增 `L10n` 字典式本地化，覆蓋 Home/Settings/Auth 與訂閱提醒文案，依系統語系切換中英文字串。
 - 使用者回饋系統：iOS `SettingsView` 新增 App 內回饋輸入區塊與 `mailto:` 送出流程（含失敗提示）；Android `SettingsScreen` 新增回饋欄位與 Email Intent 寄送（含多語系字串與無 Email App 提示）。
 - Pro 版本功能規劃：新增 `docs/PRO_FEATURE_PLAN.md`，定義預算與進階報表兩大 Pro 功能包、分階段上線策略、KPI 與 A/B 實驗、權限牆（paywall）觸發點、跨平台落地需求與風險控管。
+- 付費牆機制（Paywall）實作：iOS/Android 新增 `ProEntitlementStore`（本機快取方案狀態），並在三個高意圖入口（第 3 個分類預算、3 個月以上趨勢圖、PDF 報表匯出）加入 paywall 觸發；iOS 新增 `PaywallView`、Android 新增 `PaywallDialog`，支援試用/訂閱/恢復購買與 Debug 重置。
