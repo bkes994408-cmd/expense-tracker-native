@@ -8,6 +8,7 @@ final class LocalStore {
     let expenseStore: ExpenseStore
     let subscriptionStore: SubscriptionStore
     let installmentStore: InstallmentStore
+    let authService: AuthService
 
     private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -20,6 +21,7 @@ final class LocalStore {
             self.expenseStore = try GRDBExpenseStore(dbQueue: dbQueue)
             self.subscriptionStore = try GRDBSubscriptionStore(dbQueue: dbQueue)
             self.installmentStore = try GRDBInstallmentStore(dbQueue: dbQueue)
+            self.authService = MockAuthService()
         } catch {
             fatalError("Failed to initialize local stores: \(error)")
         }
