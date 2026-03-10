@@ -24,7 +24,7 @@ jobs:
           xcodebuild \
             -project ios/ExpenseTracker.xcodeproj \
             -scheme ExpenseTracker \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             test
