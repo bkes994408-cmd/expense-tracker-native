@@ -24,10 +24,10 @@ final class AuthViewModel: ObservableObject {
             switch mode {
             case .register:
                 currentUser = try service.register(email: email, password: password, displayName: displayName)
-                statusMessage = "註冊成功"
+                statusMessage = String(localized: "auth.registerSuccess")
             case .login:
                 currentUser = try service.login(email: email, password: password)
-                statusMessage = "登入成功"
+                statusMessage = String(localized: "auth.loginSuccess")
             }
             auditLogMessage = SecurityLogRedactor.redact(
                 "auth success for \(email) token=\(password)",
@@ -36,7 +36,7 @@ final class AuthViewModel: ObservableObject {
             )
             password = ""
         } catch {
-            statusMessage = (error as? LocalizedError)?.errorDescription ?? "驗證失敗"
+            statusMessage = (error as? LocalizedError)?.errorDescription ?? String(localized: "auth.failed")
             auditLogMessage = SecurityLogRedactor.redact(
                 "auth failed for \(email) token=\(password)",
                 email: email,
@@ -48,7 +48,7 @@ final class AuthViewModel: ObservableObject {
     func logout() {
         service.logout()
         currentUser = nil
-        statusMessage = "已登出"
+        statusMessage = String(localized: "auth.logoutSuccess")
         auditLogMessage = "auth logout"
     }
 }

@@ -10,7 +10,7 @@ struct SubscriptionPlan: Identifiable, Equatable {
     let reminderEnabled: Bool
 
     var reminderText: String {
-        guard reminderEnabled else { return "提醒已關閉" }
-        return "扣款前 \(reminderDaysBefore) 天提醒"
+        guard reminderEnabled else { return String(localized: "subscription.reminderOff") }
+        return String(format: String(localized: "subscription.reminderOn"), locale: Locale.current, reminderDaysBefore)
     }
 }

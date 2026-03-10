@@ -6,31 +6,31 @@ struct AuthView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("模式", selection: $viewModel.mode) {
-                    Text("登入").tag(AuthMode.login)
-                    Text("註冊").tag(AuthMode.register)
+                Picker(String(localized: "auth.mode"), selection: $viewModel.mode) {
+                    Text(String(localized: "auth.login")).tag(AuthMode.login)
+                    Text(String(localized: "auth.register")).tag(AuthMode.register)
                 }
                 .pickerStyle(.segmented)
 
                 if viewModel.mode == .register {
-                    TextField("顯示名稱", text: $viewModel.displayName)
+                    TextField(String(localized: "auth.displayName"), text: $viewModel.displayName)
                 }
 
                 TextField("Email", text: $viewModel.email)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.emailAddress)
-                SecureField("密碼", text: $viewModel.password)
+                SecureField(String(localized: "auth.password"), text: $viewModel.password)
 
-                Button(viewModel.mode == .register ? "註冊" : "登入") {
+                Button(viewModel.mode == .register ? String(localized: "auth.register") : String(localized: "auth.login")) {
                     viewModel.submit()
                 }
             }
-            .navigationTitle("帳號")
-            .alert("Auth", isPresented: Binding(
+            .navigationTitle(String(localized: "auth.title"))
+            .alert(String(localized: "auth.alertTitle"), isPresented: Binding(
                 get: { viewModel.statusMessage != nil },
                 set: { if !$0 { viewModel.statusMessage = nil } }
             )) {
-                Button("確定", role: .cancel) { viewModel.statusMessage = nil }
+                Button(String(localized: "common.confirm"), role: .cancel) { viewModel.statusMessage = nil }
             } message: {
                 Text(viewModel.statusMessage ?? "")
             }

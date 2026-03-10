@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">ExpenseTracker</string>
+    <string name="monthly_overview">本月總覽：%1$d</string>
+    <string name="amount">金額</string>
+    <string name="add_expense">新增帳目</string>
+    <string name="settings_category_management">分類管理</string>
+    <string name="settings_new_category">新增分類</string>
+    <string name="settings_add">新增</string>
+    <string name="settings_move_up">上移</string>
+    <string name="settings_move_down">下移</string>
+    <string name="settings_archive">封存</string>
+    <string name="settings_version">版本：%1$s</string>
+</resources>
