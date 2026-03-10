@@ -25,16 +25,21 @@ final class ExpenseListViewModel: ObservableObject {
 
     func addExpense() {
         let trimmedTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTitle.isEmpty, let rawAmount = Decimal(string: newAmount), rawAmount > 0 else { return }
+        guard !trimmedTitle.isEmpty, let rawAmount = Decimal(string: newAmount), rawAmount > 0 else {
+            Telemetry.shared.track(.expenseAddInvalid)
+            return
+        }
 
         let signedAmount = isIncome ? rawAmount : -rawAmount
 
         do {
             try store.add(title: trimmedTitle, amount: signedAmount, categoryId: nil)
+            Telemetry.shared.track(.expenseAdded, metadata: ["type": isIncome ? "income" : "expense"])
             newTitle = ""
             newAmount = ""
             reload()
         } catch {
+            Telemetry.shared.record(error: error, metadata: ["operation": "add_expense"])
             // TODO(MVP-1.2): show user-facing error message.
         }
     }
@@ -42,7 +47,12 @@ final class ExpenseListViewModel: ObservableObject {
     func deleteExpenses(at offsets: IndexSet) {
         for offset in offsets {
             let id = expenses[offset].id
-            try? store.delete(id: id)
+            do {
+                try store.delete(id: id)
+                Telemetry.shared.track(.expenseDeleted)
+            } catch {
+                Telemetry.shared.record(error: error, metadata: ["operation": "delete_expense", "expense_id": "\(id)"])
+            }
         }
         reload()
     }
