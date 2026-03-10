@@ -15,6 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,20 +25,34 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bkes994408.expensetracker.category.CategoryViewModel
 import com.bkes994408.expensetracker.db.LocalStore
+import com.bkes994408.expensetracker.pro.ProEntitlementStore
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    proEntitlementStore: ProEntitlementStore,
+) {
     val context = LocalContext.current
     val repository = LocalStore.getInstance(context).categoryRepository
     val viewModel: CategoryViewModel = viewModel(factory = CategoryViewModel.factory(repository))
 
     val categories by viewModel.categories.collectAsState()
     val nameInput by viewModel.nameInput.collectAsState()
+    var entitlementVersion by remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Text(text = "Pro tier: ${proEntitlementStore.tier.name}")
+        if (proEntitlementStore.isPro) {
+            Button(onClick = {
+                proEntitlementStore.resetToFreeForDebug()
+                entitlementVersion++
+            }) {
+                Text("Reset to FREE (Debug)")
+            }
+        }
+
         Text(text = "Category Management")
 
         Row(
@@ -82,4 +99,6 @@ fun SettingsScreen() {
 
         Text(text = "Version: 0.0.1")
     }
+
+    entitlementVersion
 }

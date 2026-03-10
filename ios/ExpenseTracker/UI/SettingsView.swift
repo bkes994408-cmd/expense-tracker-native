@@ -4,6 +4,7 @@ struct SettingsView: View {
     @StateObject private var categoryViewModel: CategoryManagementViewModel
     @StateObject private var subscriptionViewModel: SubscriptionManagementViewModel
     @StateObject private var installmentViewModel: InstallmentManagementViewModel
+    @ObservedObject var proEntitlementStore: ProEntitlementStore
     private let expenseStore: ExpenseStore
 
     @State private var exportedCSVURL: URL?
@@ -13,16 +14,34 @@ struct SettingsView: View {
         categoryStore: CategoryStore,
         subscriptionStore: SubscriptionStore,
         installmentStore: InstallmentStore,
-        expenseStore: ExpenseStore
+        expenseStore: ExpenseStore,
+        proEntitlementStore: ProEntitlementStore
     ) {
         _categoryViewModel = StateObject(wrappedValue: CategoryManagementViewModel(store: categoryStore))
         _subscriptionViewModel = StateObject(wrappedValue: SubscriptionManagementViewModel(store: subscriptionStore))
         _installmentViewModel = StateObject(wrappedValue: InstallmentManagementViewModel(store: installmentStore))
         self.expenseStore = expenseStore
+        self.proEntitlementStore = proEntitlementStore
     }
 
     var body: some View {
         List {
+            Section("Pro") {
+                LabeledContent("目前方案", value: proEntitlementStore.tier.rawValue)
+                if proEntitlementStore.isPro {
+                    Text("已解鎖 Pro 功能")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("重設為 Free（Debug）") {
+                        proEntitlementStore.resetToFreeForDebug()
+                    }
+                } else {
+                    Text("尚未解鎖，將在高意圖操作時顯示付費牆")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("Category Management") {
                 HStack {
                     TextField("New category", text: $categoryViewModel.newCategoryName)
@@ -119,7 +138,18 @@ struct SettingsView: View {
     private func exportCSV() {
         do {
             let expenses = try expenseStore.fetchAll(searchText: nil)
-            let url = try ExpenseCSVExporter.exportToTemporaryFile(expenses: expenses)
+            let header = "id,title,amount,createdAt,categoryId"
+            let rows = expenses.map { expense in
+                let title = expense.title.replacingOccurrences(of: "\"", with: "\"\"")
+                let category = expense.categoryId.map(String.init) ?? ""
+                return "\(expense.id),\"\(title)\",\(expense.amount),\(expense.createdAt.ISO8601Format()),\(category)"
+            }
+            let csv = ([header] + rows).joined(separator: "\n")
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("expenses-\(Int(Date().timeIntervalSince1970)).csv")
+            guard let data = csv.data(using: .utf8) else {
+                throw NSError(domain: "SettingsView", code: -1, userInfo: [NSLocalizedDescriptionKey: "CSV encoding failed"])
+            }
+            try data.write(to: url)
             exportedCSVURL = url
             exportStatusMessage = "已匯出 \(expenses.count) 筆資料"
         } catch {
@@ -134,7 +164,8 @@ struct SettingsView: View {
             categoryStore: PreviewCategoryStore(),
             subscriptionStore: PreviewSubscriptionStore(),
             installmentStore: PreviewInstallmentStore(),
-            expenseStore: PreviewExpenseStore()
+            expenseStore: PreviewExpenseStore(),
+            proEntitlementStore: ProEntitlementStore()
         )
     }
 }

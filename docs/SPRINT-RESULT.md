@@ -1,46 +1,31 @@
-# Sprint Result - MVP-1（核心功能最後階段）
+# Sprint Result - MVP-5（用戶體驗與增長：Pro 版本功能規劃）
 
-日期：2026-02-28
+日期：2026-03-09
 
 ## 完成項目
 
-1. **每月總覽 / 訂閱管理 / 分期管理（iOS）**
-   - 完成月總覽資料查詢與畫面顯示。
-   - 設定頁新增訂閱管理與分期管理的新增/列表能力。
+1. **Pro 功能範圍定義（預算 + 進階報表）**
+   - 完成第一波 Pro 功能包，包含預算管理、進度提醒、趨勢分析、分類變化分析與 PDF 報表匯出規劃。
 
-2. **CSV 匯出功能（iOS）**
-   - 新增 `ExpenseCSVExporter`，支援 `id,title,amount,createdAt,categoryId` 欄位輸出。
-   - `title` 支援 CSV escaping（逗號 / 雙引號）。
-   - 設定頁新增「匯出 CSV」與「分享最近匯出檔」入口。
+2. **商業化策略（定價 + Paywall）**
+   - 定義月付 / 年付 / 試用策略。
+   - 設計高意圖操作觸發的 paywall 進入點（建立第 3 個預算、查看長區間趨勢、匯出 PDF）。
 
-3. **最小測試 / 驗證**
-   - 新增 `ExpenseCSVExporterTests`（header、escaping、UTF-8 檔案輸出）。
+3. **KPI 與事件追蹤規格**
+   - 規劃訂閱漏斗與功能使用事件（例如 `pro_paywall_viewed`, `pro_subscribed`, `budget_created`）。
+   - 設定初版成功指標（轉換率、留存提升、活躍提升）。
+
+4. **工程實作分期與風險控管**
+   - 定義資料模型（`BudgetPlan`, `BudgetAlertPreference`, `ProEntitlement`）。
+   - 提供 v1 ~ v1.2 分期交付內容與主要風險緩解方案。
 
 ## 變更檔案
 
-- `ios/ExpenseTracker/Expense/ExpenseCSVExporter.swift`（新增）
-- `ios/ExpenseTracker/UI/SettingsView.swift`
-- `ios/ExpenseTracker/UI/RootView.swift`
-- `ios/ExpenseTrackerTests/Expense/ExpenseCSVExporterTests.swift`（新增）
+- `docs/PRO_FEATURE_PLAN.md`（新增）
 - `docs/ROADMAP.md`
 - `docs/SPRINT-RESULT.md`
 
-## 驗證指令
-
-```bash
-cd ios
-xcodegen generate
-xcodebuild \
-  -project ExpenseTracker.xcodeproj \
-  -scheme ExpenseTracker \
-  -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO \
-  test
-```
-
-> 預期：`TEST SUCCEEDED`
-
 ## 備註
 
-- 本次維持最小必要修改，未進行無關重構。
-- Android 端 CSV 匯出未在本輪納入（維持既有 MVP-1 範圍）。
+- 本次為產品與工程規劃交付，尚未進入程式碼功能開發。
+- 可直接作為下一輪 MVP-5 實作排期與驗收基準。
