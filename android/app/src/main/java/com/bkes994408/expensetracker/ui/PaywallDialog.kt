@@ -29,6 +29,7 @@ fun PaywallDialog(
                 Text("• 可建立不限數量分類預算")
                 Text("• 可查看 3/6/12 個月趨勢")
                 Text("• 可匯出 PDF 進階報表")
+                proEntitlementStore.lastError?.let { Text("錯誤：$it") }
             }
         },
         confirmButton = {
@@ -39,22 +40,22 @@ fun PaywallDialog(
                 Button(onClick = {
                     proEntitlementStore.startTrial()
                     onEntitlementChanged()
-                    onDismiss()
+                    if (proEntitlementStore.isPro) onDismiss()
                 }) { Text("開始 7 天免費試用") }
                 Button(onClick = {
                     proEntitlementStore.subscribeMonthly()
                     onEntitlementChanged()
-                    onDismiss()
+                    if (proEntitlementStore.isPro) onDismiss()
                 }) { Text("月付 NT$90") }
                 Button(onClick = {
                     proEntitlementStore.subscribeYearly()
                     onEntitlementChanged()
-                    onDismiss()
+                    if (proEntitlementStore.isPro) onDismiss()
                 }) { Text("年付 NT$790") }
                 TextButton(onClick = {
                     proEntitlementStore.restorePurchase()
                     onEntitlementChanged()
-                    onDismiss()
+                    if (proEntitlementStore.isPro) onDismiss()
                 }) { Text("恢復購買") }
             }
         },
