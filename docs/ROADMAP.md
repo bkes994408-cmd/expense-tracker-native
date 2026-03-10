@@ -43,7 +43,11 @@
 
 ## MVP-6：Pro 功能實作與變現
 - [x] 應用程式內購買 (In-App Purchase) 整合與測試
+<<<<<<< HEAD
 - [x] Pro 預算系統 (Advanced Budgeting System) 開發
+=======
+- [ ] Pro 預算系統 (Advanced Budgeting System) 開發
+>>>>>>> 3800ec5 (docs(roadmap): sync latest cross-project roadmap checklist)
 - [ ] 進階報表與數據分析功能
 - [ ] 用戶訂閱狀態與權限管理
 - [ ] Pro 功能用戶體驗優化與市場策略
