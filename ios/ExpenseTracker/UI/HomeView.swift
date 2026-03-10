@@ -86,10 +86,7 @@ struct HomeView: View {
                     }
 
                     Button("快速複製上月預算") {
-                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.isPro)
-                        if result == .requiresProUpgrade {
-                            openProFeature(trigger: "budget_limit_copy_last_month")
-                        }
+                        budgetViewModel.copyLastMonth()
                     }
                     .font(.footnote)
                 }
@@ -233,48 +230,30 @@ struct PaywallView: View {
                 }
                 .font(.subheadline)
 
-                if let errorMessage = entitlementStore.errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
                 VStack(spacing: 10) {
                     Button("開始 7 天免費試用（年付）") {
-                        Task {
-                            await entitlementStore.startTrial()
-                            if entitlementStore.isPro { onDismiss() }
-                        }
+                        entitlementStore.startTrial()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(entitlementStore.isProcessing)
 
                     Button("月付 NT$90") {
-                        Task {
-                            await entitlementStore.subscribeMonthly()
-                            if entitlementStore.isPro { onDismiss() }
-                        }
+                        entitlementStore.subscribeMonthly()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(entitlementStore.isProcessing)
 
                     Button("年付 NT$790") {
-                        Task {
-                            await entitlementStore.subscribeYearly()
-                            if entitlementStore.isPro { onDismiss() }
-                        }
+                        entitlementStore.subscribeYearly()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(entitlementStore.isProcessing)
 
                     Button("恢復購買") {
-                        Task {
-                            await entitlementStore.restorePurchase()
-                            if entitlementStore.isPro { onDismiss() }
-                        }
+                        entitlementStore.restorePurchase()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .font(.footnote)
-                    .disabled(entitlementStore.isProcessing)
                 }
 
                 Spacer()
