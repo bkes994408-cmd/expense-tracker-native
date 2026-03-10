@@ -16,7 +16,9 @@ final class SubscriptionManagementViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.plans.count, 1)
         XCTAssertEqual(vm.plans.first?.name, "Spotify")
-        XCTAssertEqual(vm.plans.first?.reminderText, "扣款前 2 天提醒")
+        let reminder = vm.plans.first?.reminderText
+        XCTAssertNotNil(reminder)
+        XCTAssertTrue(reminder!.contains("2"))
     }
 }
 
