@@ -38,6 +38,26 @@ cd android
 - iOS build：`.github/workflows/ios.yml`（macos runner）
 - Android build：`.github/workflows/android.yml`（ubuntu runner）
 
+## Pro 預算功能規則（MVP-6）
+
+### Free / Pro 限制
+- **Free 方案**：每月最多 2 個預算分類。
+  - 新增第 3 個分類時會觸發 paywall。
+  - 使用「快速複製上月預算」若導入後會超過 2 個分類，也會觸發 paywall。
+- **Pro 方案**：不受上述分類數上限限制。
+
+### 預算計算規則
+- 以「分類」為單位設定每月預算。
+- 預算狀態：
+  - `Healthy`：使用率 < 80%
+  - `Warning`：使用率 >= 80% 且 <= 100%
+  - `Overspent`：使用率 > 100%
+- 進度條與剩餘金額依當月實際支出（同分類彙總）計算。
+
+### 已知限制（目前交付範圍）
+- **iOS**：預算功能（建立/刪除/複製上月/狀態計算/Free gating）已完成可用。
+- **Android**：目前完成 **domain groundwork**（模型、狀態計算器、Free copy-limit policy 與測試）；完整 UI/資料儲存流程仍待後續迭代。
+
 Docs:
 - `docs/ARCHITECTURE.md`（MVP-0 分層基礎）
 - `docs/ROADMAP.md`（整體路線圖）

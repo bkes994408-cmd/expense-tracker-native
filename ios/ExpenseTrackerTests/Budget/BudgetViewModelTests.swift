@@ -34,10 +34,32 @@ final class BudgetViewModelTests: XCTestCase {
         try? budgetStore.upsert(monthKey: formatter.string(from: lastMonth), categoryName: "交通", amount: 1000, carryOverMode: .none)
 
         let viewModel = BudgetViewModel(budgetStore: budgetStore, expenseStore: expenseStore, month: currentMonth)
-        viewModel.copyLastMonth()
+        let result = viewModel.copyLastMonth()
 
+        XCTAssertEqual(result, .copied)
         XCTAssertEqual(viewModel.progressItems.count, 1)
         XCTAssertEqual(viewModel.progressItems.first?.categoryName, "交通")
+    }
+
+    func testCopyLastMonthFreePlanTriggersPaywallWhenCategoryCountWouldExceedLimit() {
+        let budgetStore = InMemoryBudgetStore()
+        let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -200)])
+        let currentMonth = Date()
+        let lastMonth = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth)!
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+
+        try? budgetStore.upsert(monthKey: formatter.string(from: lastMonth), categoryName: "餐飲", amount: 1000, carryOverMode: .none)
+        try? budgetStore.upsert(monthKey: formatter.string(from: lastMonth), categoryName: "交通", amount: 1000, carryOverMode: .none)
+        try? budgetStore.upsert(monthKey: formatter.string(from: lastMonth), categoryName: "娛樂", amount: 1000, carryOverMode: .none)
+
+        let viewModel = BudgetViewModel(budgetStore: budgetStore, expenseStore: expenseStore, month: currentMonth)
+        let result = viewModel.copyLastMonth(isPro: false)
+
+        XCTAssertEqual(result, .requiresProUpgrade)
+        XCTAssertTrue(viewModel.progressItems.isEmpty)
     }
 }
 

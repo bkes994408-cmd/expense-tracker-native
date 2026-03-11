@@ -86,7 +86,10 @@ struct HomeView: View {
                     }
 
                     Button("快速複製上月預算") {
-                        budgetViewModel.copyLastMonth()
+                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.isPro)
+                        if result == .requiresProUpgrade {
+                            openProFeature(trigger: "budget_limit_copy_last_month")
+                        }
                     }
                     .font(.footnote)
                 }

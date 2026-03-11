@@ -62,13 +62,36 @@ final class BudgetViewModel: ObservableObject {
         }
     }
 
-    func copyLastMonth() {
-        guard let previousMonth = Calendar.current.date(byAdding: .month, value: -1, to: month) else { return }
+    enum CopyLastMonthResult: Equatable {
+        case copied
+        case requiresProUpgrade
+        case failed
+    }
+
+    func copyLastMonth(isPro: Bool = true) -> CopyLastMonthResult {
+        guard let previousMonth = Calendar.current.date(byAdding: .month, value: -1, to: month) else {
+            return .failed
+        }
         do {
-            try budgetStore.copy(from: Self.monthFormatter.string(from: previousMonth), to: monthKey)
+            let previousMonthKey = Self.monthFormatter.string(from: previousMonth)
+            let previousPlans = try budgetStore.fetch(monthKey: previousMonthKey)
+            let currentPlans = try budgetStore.fetch(monthKey: monthKey)
+
+            let wouldExceedFreeLimit = Self.requiresProUpgradeForCopy(
+                isPro: isPro,
+                currentMonthCategories: currentPlans.map(\.categoryName),
+                copiedCategories: previousPlans.map(\.categoryName)
+            )
+            if wouldExceedFreeLimit {
+                return .requiresProUpgrade
+            }
+
+            try budgetStore.copy(from: previousMonthKey, to: monthKey)
             reload()
+            return .copied
         } catch {
             errorMessage = error.localizedDescription
+            return .failed
         }
     }
 
@@ -100,6 +123,18 @@ final class BudgetViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private static func requiresProUpgradeForCopy(
+        isPro: Bool,
+        currentMonthCategories: [String],
+        copiedCategories: [String],
+        freeCategoryLimit: Int = 2
+    ) -> Bool {
+        guard !isPro else { return false }
+        let existing = Set(currentMonthCategories)
+        let copied = Set(copiedCategories)
+        return existing.union(copied).count > freeCategoryLimit
     }
 
     private static let monthFormatter: DateFormatter = {
