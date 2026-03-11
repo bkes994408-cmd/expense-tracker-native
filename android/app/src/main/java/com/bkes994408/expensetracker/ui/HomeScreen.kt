@@ -37,7 +37,7 @@ fun HomeScreen(
         selectedRange,
         entitlementVersion,
     ) {
-        val expenses = runCatching { expenseRepository.sample() }.getOrDefault(emptyList())
+        val expenses = runCatching { expenseRepository.fetchExpenses() }.getOrDefault(emptyList())
         value = AdvancedReportCalculator.build(expenses, selectedRange, proEntitlementStore.isPro)
     }
 

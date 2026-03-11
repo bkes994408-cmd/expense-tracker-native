@@ -30,14 +30,14 @@ class HomeReportIntegrationTest {
         val proSwitchResult = HomeReportController.nextRange(ReportRange.ONE_MONTH, isPro = true)
         assertEquals(ReportRange.THREE_MONTHS, (proSwitchResult as RangeSelectionResult.RangeSelected).range)
 
-        val oneMonth = AdvancedReportCalculator.build(repository.sampleSync(), ReportRange.ONE_MONTH, isPro = true, now = now)
+        val oneMonth = AdvancedReportCalculator.build(repository.fetchExpensesSync(), ReportRange.ONE_MONTH, isPro = true, now = now)
         assertEquals(BigDecimal("12000.00"), oneMonth.averageIncome)
 
         repository.items.add(
             Expense(title = "New Income", amount = BigDecimal("3000"), createdAt = now.minus(1, ChronoUnit.DAYS))
         )
 
-        val threeMonths = AdvancedReportCalculator.build(repository.sampleSync(), ReportRange.THREE_MONTHS, isPro = true, now = now)
+        val threeMonths = AdvancedReportCalculator.build(repository.fetchExpensesSync(), ReportRange.THREE_MONTHS, isPro = true, now = now)
         assertEquals(BigDecimal("7000.00"), threeMonths.averageIncome)
         assertEquals(BigDecimal("666.67"), threeMonths.averageExpense)
     }
@@ -46,7 +46,7 @@ class HomeReportIntegrationTest {
 private class MutableExpenseRepository(
     val items: MutableList<Expense>,
 ) : ExpenseRepository {
-    override suspend fun sample(): List<Expense> = items.toList()
+    override suspend fun fetchExpenses(): List<Expense> = items.toList()
 
-    fun sampleSync(): List<Expense> = items.toList()
+    fun fetchExpensesSync(): List<Expense> = items.toList()
 }

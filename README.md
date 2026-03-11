@@ -56,7 +56,7 @@ cd android
 
 ### 已知限制（目前交付範圍）
 - **iOS**：預算功能（建立/刪除/複製上月/狀態計算/Free gating）已完成可用。
-- **Android**：已提供 Pro 預算 gating 與進階報表區間摘要（1M/3M/6M/12M）；報表目前以 `ExpenseRepository` 資料來源計算區間平均，後續仍需補齊完整帳目 CRUD 與持久化流程，才能達到與 iOS 同等成熟度。
+- **Android**：已提供 Pro 預算 gating 與進階報表區間摘要（1M/3M/6M/12M）；報表改為透過 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料（`FileExpenseStore`，預設檔案 `expenses.json`）計算區間平均，不再使用硬編碼 sample。完整帳目 CRUD 仍在後續里程碑持續補強。
 
 Docs:
 - `docs/ARCHITECTURE.md`（MVP-0 分層基礎）
