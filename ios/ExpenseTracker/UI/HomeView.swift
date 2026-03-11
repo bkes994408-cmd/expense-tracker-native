@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
     @StateObject private var budgetViewModel: BudgetViewModel
+    @StateObject private var reportViewModel: AdvancedReportViewModel
     @ObservedObject var proEntitlementStore: ProEntitlementStore
     let onOpenSettings: () -> Void
 
@@ -17,6 +18,7 @@ struct HomeView: View {
     ) {
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
+        _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
         self.proEntitlementStore = proEntitlementStore
         self.onOpenSettings = onOpenSettings
     }
@@ -121,9 +123,69 @@ struct HomeView: View {
                 }
             }
 
-            Section("Pro 功能") {
-                Button("查看 3 個月以上趨勢圖（示範）") {
-                    openProFeature(trigger: "advanced_report_3m")
+            Section("進階報表與數據分析") {
+                Picker("區間", selection: $reportViewModel.selectedRange) {
+                    ForEach(ReportRange.allCases) { range in
+                        Text(range.label).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: reportViewModel.selectedRange) { newValue in
+                    if !proEntitlementStore.isPro && newValue.months > 1 {
+                        reportViewModel.selectedRange = .oneMonth
+                        openProFeature(trigger: "advanced_report_3m")
+                    } else {
+                        reportViewModel.refresh()
+                    }
+                }
+
+                if let report = reportViewModel.report {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("趨勢摘要")
+                            .font(.subheadline.bold())
+                        LabeledContent("平均月收入", value: report.averageIncome.formatted())
+                        LabeledContent("平均月支出", value: report.averageExpense.formatted())
+                        LabeledContent("平均月淨額", value: report.averageNet.formatted())
+                    }
+
+                    if report.monthlyTrend.isEmpty {
+                        Text("資料不足，請先新增更多帳目")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(report.monthlyTrend) { point in
+                            HStack {
+                                Text(point.monthLabel)
+                                Spacer()
+                                Text("收 \(point.income.formatted()) / 支 \(point.expense.formatted()) / 淨 \(point.net.formatted())")
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("分類變化分析（MoM）")
+                            .font(.subheadline.bold())
+                        if let growth = report.topGrowth {
+                            Text("增長最多：\(growth.categoryName)（+\(growth.delta.formatted())）")
+                                .font(.caption)
+                        } else {
+                            Text("增長最多：暫無")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let decline = report.topDecline {
+                            Text("下降最多：\(decline.categoryName)（\(decline.delta.formatted())）")
+                                .font(.caption)
+                        } else {
+                            Text("下降最多：暫無")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Text("尚無可分析資料")
+                        .foregroundStyle(.secondary)
                 }
 
                 Button("匯出 PDF 報表（示範）") {
@@ -143,6 +205,7 @@ struct HomeView: View {
                 Button("新增") {
                     viewModel.addExpense()
                     budgetViewModel.refresh()
+                    reportViewModel.refresh()
                 }
             }
 
@@ -159,7 +222,11 @@ struct HomeView: View {
                                 .foregroundStyle(expense.amount < 0 ? .red : .green)
                         }
                     }
-                    .onDelete(perform: viewModel.deleteExpenses)
+                    .onDelete { offsets in
+                        viewModel.deleteExpenses(at: offsets)
+                        budgetViewModel.refresh()
+                        reportViewModel.refresh()
+                    }
                 }
             }
         }
@@ -268,6 +335,142 @@ struct PaywallView: View {
                 }
             }
         }
+    }
+}
+
+enum ReportRange: String, CaseIterable, Identifiable {
+    case oneMonth
+    case threeMonths
+    case sixMonths
+    case twelveMonths
+
+    var id: String { rawValue }
+
+    var months: Int {
+        switch self {
+        case .oneMonth: return 1
+        case .threeMonths: return 3
+        case .sixMonths: return 6
+        case .twelveMonths: return 12
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .oneMonth: return "1M"
+        case .threeMonths: return "3M"
+        case .sixMonths: return "6M"
+        case .twelveMonths: return "12M"
+        }
+    }
+}
+
+struct AdvancedReport {
+    struct TrendPoint: Identifiable {
+        var id: String { monthLabel }
+        let monthLabel: String
+        let income: Decimal
+        let expense: Decimal
+        let net: Decimal
+    }
+
+    struct CategoryDelta {
+        let categoryName: String
+        let delta: Decimal
+    }
+
+    let monthlyTrend: [TrendPoint]
+    let averageIncome: Decimal
+    let averageExpense: Decimal
+    let averageNet: Decimal
+    let topGrowth: CategoryDelta?
+    let topDecline: CategoryDelta?
+}
+
+@MainActor
+final class AdvancedReportViewModel: ObservableObject {
+    @Published var selectedRange: ReportRange = .oneMonth
+    @Published private(set) var report: AdvancedReport?
+
+    private let expenseStore: ExpenseStore
+    private let proEntitlementStore: ProEntitlementStore
+
+    init(expenseStore: ExpenseStore, proEntitlementStore: ProEntitlementStore) {
+        self.expenseStore = expenseStore
+        self.proEntitlementStore = proEntitlementStore
+        refresh()
+    }
+
+    func refresh() {
+        let monthCount = proEntitlementStore.isPro ? selectedRange.months : 1
+        let now = Date()
+        var snapshots: [MonthlyOverview] = []
+
+        for offset in stride(from: monthCount - 1, through: 0, by: -1) {
+            guard let targetMonth = Calendar.current.date(byAdding: .month, value: -offset, to: now),
+                  let overview = try? expenseStore.fetchMonthlyOverview(for: targetMonth)
+            else { continue }
+            snapshots.append(overview)
+        }
+
+        guard !snapshots.isEmpty else {
+            report = nil
+            return
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+
+        let trend = snapshots.map { snapshot in
+            AdvancedReport.TrendPoint(
+                monthLabel: formatter.string(from: snapshot.month),
+                income: snapshot.income,
+                expense: snapshot.expense,
+                net: snapshot.net
+            )
+        }
+
+        let count = Decimal(snapshots.count)
+        let totalIncome = snapshots.reduce(Decimal.zero) { $0 + $1.income }
+        let totalExpense = snapshots.reduce(Decimal.zero) { $0 + $1.expense }
+        let totalNet = snapshots.reduce(Decimal.zero) { $0 + $1.net }
+
+        report = AdvancedReport(
+            monthlyTrend: trend,
+            averageIncome: totalIncome / count,
+            averageExpense: totalExpense / count,
+            averageNet: totalNet / count,
+            topGrowth: topCategoryDelta(from: snapshots, highest: true),
+            topDecline: topCategoryDelta(from: snapshots, highest: false)
+        )
+    }
+
+    private func topCategoryDelta(from snapshots: [MonthlyOverview], highest: Bool) -> AdvancedReport.CategoryDelta? {
+        guard snapshots.count >= 2,
+              let previous = snapshots.dropLast().last,
+              let current = snapshots.last
+        else { return nil }
+
+        let previousMap = Dictionary(uniqueKeysWithValues: previous.categoryTotals.map { ($0.name, absDecimal($0.amount)) })
+        let currentMap = Dictionary(uniqueKeysWithValues: current.categoryTotals.map { ($0.name, absDecimal($0.amount)) })
+        let allCategories = Set(previousMap.keys).union(currentMap.keys)
+
+        let deltas = allCategories.map { name in
+            AdvancedReport.CategoryDelta(
+                categoryName: name,
+                delta: (currentMap[name] ?? .zero) - (previousMap[name] ?? .zero)
+            )
+        }
+
+        if highest {
+            return deltas.max(by: { $0.delta < $1.delta })
+        }
+        return deltas.min(by: { $0.delta < $1.delta })
+    }
+
+    private func absDecimal(_ value: Decimal) -> Decimal {
+        value < 0 ? -value : value
     }
 }
 

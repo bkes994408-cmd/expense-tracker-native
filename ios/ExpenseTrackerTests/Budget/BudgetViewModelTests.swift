@@ -21,6 +21,51 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.progressItems.first?.status, .warning)
     }
 
+    func testAdvancedReportFreeTierFallsBackToOneMonth() {
+        let expenseStore = MockExpenseStore(categoryTotals: [
+            .init(id: "餐飲", name: "餐飲", amount: -800),
+            .init(id: "交通", name: "交通", amount: -300)
+        ])
+        let freeDefaults = UserDefaults(suiteName: "test.report.free")!
+        freeDefaults.removePersistentDomain(forName: "test.report.free")
+        let entitlement = ProEntitlementStore(defaults: freeDefaults)
+
+        let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
+        viewModel.selectedRange = .sixMonths
+        viewModel.refresh()
+
+        XCTAssertEqual(viewModel.report?.monthlyTrend.count, 1)
+    }
+
+    func testAdvancedReportProTierProvidesMoMCategoryDelta() {
+        let previousMonth = MonthlyOverview(
+            month: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
+            income: 5000,
+            expense: 3000,
+            categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -900), .init(id: "交通", name: "交通", amount: -400)]
+        )
+        let currentMonth = MonthlyOverview(
+            month: Date(),
+            income: 6000,
+            expense: 3200,
+            categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -1200), .init(id: "交通", name: "交通", amount: -300)]
+        )
+
+        let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
+        let defaults = UserDefaults(suiteName: "test.report.pro")!
+        defaults.removePersistentDomain(forName: "test.report.pro")
+        let entitlement = ProEntitlementStore(defaults: defaults)
+        entitlement.subscribeMonthly()
+
+        let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
+        viewModel.selectedRange = .threeMonths
+        viewModel.refresh()
+
+        XCTAssertEqual(viewModel.report?.monthlyTrend.count, 3)
+        XCTAssertEqual(viewModel.report?.topGrowth?.categoryName, "餐飲")
+        XCTAssertEqual(viewModel.report?.topDecline?.categoryName, "交通")
+    }
+
     func testCopyLastMonthBringsPlansToCurrentMonth() {
         let budgetStore = InMemoryBudgetStore()
         let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "交通", name: "交通", amount: -200)])
@@ -90,6 +135,32 @@ private final class InMemoryBudgetStore: BudgetStore {
             try upsert(monthKey: toMonthKey, categoryName: item.categoryName, amount: item.amount, carryOverMode: item.carryOverMode)
         }
     }
+}
+
+private final class MonthlyOverviewStubStore: ExpenseStore {
+    private let snapshots: [String: MonthlyOverview]
+
+    init(snapshots: [MonthlyOverview]) {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+        self.snapshots = Dictionary(uniqueKeysWithValues: snapshots.map { (formatter.string(from: $0.month), $0) })
+    }
+
+    func fetchAll(searchText: String?) throws -> [Expense] { [] }
+
+    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+
+    func delete(id: Int64) throws {}
+
+    func fetchMonthlyOverview(for month: Date) throws -> MonthlyOverview {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+        return snapshots[formatter.string(from: month)] ?? .empty(month: month)
+    }
+
+    func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {}
 }
 
 private final class MockExpenseStore: ExpenseStore {
