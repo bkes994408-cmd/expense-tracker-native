@@ -14,15 +14,21 @@ protocol InAppPurchaseService {
 
 enum IAPError: LocalizedError {
     case productNotFound
+    case unknownProduct
     case userCancelled
+    case pending
     case unverified
 
     var errorDescription: String? {
         switch self {
         case .productNotFound:
             return "找不到可購買的商品，請稍後再試。"
+        case .unknownProduct:
+            return "收到未知商品，請聯繫客服協助處理。"
         case .userCancelled:
             return "你已取消購買。"
+        case .pending:
+            return "付款正在等待處理中，完成後會自動更新。"
         case .unverified:
             return "交易驗證失敗，請稍後再試。"
         }
@@ -30,26 +36,34 @@ enum IAPError: LocalizedError {
 }
 
 struct StoreKitPurchaseService: InAppPurchaseService {
+    static let trialProductId = "com.bkes994408.expensetracker.pro.trial"
     static let monthlyProductId = "com.bkes994408.expensetracker.pro.monthly"
     static let yearlyProductId = "com.bkes994408.expensetracker.pro.yearly"
 
+    private var supportedProductIds: Set<String> {
+        [Self.trialProductId, Self.monthlyProductId, Self.yearlyProductId]
+    }
+
     func purchase(plan: ProPlan) async throws -> ProEntitlementStore.Tier {
         let productId: String = switch plan {
-        case .trial, .yearly: Self.yearlyProductId
+        case .trial: Self.trialProductId
         case .monthly: Self.monthlyProductId
+        case .yearly: Self.yearlyProductId
         }
 
         let products = try await Product.products(for: [productId])
-        guard let product = products.first else { throw IAPError.productNotFound }
+        guard let product = products.first(where: { $0.id == productId }) else { throw IAPError.productNotFound }
         let result = try await product.purchase()
 
         switch result {
         case .success(let verification):
             guard case .verified(let transaction) = verification else { throw IAPError.unverified }
             await transaction.finish()
-            return mapProductIdToTier(transaction.productID)
-        case .userCancelled, .pending:
+            return try mapProductIdToTier(transaction.productID)
+        case .userCancelled:
             throw IAPError.userCancelled
+        case .pending:
+            throw IAPError.pending
         @unknown default:
             throw IAPError.unverified
         }
@@ -57,17 +71,27 @@ struct StoreKitPurchaseService: InAppPurchaseService {
 
     func restore() async throws -> ProEntitlementStore.Tier? {
         try await AppStore.sync()
+
         for await entitlement in Transaction.currentEntitlements {
             guard case .verified(let transaction) = entitlement else { continue }
-            return mapProductIdToTier(transaction.productID)
+            guard supportedProductIds.contains(transaction.productID) else { continue }
+            return try mapProductIdToTier(transaction.productID)
         }
+
         return nil
     }
 
-    private func mapProductIdToTier(_ productId: String) -> ProEntitlementStore.Tier {
-        if productId == Self.monthlyProductId { return .monthly }
-        if productId == Self.yearlyProductId { return .yearly }
-        return .free
+    private func mapProductIdToTier(_ productId: String) throws -> ProEntitlementStore.Tier {
+        switch productId {
+        case Self.trialProductId:
+            return .trial
+        case Self.monthlyProductId:
+            return .monthly
+        case Self.yearlyProductId:
+            return .yearly
+        default:
+            throw IAPError.unknownProduct
+        }
     }
 }
 

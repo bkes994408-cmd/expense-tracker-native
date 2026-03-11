@@ -35,25 +35,25 @@ final class ProEntitlementStore: ObservableObject {
 
     func startTrial() async {
         await runPurchase(source: "paywall_trial") {
-            try await purchaseService.purchase(plan: .trial)
+            try await self.purchaseService.purchase(plan: .trial)
         }
     }
 
     func subscribeMonthly() async {
         await runPurchase(source: "paywall_monthly") {
-            try await purchaseService.purchase(plan: .monthly)
+            try await self.purchaseService.purchase(plan: .monthly)
         }
     }
 
     func subscribeYearly() async {
         await runPurchase(source: "paywall_yearly") {
-            try await purchaseService.purchase(plan: .yearly)
+            try await self.purchaseService.purchase(plan: .yearly)
         }
     }
 
     func restorePurchase() async {
         await runPurchase(source: "restore_purchase") {
-            try await purchaseService.restore() ?? .free
+            try await self.purchaseService.restore() ?? .free
         }
     }
 
