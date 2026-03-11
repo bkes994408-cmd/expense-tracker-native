@@ -42,13 +42,9 @@
 - [ ] Web/Desktop 版本規劃 (跨平台擴展)
 
 ## MVP-6：Pro 功能實作與變現
-- [x] 應用程式內購買 (In-App Purchase) 整合與測試
-<<<<<<< HEAD
+- [ ] 應用程式內購買 (In-App Purchase) 整合與測試
 - [x] Pro 預算系統 (Advanced Budgeting System) 開發
-=======
-- [ ] Pro 預算系統 (Advanced Budgeting System) 開發
->>>>>>> 3800ec5 (docs(roadmap): sync latest cross-project roadmap checklist)
-- [ ] 進階報表與數據分析功能
+- [ ] 進階報表與數據分析功能（iOS 完成；Android 已串接持久化帳目資料來源，持續補強）
 - [ ] 用戶訂閱狀態與權限管理
 - [ ] Pro 功能用戶體驗優化與市場策略
 
@@ -70,4 +66,5 @@
 - 付費牆機制（Paywall）實作：iOS/Android 新增 `ProEntitlementStore`（本機快取方案狀態），並在三個高意圖入口（第 3 個分類預算、3 個月以上趨勢圖、PDF 報表匯出）加入 paywall 觸發；iOS 新增 `PaywallView`、Android 新增 `PaywallDialog`，支援試用/訂閱/恢復購買與 Debug 重置。
 - Pro 預算系統（Advanced Budgeting）開發：iOS 新增 `BudgetPlan` / `BudgetProgress` / `BudgetStore` / `GRDBBudgetStore` 與 `BudgetViewModel`，支援每月分類預算設定、上月快速複製、80% 警示與超支狀態計算；`HomeView` 加入 Pro 預算 UI，Free 方案限制每月 2 個分類預算，超出時觸發 paywall。
 - 測試補強：新增 iOS `BudgetViewModelTests`（覆蓋預算進度計算與上月複製）、Android `BudgetProgressCalculatorTest`（覆蓋 warning/overspent 規則）與 `BudgetProgressCalculator` domain helper。
-- 應用程式內購買（IAP）整合與測試：iOS 新增 `InAppPurchaseService`（StoreKit 2）並整合 `ProEntitlementStore` 非同步購買/還原流程；Android 新增 `ProPurchaseService` 抽象與 `ProEntitlementStore` 錯誤處理；新增 iOS/Android 對應單元測試與 `docs/IAP_INTEGRATION.md` 測試指引。
+- 進階報表與數據分析：iOS `HomeView` 新增 `AdvancedReportViewModel` 與 1/3/6/12 月趨勢摘要、MoM 分類變化分析（Top growth/decline）；Android `HomeScreen` 透過 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料（`FileExpenseStore` / `expenses.json`），再由 `AdvancedReportCalculator` 依 `createdAt` 進行區間過濾與平均值摘要，並沿用 paywall 觸發（Free 限 1M）。`FileExpenseStore` 在首次啟動且檔案不存在時會回傳空清單，不再寫入示範資料。
+- 測試：iOS `BudgetViewModelTests` 新增進階報表權限與 MoM 分析語義案例（無成長/下降時回傳 nil）；Android 新增 `AdvancedReportCalculatorTest`（createdAt 區間）、`HomeReportIntegrationTest`（區間切換、資料變化、Free/Pro gating）、`FileExpenseStoreTest`（檔案存在/不存在與讀取一致性）與 `ExpenseRepositoryImplTest`（repository 讀取持久化資料來源）。
