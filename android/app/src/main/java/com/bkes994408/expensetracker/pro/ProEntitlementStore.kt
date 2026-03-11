@@ -2,6 +2,24 @@ package com.bkes994408.expensetracker.pro
 
 import android.content.Context
 
+interface EntitlementStorage {
+    fun readTierName(): String?
+    fun writeTierName(value: String)
+}
+
+private class SharedPrefsEntitlementStorage(context: Context) : EntitlementStorage {
+    private val prefs = context.getSharedPreferences("pro_entitlement", Context.MODE_PRIVATE)
+
+    override fun readTierName(): String? = prefs.getString(KEY_TIER, ProTier.FREE.name)
+    override fun writeTierName(value: String) {
+        prefs.edit().putString(KEY_TIER, value).apply()
+    }
+
+    private companion object {
+        private const val KEY_TIER = "tier"
+    }
+}
+
 enum class ProTier {
     FREE,
     MONTHLY,
@@ -9,42 +27,54 @@ enum class ProTier {
     TRIAL,
 }
 
-class ProEntitlementStore(context: Context) {
-    private val prefs = context.getSharedPreferences("pro_entitlement", Context.MODE_PRIVATE)
+class ProEntitlementStore(
+    private val storage: EntitlementStorage,
+    private val purchaseService: ProPurchaseService,
+) {
+    constructor(
+        context: Context,
+        purchaseService: ProPurchaseService = MockProPurchaseService(),
+    ) : this(SharedPrefsEntitlementStorage(context), purchaseService)
 
     var tier: ProTier
-        get() = runCatching { ProTier.valueOf(prefs.getString(KEY_TIER, ProTier.FREE.name) ?: ProTier.FREE.name) }
+        get() = runCatching { ProTier.valueOf(storage.readTierName() ?: ProTier.FREE.name) }
             .getOrDefault(ProTier.FREE)
         private set(value) {
-            prefs.edit().putString(KEY_TIER, value.name).apply()
+            storage.writeTierName(value.name)
         }
+
+    var lastError: String? = null
+        private set
 
     val isPro: Boolean
         get() = tier != ProTier.FREE
 
-    fun startTrial() {
-        tier = ProTier.TRIAL
-    }
-
-    fun subscribeMonthly() {
-        tier = ProTier.MONTHLY
-    }
-
-    fun subscribeYearly() {
-        tier = ProTier.YEARLY
-    }
+    fun startTrial() = updateFromResult(purchaseService.purchase(ProPlan.TRIAL))
+    fun subscribeMonthly() = updateFromResult(purchaseService.purchase(ProPlan.MONTHLY))
+    fun subscribeYearly() = updateFromResult(purchaseService.purchase(ProPlan.YEARLY))
 
     fun restorePurchase() {
-        if (tier == ProTier.FREE) {
-            tier = ProTier.MONTHLY
-        }
+        purchaseService.restore()
+            .onSuccess {
+                tier = it ?: ProTier.FREE
+                lastError = null
+            }
+            .onFailure {
+                lastError = it.message
+            }
     }
 
     fun resetToFreeForDebug() {
         tier = ProTier.FREE
+        lastError = null
     }
 
-    private companion object {
-        private const val KEY_TIER = "tier"
+    private fun updateFromResult(result: Result<ProTier>) {
+        result.onSuccess {
+            tier = it
+            lastError = null
+        }.onFailure {
+            lastError = it.message
+        }
     }
 }

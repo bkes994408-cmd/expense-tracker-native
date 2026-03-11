@@ -233,30 +233,48 @@ struct PaywallView: View {
                 }
                 .font(.subheadline)
 
+                if let errorMessage = entitlementStore.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
                 VStack(spacing: 10) {
                     Button("開始 7 天免費試用（年付）") {
-                        entitlementStore.startTrial()
-                        if entitlementStore.isPro { onDismiss() }
+                        Task {
+                            await entitlementStore.startTrial()
+                            if entitlementStore.isPro { onDismiss() }
+                        }
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("月付 NT$90") {
-                        entitlementStore.subscribeMonthly()
-                        if entitlementStore.isPro { onDismiss() }
+                        Task {
+                            await entitlementStore.subscribeMonthly()
+                            if entitlementStore.isPro { onDismiss() }
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("年付 NT$790") {
-                        entitlementStore.subscribeYearly()
-                        if entitlementStore.isPro { onDismiss() }
+                        Task {
+                            await entitlementStore.subscribeYearly()
+                            if entitlementStore.isPro { onDismiss() }
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("恢復購買") {
-                        entitlementStore.restorePurchase()
-                        if entitlementStore.isPro { onDismiss() }
+                        Task {
+                            await entitlementStore.restorePurchase()
+                            if entitlementStore.isPro { onDismiss() }
+                        }
                     }
                     .font(.footnote)
+                    .disabled(entitlementStore.isProcessing)
                 }
 
                 Spacer()
