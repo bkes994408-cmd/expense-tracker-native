@@ -8,41 +8,26 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.math.BigDecimal
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class FileExpenseStore(
-    context: Context,
-    private val nowProvider: () -> Instant = { Instant.now() },
+    private val fileOps: FileOps,
 ) : ExpenseStore {
-    private val appContext = context.applicationContext
+    constructor(
+        context: Context,
+        fileName: String = "expenses.json",
+    ) : this(ContextFileOps(context.applicationContext, fileName))
+
     private val mutex = Mutex()
-    private val fileName = "expenses.json"
 
     override suspend fun readAll(): List<Expense> = withContext(Dispatchers.IO) {
         mutex.withLock {
-            if (!appContext.fileList().contains(fileName)) {
-                persist(seedExpenses())
+            if (!fileOps.exists()) {
+                return@withLock emptyList()
             }
-            val raw = appContext.openFileInput(fileName).bufferedReader().use { it.readText() }
+            val raw = fileOps.readText()
             parse(raw)
         }
-    }
-
-    private fun persist(expenses: List<Expense>) {
-        val json = JSONArray().apply {
-            expenses.forEach { expense ->
-                put(
-                    JSONObject().apply {
-                        put("title", expense.title)
-                        put("amount", expense.amount.toPlainString())
-                        put("createdAt", expense.createdAt.toString())
-                    }
-                )
-            }
-        }
-        appContext.openFileOutput(fileName, Context.MODE_PRIVATE).bufferedWriter().use { it.write(json.toString()) }
     }
 
     private fun parse(raw: String): List<Expense> {
@@ -61,14 +46,24 @@ class FileExpenseStore(
             }
         }
     }
+}
 
-    private fun seedExpenses(): List<Expense> {
-        val now = nowProvider()
-        return listOf(
-            Expense(title = "Salary", amount = BigDecimal("42000"), createdAt = now.minus(5, ChronoUnit.DAYS)),
-            Expense(title = "Food", amount = BigDecimal("-8500"), createdAt = now.minus(4, ChronoUnit.DAYS)),
-            Expense(title = "Transport", amount = BigDecimal("-3200"), createdAt = now.minus(35, ChronoUnit.DAYS)),
-            Expense(title = "Freelance", amount = BigDecimal("18000"), createdAt = now.minus(62, ChronoUnit.DAYS)),
-        )
+internal interface FileOps {
+    fun exists(): Boolean
+    fun readText(): String
+    fun writeText(text: String)
+}
+
+private class ContextFileOps(
+    private val context: Context,
+    private val fileName: String,
+) : FileOps {
+    override fun exists(): Boolean = context.fileList().contains(fileName)
+
+    override fun readText(): String =
+        context.openFileInput(fileName).bufferedReader().use { it.readText() }
+
+    override fun writeText(text: String) {
+        context.openFileOutput(fileName, Context.MODE_PRIVATE).bufferedWriter().use { it.write(text) }
     }
 }
