@@ -9,12 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bkes994408.expensetracker.domain.Expense
+import com.bkes994408.expensetracker.domain.ExpenseRepository
+import com.bkes994408.expensetracker.pro.AdvancedReport
 import com.bkes994408.expensetracker.pro.AdvancedReportCalculator
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
 import com.bkes994408.expensetracker.pro.ReportRange
@@ -24,18 +26,19 @@ import java.math.BigDecimal
 fun HomeScreen(
     onOpenSettings: () -> Unit,
     proEntitlementStore: ProEntitlementStore,
+    expenseRepository: ExpenseRepository,
 ) {
     var paywallTrigger by remember { mutableStateOf<String?>(null) }
     var entitlementVersion by remember { mutableStateOf(0) }
     var selectedRange by remember { mutableStateOf(ReportRange.ONE_MONTH) }
 
-    val report = remember(selectedRange, entitlementVersion) {
-        val sampleExpenses = listOf(
-            Expense(title = "Salary", amount = BigDecimal("42000")),
-            Expense(title = "Food", amount = BigDecimal("-8500")),
-            Expense(title = "Transport", amount = BigDecimal("-3200")),
-        )
-        AdvancedReportCalculator.build(sampleExpenses, selectedRange, proEntitlementStore.isPro)
+    val report by produceState(
+        initialValue = AdvancedReport(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
+        selectedRange,
+        entitlementVersion,
+    ) {
+        val expenses = runCatching { expenseRepository.sample() }.getOrDefault(emptyList())
+        value = AdvancedReportCalculator.build(expenses, selectedRange, proEntitlementStore.isPro)
     }
 
     Column(
@@ -52,16 +55,9 @@ fun HomeScreen(
 
         Text(text = "進階報表：區間 ${selectedRange.months}M")
         Button(onClick = {
-            val next = when (selectedRange) {
-                ReportRange.ONE_MONTH -> ReportRange.THREE_MONTHS
-                ReportRange.THREE_MONTHS -> ReportRange.SIX_MONTHS
-                ReportRange.SIX_MONTHS -> ReportRange.TWELVE_MONTHS
-                ReportRange.TWELVE_MONTHS -> ReportRange.ONE_MONTH
-            }
-            if (!proEntitlementStore.isPro && next.months > 1) {
-                paywallTrigger = "advanced_report_3m"
-            } else {
-                selectedRange = next
+            when (val result = HomeReportController.nextRange(selectedRange, proEntitlementStore.isPro)) {
+                is RangeSelectionResult.RangeSelected -> selectedRange = result.range
+                is RangeSelectionResult.PaywallRequired -> paywallTrigger = result.trigger
             }
         }) {
             Text(text = "切換報表區間")
@@ -88,7 +84,6 @@ fun HomeScreen(
         )
     }
 
-    // Keep state read in composition to update UI text when entitlement changed.
     entitlementVersion
 }
 

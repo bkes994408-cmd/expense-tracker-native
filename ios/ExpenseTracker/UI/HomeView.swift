@@ -464,9 +464,12 @@ final class AdvancedReportViewModel: ObservableObject {
         }
 
         if highest {
-            return deltas.max(by: { $0.delta < $1.delta })
+            let growth = deltas.filter { $0.delta > .zero }
+            return growth.max(by: { $0.delta < $1.delta })
         }
-        return deltas.min(by: { $0.delta < $1.delta })
+
+        let decline = deltas.filter { $0.delta < .zero }
+        return decline.min(by: { $0.delta < $1.delta })
     }
 
     private func absDecimal(_ value: Decimal) -> Decimal {

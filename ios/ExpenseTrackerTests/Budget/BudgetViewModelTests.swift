@@ -66,6 +66,34 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.report?.topDecline?.categoryName, "交通")
     }
 
+    func testAdvancedReportReturnsNilWhenNoGrowthOrDecline() {
+        let previousMonth = MonthlyOverview(
+            month: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
+            income: 5000,
+            expense: 3000,
+            categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -900)]
+        )
+        let currentMonth = MonthlyOverview(
+            month: Date(),
+            income: 5000,
+            expense: 3000,
+            categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -900)]
+        )
+
+        let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
+        let defaults = UserDefaults(suiteName: "test.report.nil")!
+        defaults.removePersistentDomain(forName: "test.report.nil")
+        let entitlement = ProEntitlementStore(defaults: defaults)
+        entitlement.subscribeMonthly()
+
+        let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
+        viewModel.selectedRange = .threeMonths
+        viewModel.refresh()
+
+        XCTAssertNil(viewModel.report?.topGrowth)
+        XCTAssertNil(viewModel.report?.topDecline)
+    }
+
     func testCopyLastMonthBringsPlansToCurrentMonth() {
         let budgetStore = InMemoryBudgetStore()
         let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "交通", name: "交通", amount: -200)])
