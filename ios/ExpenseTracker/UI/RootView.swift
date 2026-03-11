@@ -54,6 +54,7 @@ struct RootView: View {
         NavigationStack(path: $path) {
             HomeView(
                 store: LocalStore.shared.expenseStore,
+                budgetStore: LocalStore.shared.budgetStore,
                 proEntitlementStore: proEntitlementStore,
                 onOpenSettings: { path.append(.settings) }
             )

@@ -2,14 +2,21 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
+    @StateObject private var budgetViewModel: BudgetViewModel
     @ObservedObject var proEntitlementStore: ProEntitlementStore
     let onOpenSettings: () -> Void
 
     @State private var paywallTrigger: String = ""
     @State private var isPaywallPresented = false
 
-    init(store: ExpenseStore, proEntitlementStore: ProEntitlementStore, onOpenSettings: @escaping () -> Void) {
+    init(
+        store: ExpenseStore,
+        budgetStore: BudgetStore,
+        proEntitlementStore: ProEntitlementStore,
+        onOpenSettings: @escaping () -> Void
+    ) {
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
+        _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         self.proEntitlementStore = proEntitlementStore
         self.onOpenSettings = onOpenSettings
     }
@@ -37,14 +44,84 @@ struct HomeView: View {
                 }
             }
 
-            Section("Pro 功能") {
+            Section("Pro 預算系統") {
                 LabeledContent("方案狀態", value: proEntitlementStore.isPro ? "Pro（\(proEntitlementStore.tier.rawValue)）" : "Free")
                     .font(.caption)
 
-                Button("建立第 3 個分類預算（示範）") {
-                    openProFeature(trigger: "budget_limit")
+                if let errorMessage = budgetViewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
 
+                if budgetViewModel.expenseCategories.isEmpty {
+                    Text("先建立支出帳目後即可設定分類預算")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Picker("分類", selection: $budgetViewModel.selectedCategoryName) {
+                        ForEach(budgetViewModel.expenseCategories, id: \.self) { category in
+                            Text(category).tag(category)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    TextField("預算金額", text: $budgetViewModel.amountText)
+                        .keyboardType(.decimalPad)
+
+                    Picker("結轉模式", selection: $budgetViewModel.carryOverMode) {
+                        Text("不結轉").tag(CarryOverMode.none)
+                        if proEntitlementStore.isPro {
+                            Text("可結轉").tag(CarryOverMode.rollover)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Button("儲存本月分類預算") {
+                        let addingNewCategory = !budgetViewModel.hasBudget(for: budgetViewModel.selectedCategoryName)
+                        if !proEntitlementStore.isPro && addingNewCategory && budgetViewModel.activeBudgetCount >= 2 {
+                            openProFeature(trigger: "budget_limit")
+                            return
+                        }
+                        budgetViewModel.saveBudget()
+                    }
+
+                    Button("快速複製上月預算") {
+                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.isPro)
+                        if result == .requiresProUpgrade {
+                            openProFeature(trigger: "budget_limit_copy_last_month")
+                        }
+                    }
+                    .font(.footnote)
+                }
+
+                if budgetViewModel.progressItems.isEmpty {
+                    Text("本月尚未設定預算")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(budgetViewModel.progressItems) { item in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(item.categoryName)
+                                Spacer()
+                                Text("剩餘 \(item.remaining.formatted())")
+                                    .foregroundStyle(item.remaining < 0 ? .red : .secondary)
+                            }
+
+                            ProgressView(value: min(item.ratio, 1.2), total: 1.0)
+                                .tint(progressColor(item.status))
+
+                            Text("已花費 \(item.spent.formatted()) / 預算 \(item.budget.formatted())")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onDelete { indexSet in
+                        indexSet.map { budgetViewModel.progressItems[$0] }.forEach(budgetViewModel.deleteBudget)
+                    }
+                }
+            }
+
+            Section("Pro 功能") {
                 Button("查看 3 個月以上趨勢圖（示範）") {
                     openProFeature(trigger: "advanced_report_3m")
                 }
@@ -63,7 +140,10 @@ struct HomeView: View {
                     Text("收入").tag(true)
                 }
                 .pickerStyle(.segmented)
-                Button("新增") { viewModel.addExpense() }
+                Button("新增") {
+                    viewModel.addExpense()
+                    budgetViewModel.refresh()
+                }
             }
 
             Section("帳目列表") {
@@ -103,18 +183,38 @@ struct HomeView: View {
             isPaywallPresented = true
         }
     }
+
+    private func progressColor(_ status: BudgetProgress.Status) -> Color {
+        switch status {
+        case .healthy: return .green
+        case .warning: return .orange
+        case .overspent: return .red
+        }
+    }
 }
 
 #Preview {
     NavigationStack {
-        HomeView(store: PreviewExpenseStore(), proEntitlementStore: ProEntitlementStore(), onOpenSettings: {})
+        HomeView(
+            store: PreviewExpenseStore(),
+            budgetStore: PreviewBudgetStore(),
+            proEntitlementStore: ProEntitlementStore(),
+            onOpenSettings: {}
+        )
     }
 }
 
+@MainActor
 struct PaywallView: View {
     let trigger: String
-    @ObservedObject var entitlementStore: ProEntitlementStore
+    @ObservedObject private var entitlementStore: ProEntitlementStore
     let onDismiss: () -> Void
+
+    init(trigger: String, entitlementStore: ProEntitlementStore, onDismiss: @escaping () -> Void) {
+        self.trigger = trigger
+        self._entitlementStore = ObservedObject(wrappedValue: entitlementStore)
+        self.onDismiss = onDismiss
+    }
 
     var body: some View {
         NavigationStack {
@@ -136,25 +236,25 @@ struct PaywallView: View {
                 VStack(spacing: 10) {
                     Button("開始 7 天免費試用（年付）") {
                         entitlementStore.startTrial()
-                        onDismiss()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.borderedProminent)
 
                     Button("月付 NT$90") {
                         entitlementStore.subscribeMonthly()
-                        onDismiss()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.bordered)
 
                     Button("年付 NT$790") {
                         entitlementStore.subscribeYearly()
-                        onDismiss()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .buttonStyle(.bordered)
 
                     Button("恢復購買") {
                         entitlementStore.restorePurchase()
-                        onDismiss()
+                        if entitlementStore.isPro { onDismiss() }
                     }
                     .font(.footnote)
                 }
@@ -185,6 +285,7 @@ private final class PreviewExpenseStore: ExpenseStore {
             income: 3500,
             expense: 120,
             categoryTotals: [
+                .init(id: "餐飲", name: "餐飲", amount: -120),
                 .init(id: "未分類", name: "未分類", amount: 3380)
             ]
         )
@@ -193,4 +294,14 @@ private final class PreviewExpenseStore: ExpenseStore {
     func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
     func delete(id: Int64) throws {}
     func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {}
+}
+
+private final class PreviewBudgetStore: BudgetStore {
+    func fetch(monthKey: String) throws -> [BudgetPlan] {
+        [BudgetPlan(id: 1, monthKey: monthKey, categoryName: "餐飲", amount: 3000, carryOverMode: .none)]
+    }
+
+    func upsert(monthKey: String, categoryName: String, amount: Decimal, carryOverMode: CarryOverMode) throws {}
+    func delete(id: Int64) throws {}
+    func copy(from fromMonthKey: String, to toMonthKey: String) throws {}
 }

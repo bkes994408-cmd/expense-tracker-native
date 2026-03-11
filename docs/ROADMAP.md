@@ -41,6 +41,13 @@
 - [x] 付費牆機制 (Paywall) 實作
 - [ ] Web/Desktop 版本規劃 (跨平台擴展)
 
+## MVP-6：Pro 功能實作與變現
+- [ ] 應用程式內購買 (In-App Purchase) 整合與測試
+- [x] Pro 預算系統 (Advanced Budgeting System) 開發
+- [ ] 進階報表與數據分析功能
+- [ ] 用戶訂閱狀態與權限管理
+- [ ] Pro 功能用戶體驗優化與市場策略
+
 ## 驗證證據（本輪）
 - CSV 匯出：`HomeView` 新增「匯出CSV」按鈕，呼叫 `ExpenseListViewModel.exportCSV()`，並透過 `ShareLink` 匯出。
 - 測試：`ExpenseListViewModelTests.testExportCSVIncludesHeaderAndEscapedTitle` 驗證欄位標頭與 CSV escape。
@@ -57,3 +64,5 @@
 - 使用者回饋系統：iOS `SettingsView` 新增 App 內回饋輸入區塊與 `mailto:` 送出流程（含失敗提示）；Android `SettingsScreen` 新增回饋欄位與 Email Intent 寄送（含多語系字串與無 Email App 提示）。
 - Pro 版本功能規劃：新增 `docs/PRO_FEATURE_PLAN.md`，定義預算與進階報表兩大 Pro 功能包、分階段上線策略、KPI 與 A/B 實驗、權限牆（paywall）觸發點、跨平台落地需求與風險控管。
 - 付費牆機制（Paywall）實作：iOS/Android 新增 `ProEntitlementStore`（本機快取方案狀態），並在三個高意圖入口（第 3 個分類預算、3 個月以上趨勢圖、PDF 報表匯出）加入 paywall 觸發；iOS 新增 `PaywallView`、Android 新增 `PaywallDialog`，支援試用/訂閱/恢復購買與 Debug 重置。
+- Pro 預算系統（Advanced Budgeting）開發：iOS 新增 `BudgetPlan` / `BudgetProgress` / `BudgetStore` / `GRDBBudgetStore` 與 `BudgetViewModel`，支援每月分類預算設定、上月快速複製、80% 警示與超支狀態計算；`HomeView` 加入 Pro 預算 UI，Free 方案限制每月 2 個分類預算，超出時觸發 paywall。
+- 測試補強：新增 iOS `BudgetViewModelTests`（覆蓋預算進度計算與上月複製）、Android `BudgetProgressCalculatorTest`（覆蓋 warning/overspent 規則）與 `BudgetProgressCalculator` domain helper。
