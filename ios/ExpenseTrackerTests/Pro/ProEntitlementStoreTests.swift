@@ -113,4 +113,19 @@ final class ProEntitlementStoreTests: XCTestCase {
         XCTAssertNotEqual(IAPError.pending.errorDescription, IAPError.userCancelled.errorDescription)
         XCTAssertEqual(IAPError.unknownProduct.errorDescription, "收到未知商品，請聯繫客服協助處理。")
     }
+
+    func testStoreKitProductMappingDistinguishesTrialAndYearly() throws {
+        let service = StoreKitPurchaseService()
+
+        XCTAssertEqual(try service.mapProductIdToTier(StoreKitPurchaseService.trialProductId), .trial)
+        XCTAssertEqual(try service.mapProductIdToTier(StoreKitPurchaseService.yearlyProductId), .yearly)
+    }
+
+    func testStoreKitUnknownProductThrowsUnknownProductError() {
+        let service = StoreKitPurchaseService()
+
+        XCTAssertThrowsError(try service.mapProductIdToTier("com.bkes994408.expensetracker.pro.unknown")) { error in
+            XCTAssertEqual(error as? IAPError, .unknownProduct)
+        }
+    }
 }

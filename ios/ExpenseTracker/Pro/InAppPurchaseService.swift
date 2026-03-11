@@ -12,7 +12,7 @@ protocol InAppPurchaseService {
     func restore() async throws -> ProEntitlementStore.Tier?
 }
 
-enum IAPError: LocalizedError {
+enum IAPError: LocalizedError, Equatable {
     case productNotFound
     case unknownProduct
     case userCancelled
@@ -81,7 +81,9 @@ struct StoreKitPurchaseService: InAppPurchaseService {
         return nil
     }
 
-    private func mapProductIdToTier(_ productId: String) throws -> ProEntitlementStore.Tier {
+    // trial entitlement 僅代表「獨立 trial SKU」。
+    // 若是 yearly SKU 的 introductory offer（例如免費試用），entitlement 仍視為 .yearly。
+    func mapProductIdToTier(_ productId: String) throws -> ProEntitlementStore.Tier {
         switch productId {
         case Self.trialProductId:
             return .trial

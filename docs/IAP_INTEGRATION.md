@@ -17,8 +17,14 @@
   3. 補上 billing 失敗重試、pending transaction 與未知商品處理的整合測試。
 
 ## 商品 ID（iOS）
+- `com.bkes994408.expensetracker.pro.trial`（獨立 trial SKU，entitlement = `trial`）
 - `com.bkes994408.expensetracker.pro.monthly`
 - `com.bkes994408.expensetracker.pro.yearly`
+
+### trial entitlement 定義
+- `trial` entitlement **只**代表購買到獨立 `trial` 商品（`...pro.trial`）。
+- 若是 `yearly` 商品本身附帶 introductory offer（例如免費試用期），entitlement 仍視為 `yearly`，不會映射為 `trial`。
+- `mapProductIdToTier` 與 StoreKit restore 流程都採用同一套定義，避免平台或流程間語意不一致。
 
 > 實際上線前，請在 App Store Connect 與 Google Play Console 建立對應商品，並確認價格與試用週期一致。
 
@@ -27,11 +33,20 @@
 - `ProEntitlementStoreTests.testSubscribeMonthlyUpdatesTierAndSource`
 - `ProEntitlementStoreTests.testPurchaseFailureShowsErrorAndDoesNotUpgrade`
 - `ProEntitlementStoreTests.testRestoreSetsTierFromService`
+- `ProEntitlementStoreTests.testRestoreFailureKeepsCurrentTierAndShowsError`
+- `ProEntitlementStoreTests.testRestoreWithNoPurchaseRecordKeepsFreeTier`
+- `ProEntitlementStoreTests.testPendingPurchaseShowsPendingMessage`
+- `ProEntitlementStoreTests.testStoreKitProductMappingDistinguishesTrialAndYearly`
+- `ProEntitlementStoreTests.testStoreKitUnknownProductThrowsUnknownProductError`
 
 ### Android Unit Tests
 - `ProEntitlementStoreTest.subscribeMonthly_updatesTier`
 - `ProEntitlementStoreTest.purchaseFailure_keepsFreeAndStoresError`
+- `ProEntitlementStoreTest.pendingPurchase_keepsFreeAndStoresPendingError`
+- `ProEntitlementStoreTest.unknownProduct_keepsFreeAndStoresError`
 - `ProEntitlementStoreTest.restorePurchase_updatesTierFromService`
+- `ProEntitlementStoreTest.restoreFailure_keepsCurrentTierAndStoresError`
+- `ProEntitlementStoreTest.restoreNil_setsFreeAndClearsError`
 
 ## Sandbox / QA 建議
 1. iOS 使用 StoreKit Configuration 或 Sandbox Apple ID 驗證購買與 Restore。
