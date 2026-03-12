@@ -294,12 +294,18 @@ struct PaywallView: View {
     }
 
     var body: some View {
+        let content = PaywallExperience.content(for: trigger)
+
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("升級 Pro，解鎖進階理財能力")
+                Text(content.headline)
                     .font(.title3.bold())
 
-                Text("觸發來源：\(trigger)")
+                Text(content.subheadline)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text("觸發來源：\(trigger) · 建議：\(content.recommendedPlanLabel)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -312,6 +318,7 @@ struct PaywallView: View {
 
                 VStack(spacing: 10) {
                     Button("開始 7 天免費試用（年付）") {
+                        Telemetry.shared.track(.proPaywallCtaTapped, metadata: ["trigger": trigger, "cta": "trial"])
                         Task {
                             await entitlementStore.startTrial()
                             if entitlementStore.isPro { onDismiss() }
@@ -321,6 +328,7 @@ struct PaywallView: View {
                     .disabled(entitlementStore.isProcessing)
 
                     Button("月付 NT$90") {
+                        Telemetry.shared.track(.proPaywallCtaTapped, metadata: ["trigger": trigger, "cta": "monthly"])
                         Task {
                             await entitlementStore.subscribeMonthly()
                             if entitlementStore.isPro { onDismiss() }
@@ -330,6 +338,7 @@ struct PaywallView: View {
                     .disabled(entitlementStore.isProcessing)
 
                     Button("年付 NT$790") {
+                        Telemetry.shared.track(.proPaywallCtaTapped, metadata: ["trigger": trigger, "cta": "yearly"])
                         Task {
                             await entitlementStore.subscribeYearly()
                             if entitlementStore.isPro { onDismiss() }
@@ -339,6 +348,7 @@ struct PaywallView: View {
                     .disabled(entitlementStore.isProcessing)
 
                     Button("恢復購買") {
+                        Telemetry.shared.track(.proPaywallCtaTapped, metadata: ["trigger": trigger, "cta": "restore"])
                         Task {
                             await entitlementStore.restorePurchase()
                             if entitlementStore.isPro { onDismiss() }
@@ -351,6 +361,9 @@ struct PaywallView: View {
                 Spacer()
             }
             .padding()
+            .onAppear {
+                Telemetry.shared.track(.proPaywallViewed, metadata: ["trigger": trigger])
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("關閉", action: onDismiss)

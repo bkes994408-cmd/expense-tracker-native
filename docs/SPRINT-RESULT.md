@@ -1,31 +1,36 @@
-# Sprint Result - MVP-5（用戶體驗與增長：Pro 版本功能規劃）
+# Sprint Result - MVP-6（Pro 功能用戶體驗優化與市場策略）
 
-日期：2026-03-09
+日期：2026-03-13
 
 ## 完成項目
 
-1. **Pro 功能範圍定義（預算 + 進階報表）**
-   - 完成第一波 Pro 功能包，包含預算管理、進度提醒、趨勢分析、分類變化分析與 PDF 報表匯出規劃。
+1. **情境化 Paywall UX**
+   - iOS / Android 新增 `PaywallExperience`，依觸發來源（預算上限、進階報表、PDF 匯出）動態呈現 paywall 文案。
+   - Paywall 由固定文案升級為場景化 headline + subheadline + 推薦方案提示。
 
-2. **商業化策略（定價 + Paywall）**
-   - 定義月付 / 年付 / 試用策略。
-   - 設計高意圖操作觸發的 paywall 進入點（建立第 3 個預算、查看長區間趨勢、匯出 PDF）。
+2. **Pro 轉換漏斗事件埋點**
+   - iOS 新增 analytics event：`pro_paywall_viewed`、`pro_paywall_cta_tapped`。
+   - Android 新增 analytics event：`PRO_PAYWALL_VIEWED`、`PRO_PAYWALL_CTA_TAPPED`。
+   - CTA（trial/monthly/yearly/restore）皆會附帶 `trigger` 與 `cta` metadata。
 
-3. **KPI 與事件追蹤規格**
-   - 規劃訂閱漏斗與功能使用事件（例如 `pro_paywall_viewed`, `pro_subscribed`, `budget_created`）。
-   - 設定初版成功指標（轉換率、留存提升、活躍提升）。
+3. **市場策略文件化**
+   - 新增 `docs/PRO_UX_MARKET_STRATEGY.md`，定義推薦方案策略、A/B 測試與 KPI。
 
-4. **工程實作分期與風險控管**
-   - 定義資料模型（`BudgetPlan`, `BudgetAlertPreference`, `ProEntitlement`）。
-   - 提供 v1 ~ v1.2 分期交付內容與主要風險緩解方案。
+## 測試結果
+
+- ✅ Android 單元測試：`./gradlew testDebugUnitTest`（含新增 `PaywallExperienceTest`）
+- ⚠️ iOS 單元測試：已新增 `PaywallExperienceTests`，本輪未於 CLI 執行（需在 macOS Xcode 測試流程中補跑）。
 
 ## 變更檔案
 
-- `docs/PRO_FEATURE_PLAN.md`（新增）
+- `ios/ExpenseTracker/Pro/PaywallExperience.swift`（新增）
+- `ios/ExpenseTracker/UI/HomeView.swift`
+- `ios/ExpenseTracker/Telemetry/Telemetry.swift`
+- `ios/ExpenseTrackerTests/Pro/PaywallExperienceTests.swift`（新增）
+- `android/app/src/main/java/com/bkes994408/expensetracker/pro/PaywallExperience.kt`（新增）
+- `android/app/src/main/java/com/bkes994408/expensetracker/ui/PaywallDialog.kt`
+- `android/app/src/main/java/com/bkes994408/expensetracker/telemetry/Telemetry.kt`
+- `android/app/src/test/java/com/bkes994408/expensetracker/pro/PaywallExperienceTest.kt`（新增）
+- `docs/PRO_UX_MARKET_STRATEGY.md`（新增）
 - `docs/ROADMAP.md`
 - `docs/SPRINT-RESULT.md`
-
-## 備註
-
-- 本次為產品與工程規劃交付，尚未進入程式碼功能開發。
-- 可直接作為下一輪 MVP-5 實作排期與驗收基準。
