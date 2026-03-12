@@ -90,6 +90,44 @@ class ProEntitlementStoreTest {
         assertEquals(SubscriptionState.FREE, store.subscriptionState)
         assertNull(store.lastError)
     }
+
+    @Test
+    fun restoreTrial_preservesExistingTrialExpiry() {
+        val now = 1_000_000L
+        val storage = InMemoryEntitlementStorage()
+
+        val starter = ProEntitlementStore(
+            storage = storage,
+            purchaseService = MockProPurchaseService(purchaseResult = Result.success(ProTier.TRIAL)),
+            nowProvider = { now },
+        )
+        starter.startTrial()
+        val originalExpiry = starter.trialExpireAtMillis
+
+        val restored = ProEntitlementStore(
+            storage = storage,
+            purchaseService = MockProPurchaseService(restoreResult = Result.success(ProTier.TRIAL)),
+            nowProvider = { now + 24L * 60L * 60L * 1000L },
+        )
+        restored.restorePurchase()
+
+        assertEquals(originalExpiry, restored.trialExpireAtMillis)
+    }
+
+    @Test
+    fun restoreTrial_withoutStoredExpiry_isImmediatelyExpired() {
+        val now = 1_000_000L
+        val store = ProEntitlementStore(
+            storage = InMemoryEntitlementStorage(),
+            purchaseService = MockProPurchaseService(restoreResult = Result.success(ProTier.TRIAL)),
+            nowProvider = { now },
+        )
+
+        store.restorePurchase()
+
+        assertEquals(SubscriptionState.EXPIRED, store.subscriptionState)
+        assertFalse(store.isPro)
+    }
 }
 
 private class InMemoryEntitlementStorage : EntitlementStorage {

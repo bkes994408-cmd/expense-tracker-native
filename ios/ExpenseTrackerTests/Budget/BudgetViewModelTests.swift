@@ -37,7 +37,7 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.report?.monthlyTrend.count, 1)
     }
 
-    func testAdvancedReportProTierProvidesMoMCategoryDelta() {
+    func testAdvancedReportProTierProvidesMoMCategoryDelta() async {
         let previousMonth = MonthlyOverview(
             month: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
             income: 5000,
@@ -54,8 +54,11 @@ final class BudgetViewModelTests: XCTestCase {
         let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
         let defaults = UserDefaults(suiteName: "test.report.pro")!
         defaults.removePersistentDomain(forName: "test.report.pro")
-        let entitlement = ProEntitlementStore(defaults: defaults)
-        entitlement.subscribeMonthly()
+        let entitlement = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.monthly))
+        )
+        await entitlement.subscribeMonthly()
 
         let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
         viewModel.selectedRange = .threeMonths
@@ -66,7 +69,7 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.report?.topDecline?.categoryName, "交通")
     }
 
-    func testAdvancedReportReturnsNilWhenNoGrowthOrDecline() {
+    func testAdvancedReportReturnsNilWhenNoGrowthOrDecline() async {
         let previousMonth = MonthlyOverview(
             month: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
             income: 5000,
@@ -83,8 +86,11 @@ final class BudgetViewModelTests: XCTestCase {
         let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
         let defaults = UserDefaults(suiteName: "test.report.nil")!
         defaults.removePersistentDomain(forName: "test.report.nil")
-        let entitlement = ProEntitlementStore(defaults: defaults)
-        entitlement.subscribeMonthly()
+        let entitlement = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.monthly))
+        )
+        await entitlement.subscribeMonthly()
 
         let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
         viewModel.selectedRange = .threeMonths
