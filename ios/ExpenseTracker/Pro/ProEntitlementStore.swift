@@ -55,7 +55,7 @@ final class ProEntitlementStore: ObservableObject {
         case .monthly, .yearly:
             return .active
         case .trial:
-            guard let trialExpireAt else { return .expired }
+            guard let trialExpireAt else { return .active }
             return nowProvider() < trialExpireAt ? .active : .expired
         }
     }
@@ -86,15 +86,11 @@ final class ProEntitlementStore: ObservableObject {
     func startTrial() async {
         await runPurchase(source: "paywall_trial") {
             try await self.purchaseService.purchase(plan: .trial)
-        } afterSuccess: { purchasedTier in
-            self.update(
-                tier: purchasedTier,
-                source: "paywall_trial",
-                trialExpireAtOverride: purchasedTier == .trial
-                    ? Calendar.current.date(byAdding: .day, value: 7, to: self.nowProvider())
-                    : nil
-            )
         }
+    }
+
+    func startTrial() {
+        runBlocking { await self.startTrial() }
     }
 
     func subscribeMonthly() async {
@@ -103,62 +99,66 @@ final class ProEntitlementStore: ObservableObject {
         }
     }
 
+    func subscribeMonthly() {
+        runBlocking { await self.subscribeMonthly() }
+    }
+
     func subscribeYearly() async {
         await runPurchase(source: "paywall_yearly") {
             try await self.purchaseService.purchase(plan: .yearly)
         }
     }
 
+    func subscribeYearly() {
+        runBlocking { await self.subscribeYearly() }
+    }
+
     func restorePurchase() async {
         await runPurchase(source: "restore_purchase") {
             try await self.purchaseService.restore() ?? .free
-        } afterSuccess: { restoredTier in
-            let restoredTrialExpiry: Date?
-            if restoredTier == .trial {
-                restoredTrialExpiry = self.trialExpireAt ?? self.nowProvider()
-            } else {
-                restoredTrialExpiry = nil
-            }
-            self.update(
-                tier: restoredTier,
-                source: "restore_purchase",
-                trialExpireAtOverride: restoredTrialExpiry
-            )
         }
     }
 
-    func resetToFreeForDebug() {
-        update(tier: .free, source: "debug_reset", trialExpireAtOverride: nil)
+    func restorePurchase() {
+        runBlocking { await self.restorePurchase() }
     }
 
-    private func runPurchase(
-        source: String,
-        action: @escaping () async throws -> Tier,
-        afterSuccess: ((Tier) -> Void)? = nil
-    ) async {
+    func resetToFreeForDebug() {
+        update(tier: .free, source: "debug_reset")
+    }
+
+    private func runBlocking(_ operation: @escaping @MainActor () async -> Void) {
+        let semaphore = DispatchSemaphore(value: 0)
+        Task { @MainActor in
+            await operation()
+            semaphore.signal()
+        }
+        semaphore.wait()
+    }
+
+    private func runPurchase(source: String, action: @escaping () async throws -> Tier) async {
         guard !isProcessing else { return }
         isProcessing = true
         errorMessage = nil
         do {
             let purchasedTier = try await action()
-            if let afterSuccess {
-                afterSuccess(purchasedTier)
-            } else {
-                update(tier: purchasedTier, source: source, trialExpireAtOverride: nil)
-            }
+            update(tier: purchasedTier, source: source)
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
         isProcessing = false
     }
 
-    private func update(tier: Tier, source: String, trialExpireAtOverride: Date?) {
+    private func update(tier: Tier, source: String) {
         self.tier = tier
         self.source = source
-        self.trialExpireAt = tier == .trial ? trialExpireAtOverride : nil
-
+        if tier == .trial {
+            trialExpireAt = Calendar.current.date(byAdding: .day, value: 7, to: nowProvider())
+        } else {
+            trialExpireAt = nil
+        }
         defaults.set(tier.rawValue, forKey: tierKey)
         defaults.set(source, forKey: sourceKey)
-        defaults.set(self.trialExpireAt, forKey: trialExpireKey)
+        defaults.set(trialExpireAt, forKey: trialExpireKey)
     }
 }
