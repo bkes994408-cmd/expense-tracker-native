@@ -10,7 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 
-class FileExpenseStore(
+internal class FileExpenseStore(
     private val fileOps: FileOps,
 ) : ExpenseStore {
     constructor(
