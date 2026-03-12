@@ -45,7 +45,7 @@
 - [x] 應用程式內購買 (In-App Purchase) 整合與測試（iOS StoreKit 2 + Android Billing adapter 骨架與測試）
 - [x] Pro 預算系統 (Advanced Budgeting System) 開發
 - [ ] 進階報表與數據分析功能（iOS 完成；Android 已串接持久化帳目資料來源，持續補強）
-- [ ] 用戶訂閱狀態與權限管理
+- [x] 用戶訂閱狀態與權限管理
 - [ ] Pro 功能用戶體驗優化與市場策略
 
 ## 驗證證據（本輪）
@@ -70,3 +70,5 @@
 - 測試：iOS `BudgetViewModelTests` 新增進階報表權限與 MoM 分析語義案例（無成長/下降時回傳 nil）；Android 新增 `AdvancedReportCalculatorTest`（createdAt 區間）、`HomeReportIntegrationTest`（區間切換、資料變化、Free/Pro gating）、`FileExpenseStoreTest`（檔案存在/不存在與讀取一致性）與 `ExpenseRepositoryImplTest`（repository 讀取持久化資料來源）。
 - Web/Desktop 規劃：新增 `docs/WEB_DESKTOP_PLAN.md`，定義 Web 與 Desktop 分階段範圍、技術路線（React + TypeScript + Tauri）、DoD、風險與緩解，以及 CI/測試策略，作為跨平台擴展實作藍圖。
 - IAP 整合補強：Android 新增 `GooglePlayBillingPurchaseService`（plan/productId 映射、restore tier 判定）與 `GooglePlayBillingGateway` 介面，將後續 BillingClient 實作與 entitlement/domain 決策解耦；新增 `GooglePlayBillingPurchaseServiceTest` 驗證月費映射、未知 SKU 購買失敗，以及 restore 在「未知 SKU 忽略」策略下的最高 tier / 空購買紀錄情境。
+- 訂閱狀態與權限管理：iOS/Android `ProEntitlementStore` 新增 `subscription status`（tier/source/最後更新時間）與統一 `hasAccess(feature)` 權限檢查；Home UI 改由 feature gate 控制進階報表、多分類預算、上月預算複製、PDF 匯出等 Pro 功能，並在畫面顯示方案權限摘要。
+- 測試補強：iOS `ProEntitlementStoreTests` 新增權限 gating 與更新時間驗證；Android `ProEntitlementStoreTest` 新增 status metadata 與 feature access 測試。

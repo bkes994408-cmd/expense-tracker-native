@@ -17,6 +17,8 @@ final class ProEntitlementStoreTests: XCTestCase {
 
         XCTAssertEqual(store.tier, .monthly)
         XCTAssertEqual(store.source, "paywall_monthly")
+        XCTAssertNotNil(store.lastUpdatedAt)
+        XCTAssertTrue(store.hasAccess(to: .advancedReportMultiMonth))
         XCTAssertNil(store.errorMessage)
     }
 
@@ -112,6 +114,20 @@ final class ProEntitlementStoreTests: XCTestCase {
     func testIAPErrorMessagesAreSpecific() {
         XCTAssertNotEqual(IAPError.pending.errorDescription, IAPError.userCancelled.errorDescription)
         XCTAssertEqual(IAPError.unknownProduct.errorDescription, "收到未知商品，請聯繫客服協助處理。")
+    }
+
+    func testFreeTierDoesNotHaveProFeatureAccess() {
+        let suiteName = "ProEntitlementStoreTests.permission.free"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let store = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService()
+        )
+
+        XCTAssertFalse(store.hasAccess(to: .reportPdfExport))
+        XCTAssertEqual(store.subscriptionStatus.permissionSummary, "Free（僅基礎功能）")
     }
 
     func testStoreKitProductMappingDistinguishesTrialAndYearly() throws {
