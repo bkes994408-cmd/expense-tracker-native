@@ -43,6 +43,7 @@
 		9D81C6107482764585B3B7DA /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 998393A7C7FB120F61EC4FDD /* APIClient.swift */; };
 		A08CE5C7C7A28FAE34CE4C6E /* InstallmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3079114D7F15FB28F54BAB16 /* InstallmentStore.swift */; };
 		A1CB5DB0A5FABA2D27728A8F /* ProEntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8A5443CC93AA65E91DC610 /* ProEntitlementStore.swift */; };
+		F1A2B3C4D5E6F7890A1B2C3D /* PaywallExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */; };
 		B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46EFDA8D7DCED1725934DEE3 /* RootView.swift */; };
 		BA36B41E6F1C4CEEE0A2E475 /* GRDBInstallmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B326F83D2231CBBF6BC44B /* GRDBInstallmentStore.swift */; };
 		C22C8B690213C7B0A29EEE95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C47014370B7F790330BA2FFD /* Assets.xcassets */; };
@@ -126,6 +127,7 @@
 		D59920AF0F3A966613D3D67A /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		DDB86F0FCFDD709940767D6B /* Telemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Telemetry.swift; sourceTree = "<group>"; };
 		EAF35A88661C2C25280D8DF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallExperience.swift; sourceTree = "<group>"; };
 		F9A83AE955BFBF5B77C09A66 /* SyncStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStateStoreTests.swift; sourceTree = "<group>"; };
 		FA172C7B9651C727DD14A205 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		FB56F3639E4CC504043B52CA /* BudgetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetViewModelTests.swift; sourceTree = "<group>"; };
@@ -147,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				41FA8474E2AF3E81C8CEAA82 /* InAppPurchaseService.swift */,
+				E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */,
 				3C8A5443CC93AA65E91DC610 /* ProEntitlementStore.swift */,
 			);
 			path = Pro;
@@ -537,6 +540,7 @@
 				139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */,
 				C73F2AA3B1EB2361DAA7C69C /* MockAuthService.swift in Sources */,
 				FE950538BB8A39BE57F71AC3 /* MonthlyOverview.swift in Sources */,
+				F1A2B3C4D5E6F7890A1B2C3D /* PaywallExperience.swift in Sources */,
 				A1CB5DB0A5FABA2D27728A8F /* ProEntitlementStore.swift in Sources */,
 				B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */,
 				19909A3B4971190C3712D358 /* SettingsView.swift in Sources */,

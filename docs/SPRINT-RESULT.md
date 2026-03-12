@@ -18,7 +18,8 @@
 
 ## 測試結果
 
-- ✅ Android 單元測試：`./gradlew testDebugUnitTest`（含新增 `PaywallExperienceTest`）
+- ⚠️ Android 單元測試：`./gradlew testDebugUnitTest` 在目前環境失敗（JDK `25.0.2` 與現行 Gradle/Android 設定不相容，輸出為 `What went wrong: 25.0.2`）。
+- ✅ iOS 編譯驗證：`xcodebuild -project ios/ExpenseTracker.xcodeproj -scheme ExpenseTracker -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 成功，確認 `PaywallExperience.swift` 已納入 app target。
 - ⚠️ iOS 單元測試：已新增 `PaywallExperienceTests`，本輪未於 CLI 執行（需在 macOS Xcode 測試流程中補跑）。
 
 ## 變更檔案
