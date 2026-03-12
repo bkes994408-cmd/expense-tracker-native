@@ -56,6 +56,38 @@ class GooglePlayBillingPurchaseServiceTest {
         assertTrue(result.isSuccess)
         assertEquals(null, result.getOrNull())
     }
+
+    @Test
+    fun restore_unknownProducts_areIgnored() {
+        val service = GooglePlayBillingPurchaseService(
+            gateway = FakeGateway(
+                restoreResult = Result.success(
+                    listOf("unknown.sku.1", "unknown.sku.2"),
+                ),
+            ),
+        )
+
+        val result = service.restore()
+
+        assertTrue(result.isSuccess)
+        assertEquals(null, result.getOrNull())
+    }
+
+    @Test
+    fun restore_mixedKnownAndUnknown_returnsHighestKnownTier() {
+        val service = GooglePlayBillingPurchaseService(
+            gateway = FakeGateway(
+                restoreResult = Result.success(
+                    listOf("unknown.sku", ProductIds.MONTHLY, ProductIds.TRIAL),
+                ),
+            ),
+        )
+
+        val result = service.restore()
+
+        assertTrue(result.isSuccess)
+        assertEquals(ProTier.MONTHLY, result.getOrNull())
+    }
 }
 
 private class FakeGateway(

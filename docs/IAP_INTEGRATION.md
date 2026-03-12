@@ -2,13 +2,13 @@
 
 ## 範圍
 - iOS：導入 StoreKit 2 購買抽象層 `InAppPurchaseService`，支援 trial / 月費 / 年費與 Restore。
-- Android：已加入 **Billing adapter/domain 決策層**（`GooglePlayBillingPurchaseService` + `GooglePlayBillingGateway`），負責 plan/productId 映射、restore tier 判定與錯誤語意；目前 `Gateway` 預設為 `UnconfiguredGooglePlayBillingGateway`，待接入真實 Google Play Billing client。
+- Android：已加入 **Billing adapter/domain 決策層**（`GooglePlayBillingPurchaseService` + `GooglePlayBillingGateway`），負責 plan/productId 映射、restore tier 判定與錯誤語意；restore 對未知 `productId` 採「忽略未知、僅以已知商品決策」策略。`Gateway` 目前預設為 `UnconfiguredGooglePlayBillingGateway`，待接入真實 Google Play Billing client。
 - Paywall UI：購買失敗顯示錯誤訊息、購買成功才關閉 paywall。
 
 ## Android 整合深度（現況與下一步）
 - 現況：
   - 已完成 `ProPurchaseService` 介面與 entitlement 流程串接。
-  - 已新增 `GooglePlayBillingPurchaseService`（plan/productId 映射、restore 時多筆購買取最高 tier）。
+  - 已新增 `GooglePlayBillingPurchaseService`（plan/productId 映射、restore 時多筆購買取最高 tier；未知 `productId` 會被忽略）。
   - 測試涵蓋 adapter 的映射與 restore 決策（不依賴 Google Play Billing SDK）。
 - 尚未完成：
   - 真實 Google Play Billing client 連線、商品查詢、購買流程與 restore（query purchases）實作（可由 `GooglePlayBillingGateway` 實作銜接）。
@@ -52,6 +52,8 @@
 - `GooglePlayBillingPurchaseServiceTest.purchase_unknownProduct_returnsFailure`
 - `GooglePlayBillingPurchaseServiceTest.restore_multiplePurchases_returnsHighestTier`
 - `GooglePlayBillingPurchaseServiceTest.restore_noPurchase_returnsNullTier`
+- `GooglePlayBillingPurchaseServiceTest.restore_unknownProducts_areIgnored`
+- `GooglePlayBillingPurchaseServiceTest.restore_mixedKnownAndUnknown_returnsHighestKnownTier`
 
 ## Sandbox / QA 建議
 1. iOS 使用 StoreKit Configuration 或 Sandbox Apple ID 驗證購買與 Restore。

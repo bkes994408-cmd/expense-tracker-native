@@ -6,7 +6,7 @@ package com.bkes994408.expensetracker.pro
  * 這層只處理：
  * 1) Plan <-> ProductId 映射
  * 2) Billing 結果 -> ProTier 映射
- * 3) restore 決策（多筆購買時取最高 tier）
+ * 3) restore 決策（多筆購買時取最高 tier，未知 productId 會忽略）
  *
  * 真正的 BillingClient 呼叫放在 [GooglePlayBillingGateway]（可替換）。
  */
@@ -28,7 +28,9 @@ class GooglePlayBillingPurchaseService(
     override fun restore(): Result<ProTier?> {
         return gateway.queryActivePurchases()
             .mapCatching { productIds ->
-                val tiers = productIds.map { mapProductIdToTier(it) }
+                val tiers = productIds.mapNotNull { productId ->
+                    runCatching { mapProductIdToTier(productId) }.getOrNull()
+                }
                 tiers.maxByOrNull { it.priority }
             }
     }
