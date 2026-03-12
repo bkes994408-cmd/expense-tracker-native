@@ -8,6 +8,8 @@ enum AnalyticsEvent: String {
     case expenseDeleted = "expense_deleted"
     case csvExported = "csv_exported"
     case csvExportFailed = "csv_export_failed"
+    case proPaywallViewed = "pro_paywall_viewed"
+    case proPaywallCtaTapped = "pro_paywall_cta_tapped"
 }
 
 protocol AnalyticsService {
