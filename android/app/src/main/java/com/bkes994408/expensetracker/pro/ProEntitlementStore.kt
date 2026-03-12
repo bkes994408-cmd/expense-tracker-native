@@ -80,7 +80,7 @@ class ProEntitlementStore(
             ProTier.FREE -> SubscriptionState.FREE
             ProTier.TRIAL -> {
                 val expiresAt = trialExpireAtMillis
-                if (expiresAt != null && nowProvider() >= expiresAt) SubscriptionState.EXPIRED else SubscriptionState.ACTIVE
+                if (expiresAt == null || nowProvider() >= expiresAt) SubscriptionState.EXPIRED else SubscriptionState.ACTIVE
             }
             ProTier.MONTHLY, ProTier.YEARLY -> SubscriptionState.ACTIVE
         }
@@ -123,7 +123,7 @@ class ProEntitlementStore(
                 if (it == null) {
                     applyTier(ProTier.FREE)
                 } else {
-                    applyTier(it)
+                    applyRestoredTier(it)
                 }
                 lastError = null
             }
@@ -146,6 +146,16 @@ class ProEntitlementStore(
             lastError = null
         }.onFailure {
             lastError = it.message
+        }
+    }
+
+    private fun applyRestoredTier(restoredTier: ProTier) {
+        if (restoredTier == ProTier.TRIAL) {
+            val preservedOrExpiredNow = trialExpireAtMillis ?: nowProvider()
+            tier = ProTier.TRIAL
+            storage.writeTrialExpireAtMillis(preservedOrExpiredNow)
+        } else {
+            applyTier(restoredTier)
         }
     }
 
