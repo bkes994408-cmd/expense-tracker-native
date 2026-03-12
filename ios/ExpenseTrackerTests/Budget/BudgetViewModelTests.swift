@@ -54,9 +54,11 @@ final class BudgetViewModelTests: XCTestCase {
         let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
         let defaults = UserDefaults(suiteName: "test.report.pro")!
         defaults.removePersistentDomain(forName: "test.report.pro")
-        defaults.set("monthly", forKey: "pro.entitlement.tier")
-        defaults.set("test_setup", forKey: "pro.entitlement.source")
-        let entitlement = ProEntitlementStore(defaults: defaults)
+        let entitlement = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.monthly))
+        )
+        await entitlement.subscribeMonthly()
 
         let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
         viewModel.selectedRange = .threeMonths
@@ -84,9 +86,11 @@ final class BudgetViewModelTests: XCTestCase {
         let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
         let defaults = UserDefaults(suiteName: "test.report.nil")!
         defaults.removePersistentDomain(forName: "test.report.nil")
-        defaults.set("monthly", forKey: "pro.entitlement.tier")
-        defaults.set("test_setup", forKey: "pro.entitlement.source")
-        let entitlement = ProEntitlementStore(defaults: defaults)
+        let entitlement = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.monthly))
+        )
+        await entitlement.subscribeMonthly()
 
         let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
         viewModel.selectedRange = .threeMonths
