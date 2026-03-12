@@ -111,6 +111,76 @@ final class ProEntitlementStoreTests: XCTestCase {
         XCTAssertEqual(store.errorMessage, IAPError.pending.errorDescription)
     }
 
+    func testTrialExpiryRevokesProAccess() async {
+        let suiteName = "ProEntitlementStoreTests.trialExpiry"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.trial)),
+            nowProvider: { baseDate }
+        )
+
+        await store.startTrial()
+        XCTAssertEqual(store.subscriptionState, .active)
+        XCTAssertTrue(store.canAccess(.advancedReports))
+
+        let expired = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(),
+            nowProvider: { baseDate.addingTimeInterval(8 * 24 * 60 * 60) }
+        )
+
+        XCTAssertEqual(expired.subscriptionState, .expired)
+        XCTAssertFalse(expired.canAccess(.pdfExport))
+    }
+
+    func testRestoreTrialDoesNotExtendExistingTrialWindow() async {
+        let suiteName = "ProEntitlementStoreTests.restoreTrialNoExtend"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let oneDayLater = baseDate.addingTimeInterval(24 * 60 * 60)
+
+        let firstStore = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(purchaseResult: .success(.trial)),
+            nowProvider: { baseDate }
+        )
+        await firstStore.startTrial()
+        let originalExpiry = firstStore.trialExpireAt
+
+        let restoredStore = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(restoreResult: .success(.trial)),
+            nowProvider: { oneDayLater }
+        )
+        await restoredStore.restorePurchase()
+
+        XCTAssertEqual(restoredStore.trialExpireAt, originalExpiry)
+    }
+
+    func testRestoreTrialWithoutStoredExpiryIsImmediatelyExpired() async {
+        let suiteName = "ProEntitlementStoreTests.restoreTrialWithoutExpiry"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = ProEntitlementStore(
+            defaults: defaults,
+            purchaseService: MockInAppPurchaseService(restoreResult: .success(.trial)),
+            nowProvider: { now }
+        )
+
+        await store.restorePurchase()
+
+        XCTAssertEqual(store.subscriptionState, .expired)
+        XCTAssertFalse(store.isPro)
+    }
+
     func testIAPErrorMessagesAreSpecific() {
         XCTAssertNotEqual(IAPError.pending.errorDescription, IAPError.userCancelled.errorDescription)
         XCTAssertEqual(IAPError.unknownProduct.errorDescription, "收到未知商品，請聯繫客服協助處理。")

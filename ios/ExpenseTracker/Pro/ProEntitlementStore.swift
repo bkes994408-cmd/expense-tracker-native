@@ -7,63 +7,78 @@ final class ProEntitlementStore: ObservableObject {
         case monthly
         case yearly
         case trial
-
-        var isPro: Bool { self != .free }
     }
 
-    enum ProFeature {
-        case advancedReportMultiMonth
-        case budgetUnlimitedCategories
-        case budgetCopyLastMonth
-        case reportPdfExport
+    enum Feature {
+        case advancedReports
+        case pdfExport
+        case unlimitedBudgets
+        case rolloverBudget
     }
 
-    struct SubscriptionStatus {
-        let tier: Tier
-        let source: String
-        let lastUpdatedAt: Date?
-
-        var isActive: Bool { tier.isPro }
-        var permissionSummary: String {
-            isActive ? "Pro 已啟用" : "Free（僅基礎功能）"
-        }
+    enum SubscriptionState {
+        case free
+        case active
+        case expired
     }
 
     @Published private(set) var tier: Tier
     @Published private(set) var source: String
-    @Published private(set) var lastUpdatedAt: Date?
+    @Published private(set) var trialExpireAt: Date?
     @Published private(set) var isProcessing: Bool = false
     @Published var errorMessage: String?
 
     private let defaults: UserDefaults
     private let purchaseService: InAppPurchaseService
+    private let nowProvider: () -> Date
     private let tierKey = "pro.entitlement.tier"
     private let sourceKey = "pro.entitlement.source"
-    private let updatedAtKey = "pro.entitlement.updatedAt"
+    private let trialExpireKey = "pro.entitlement.trial.expireAt"
 
     init(
         defaults: UserDefaults = .standard,
-        purchaseService: InAppPurchaseService = StoreKitPurchaseService()
+        purchaseService: InAppPurchaseService = StoreKitPurchaseService(),
+        nowProvider: @escaping () -> Date = Date.init
     ) {
         self.defaults = defaults
         self.purchaseService = purchaseService
+        self.nowProvider = nowProvider
         self.tier = Tier(rawValue: defaults.string(forKey: tierKey) ?? "") ?? .free
         self.source = defaults.string(forKey: sourceKey) ?? "none"
-        self.lastUpdatedAt = defaults.object(forKey: updatedAtKey) as? Date
+        self.trialExpireAt = defaults.object(forKey: trialExpireKey) as? Date
     }
 
-    var isPro: Bool { tier.isPro }
-
-    var subscriptionStatus: SubscriptionStatus {
-        SubscriptionStatus(tier: tier, source: source, lastUpdatedAt: lastUpdatedAt)
+    var subscriptionState: SubscriptionState {
+        switch tier {
+        case .free:
+            return .free
+        case .monthly, .yearly:
+            return .active
+        case .trial:
+            guard let trialExpireAt else { return .expired }
+            return nowProvider() < trialExpireAt ? .active : .expired
+        }
     }
 
-    func hasAccess(to feature: ProFeature) -> Bool {
+    var statusText: String {
+        switch subscriptionState {
+        case .free: return "Free"
+        case .active:
+            switch tier {
+            case .trial: return "Trial"
+            case .monthly: return "Pro（月付）"
+            case .yearly: return "Pro（年付）"
+            case .free: return "Free"
+            }
+        case .expired: return "已過期"
+        }
+    }
+
+    var isPro: Bool { subscriptionState == .active }
+
+    func canAccess(_ feature: Feature) -> Bool {
         switch feature {
-        case .advancedReportMultiMonth,
-             .budgetUnlimitedCategories,
-             .budgetCopyLastMonth,
-             .reportPdfExport:
+        case .advancedReports, .pdfExport, .unlimitedBudgets, .rolloverBudget:
             return isPro
         }
     }
@@ -71,6 +86,14 @@ final class ProEntitlementStore: ObservableObject {
     func startTrial() async {
         await runPurchase(source: "paywall_trial") {
             try await self.purchaseService.purchase(plan: .trial)
+        } afterSuccess: { purchasedTier in
+            self.update(
+                tier: purchasedTier,
+                source: "paywall_trial",
+                trialExpireAtOverride: purchasedTier == .trial
+                    ? Calendar.current.date(byAdding: .day, value: 7, to: self.nowProvider())
+                    : nil
+            )
         }
     }
 
@@ -89,32 +112,53 @@ final class ProEntitlementStore: ObservableObject {
     func restorePurchase() async {
         await runPurchase(source: "restore_purchase") {
             try await self.purchaseService.restore() ?? .free
+        } afterSuccess: { restoredTier in
+            let restoredTrialExpiry: Date?
+            if restoredTier == .trial {
+                restoredTrialExpiry = self.trialExpireAt ?? self.nowProvider()
+            } else {
+                restoredTrialExpiry = nil
+            }
+            self.update(
+                tier: restoredTier,
+                source: "restore_purchase",
+                trialExpireAtOverride: restoredTrialExpiry
+            )
         }
     }
 
     func resetToFreeForDebug() {
-        update(tier: .free, source: "debug_reset")
+        update(tier: .free, source: "debug_reset", trialExpireAtOverride: nil)
     }
 
-    private func runPurchase(source: String, action: @escaping () async throws -> Tier) async {
+    private func runPurchase(
+        source: String,
+        action: @escaping () async throws -> Tier,
+        afterSuccess: ((Tier) -> Void)? = nil
+    ) async {
         guard !isProcessing else { return }
         isProcessing = true
         errorMessage = nil
         do {
             let purchasedTier = try await action()
-            update(tier: purchasedTier, source: source)
+            if let afterSuccess {
+                afterSuccess(purchasedTier)
+            } else {
+                update(tier: purchasedTier, source: source, trialExpireAtOverride: nil)
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
         isProcessing = false
     }
 
-    private func update(tier: Tier, source: String) {
+    private func update(tier: Tier, source: String, trialExpireAtOverride: Date?) {
         self.tier = tier
         self.source = source
-        self.lastUpdatedAt = Date()
+        self.trialExpireAt = tier == .trial ? trialExpireAtOverride : nil
+
         defaults.set(tier.rawValue, forKey: tierKey)
         defaults.set(source, forKey: sourceKey)
-        defaults.set(lastUpdatedAt, forKey: updatedAtKey)
+        defaults.set(self.trialExpireAt, forKey: trialExpireKey)
     }
 }

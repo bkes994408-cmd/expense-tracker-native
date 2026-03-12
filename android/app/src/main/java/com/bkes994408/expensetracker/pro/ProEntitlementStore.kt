@@ -3,54 +3,48 @@ package com.bkes994408.expensetracker.pro
 import android.content.Context
 
 enum class ProFeature {
-    ADVANCED_REPORT_MULTI_MONTH,
-    BUDGET_UNLIMITED_CATEGORIES,
-    BUDGET_COPY_LAST_MONTH,
-    REPORT_PDF_EXPORT,
+    ADVANCED_REPORTS,
+    PDF_EXPORT,
+    UNLIMITED_BUDGETS,
+    ROLLOVER_BUDGET,
 }
 
-data class SubscriptionStatus(
-    val tier: ProTier,
-    val source: String,
-    val lastUpdatedAtMillis: Long?,
-) {
-    val isActive: Boolean get() = tier != ProTier.FREE
-    val permissionSummary: String get() = if (isActive) "Pro 已啟用" else "Free（僅基礎功能）"
+enum class SubscriptionState {
+    FREE,
+    ACTIVE,
+    EXPIRED,
 }
 
 interface EntitlementStorage {
     fun readTierName(): String?
     fun writeTierName(value: String)
-    fun readSource(): String?
-    fun writeSource(value: String)
-    fun readUpdatedAtMillis(): Long?
-    fun writeUpdatedAtMillis(value: Long)
+    fun readTrialExpireAtMillis(): Long?
+    fun writeTrialExpireAtMillis(value: Long?)
 }
 
 private class SharedPrefsEntitlementStorage(context: Context) : EntitlementStorage {
     private val prefs = context.getSharedPreferences("pro_entitlement", Context.MODE_PRIVATE)
 
     override fun readTierName(): String? = prefs.getString(KEY_TIER, ProTier.FREE.name)
+
     override fun writeTierName(value: String) {
         prefs.edit().putString(KEY_TIER, value).apply()
     }
 
-    override fun readSource(): String? = prefs.getString(KEY_SOURCE, "none")
-    override fun writeSource(value: String) {
-        prefs.edit().putString(KEY_SOURCE, value).apply()
+    override fun readTrialExpireAtMillis(): Long? {
+        if (!prefs.contains(KEY_TRIAL_EXPIRE_AT)) return null
+        return prefs.getLong(KEY_TRIAL_EXPIRE_AT, 0L)
     }
 
-    override fun readUpdatedAtMillis(): Long? =
-        if (prefs.contains(KEY_UPDATED_AT)) prefs.getLong(KEY_UPDATED_AT, 0L) else null
-
-    override fun writeUpdatedAtMillis(value: Long) {
-        prefs.edit().putLong(KEY_UPDATED_AT, value).apply()
+    override fun writeTrialExpireAtMillis(value: Long?) {
+        prefs.edit().apply {
+            if (value == null) remove(KEY_TRIAL_EXPIRE_AT) else putLong(KEY_TRIAL_EXPIRE_AT, value)
+        }.apply()
     }
 
     private companion object {
         private const val KEY_TIER = "tier"
-        private const val KEY_SOURCE = "source"
-        private const val KEY_UPDATED_AT = "updated_at"
+        private const val KEY_TRIAL_EXPIRE_AT = "trial_expire_at"
     }
 }
 
@@ -64,6 +58,7 @@ enum class ProTier {
 class ProEntitlementStore(
     private val storage: EntitlementStorage,
     private val purchaseService: ProPurchaseService,
+    private val nowProvider: () -> Long = { System.currentTimeMillis() },
 ) {
     constructor(
         context: Context,
@@ -77,43 +72,59 @@ class ProEntitlementStore(
             storage.writeTierName(value.name)
         }
 
-    val source: String
-        get() = storage.readSource() ?: "none"
+    val trialExpireAtMillis: Long?
+        get() = storage.readTrialExpireAtMillis()
 
-    val lastUpdatedAtMillis: Long?
-        get() = storage.readUpdatedAtMillis()
+    val subscriptionState: SubscriptionState
+        get() = when (tier) {
+            ProTier.FREE -> SubscriptionState.FREE
+            ProTier.TRIAL -> {
+                val expiresAt = trialExpireAtMillis
+                if (expiresAt == null || nowProvider() >= expiresAt) SubscriptionState.EXPIRED else SubscriptionState.ACTIVE
+            }
+            ProTier.MONTHLY, ProTier.YEARLY -> SubscriptionState.ACTIVE
+        }
 
-    val status: SubscriptionStatus
-        get() = SubscriptionStatus(
-            tier = tier,
-            source = source,
-            lastUpdatedAtMillis = lastUpdatedAtMillis,
-        )
+    val statusLabel: String
+        get() = when (subscriptionState) {
+            SubscriptionState.FREE -> "Free"
+            SubscriptionState.ACTIVE -> when (tier) {
+                ProTier.TRIAL -> "Trial"
+                ProTier.MONTHLY -> "Pro Monthly"
+                ProTier.YEARLY -> "Pro Yearly"
+                ProTier.FREE -> "Free"
+            }
+            SubscriptionState.EXPIRED -> "Expired"
+        }
 
     var lastError: String? = null
         private set
 
     val isPro: Boolean
-        get() = tier != ProTier.FREE
+        get() = subscriptionState == SubscriptionState.ACTIVE
 
-    fun hasAccess(feature: ProFeature): Boolean {
+    fun canAccess(feature: ProFeature): Boolean {
         return when (feature) {
-            ProFeature.ADVANCED_REPORT_MULTI_MONTH,
-            ProFeature.BUDGET_UNLIMITED_CATEGORIES,
-            ProFeature.BUDGET_COPY_LAST_MONTH,
-            ProFeature.REPORT_PDF_EXPORT,
+            ProFeature.ADVANCED_REPORTS,
+            ProFeature.PDF_EXPORT,
+            ProFeature.UNLIMITED_BUDGETS,
+            ProFeature.ROLLOVER_BUDGET,
             -> isPro
         }
     }
 
-    fun startTrial() = updateFromResult(source = "paywall_trial", result = purchaseService.purchase(ProPlan.TRIAL))
-    fun subscribeMonthly() = updateFromResult(source = "paywall_monthly", result = purchaseService.purchase(ProPlan.MONTHLY))
-    fun subscribeYearly() = updateFromResult(source = "paywall_yearly", result = purchaseService.purchase(ProPlan.YEARLY))
+    fun startTrial() = updateFromResult(purchaseService.purchase(ProPlan.TRIAL), activateTrial = true)
+    fun subscribeMonthly() = updateFromResult(purchaseService.purchase(ProPlan.MONTHLY))
+    fun subscribeYearly() = updateFromResult(purchaseService.purchase(ProPlan.YEARLY))
 
     fun restorePurchase() {
         purchaseService.restore()
             .onSuccess {
-                persist(tier = it ?: ProTier.FREE, source = "restore_purchase")
+                if (it == null) {
+                    applyTier(ProTier.FREE)
+                } else {
+                    applyRestoredTier(it)
+                }
                 lastError = null
             }
             .onFailure {
@@ -122,22 +133,40 @@ class ProEntitlementStore(
     }
 
     fun resetToFreeForDebug() {
-        persist(tier = ProTier.FREE, source = "debug_reset")
+        applyTier(ProTier.FREE)
         lastError = null
     }
 
-    private fun updateFromResult(source: String, result: Result<ProTier>) {
+    private fun updateFromResult(result: Result<ProTier>, activateTrial: Boolean = false) {
         result.onSuccess {
-            persist(tier = it, source = source)
+            applyTier(it)
+            if (activateTrial && it == ProTier.TRIAL) {
+                storage.writeTrialExpireAtMillis(nowProvider() + TRIAL_DURATION_MS)
+            }
             lastError = null
         }.onFailure {
             lastError = it.message
         }
     }
 
-    private fun persist(tier: ProTier, source: String) {
-        this.tier = tier
-        storage.writeSource(source)
-        storage.writeUpdatedAtMillis(System.currentTimeMillis())
+    private fun applyRestoredTier(restoredTier: ProTier) {
+        if (restoredTier == ProTier.TRIAL) {
+            val preservedOrExpiredNow = trialExpireAtMillis ?: nowProvider()
+            tier = ProTier.TRIAL
+            storage.writeTrialExpireAtMillis(preservedOrExpiredNow)
+        } else {
+            applyTier(restoredTier)
+        }
+    }
+
+    private fun applyTier(newTier: ProTier) {
+        tier = newTier
+        if (newTier != ProTier.TRIAL) {
+            storage.writeTrialExpireAtMillis(null)
+        }
+    }
+
+    private companion object {
+        private const val TRIAL_DURATION_MS = 7L * 24L * 60L * 60L * 1000L
     }
 }

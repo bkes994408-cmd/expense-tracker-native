@@ -39,7 +39,11 @@ fun HomeScreen(
         entitlementVersion,
     ) {
         val expenses = runCatching { expenseRepository.fetchExpenses() }.getOrDefault(emptyList())
-        value = AdvancedReportCalculator.build(expenses, selectedRange, proEntitlementStore.hasAccess(ProFeature.ADVANCED_REPORT_MULTI_MONTH))
+        value = AdvancedReportCalculator.build(
+            expenses,
+            selectedRange,
+            proEntitlementStore.canAccess(ProFeature.ADVANCED_REPORTS),
+        )
     }
 
     Column(
@@ -48,21 +52,20 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Expense Tracker")
-        Text(text = "目前方案：${proEntitlementStore.status.permissionSummary} (${proEntitlementStore.tier.name})")
+        Text(text = "目前方案：${proEntitlementStore.statusLabel}")
 
         Button(onClick = {
-            openProFeature(
-                trigger = "budget_limit",
-                feature = ProFeature.BUDGET_UNLIMITED_CATEGORIES,
-                proEntitlementStore = proEntitlementStore,
-            ) { paywallTrigger = it }
+            openProFeature("budget_limit", ProFeature.UNLIMITED_BUDGETS, proEntitlementStore) { paywallTrigger = it }
         }) {
             Text(text = "建立第 3 個分類預算（示範）")
         }
 
         Text(text = "進階報表：區間 ${selectedRange.months}M")
         Button(onClick = {
-            when (val result = HomeReportController.nextRange(selectedRange, proEntitlementStore.hasAccess(ProFeature.ADVANCED_REPORT_MULTI_MONTH))) {
+            when (val result = HomeReportController.nextRange(
+                selectedRange,
+                proEntitlementStore.canAccess(ProFeature.ADVANCED_REPORTS),
+            )) {
                 is RangeSelectionResult.RangeSelected -> selectedRange = result.range
                 is RangeSelectionResult.PaywallRequired -> paywallTrigger = result.trigger
             }
@@ -74,11 +77,7 @@ fun HomeScreen(
         Text(text = "平均月淨額：${report.averageNet}")
 
         Button(onClick = {
-            openProFeature(
-                trigger = "report_pdf_export",
-                feature = ProFeature.REPORT_PDF_EXPORT,
-                proEntitlementStore = proEntitlementStore,
-            ) { paywallTrigger = it }
+            openProFeature("report_pdf_export", ProFeature.PDF_EXPORT, proEntitlementStore) { paywallTrigger = it }
         }) {
             Text(text = "匯出 PDF 報表（示範）")
         }
@@ -106,7 +105,7 @@ private fun openProFeature(
     proEntitlementStore: ProEntitlementStore,
     onPaywallNeeded: (String) -> Unit,
 ) {
-    if (!proEntitlementStore.hasAccess(feature)) {
+    if (!proEntitlementStore.canAccess(feature)) {
         onPaywallNeeded(trigger)
     }
 }

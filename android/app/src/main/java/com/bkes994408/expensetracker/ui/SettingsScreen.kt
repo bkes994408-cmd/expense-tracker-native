@@ -43,7 +43,7 @@ fun SettingsScreen(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = "Pro tier: ${proEntitlementStore.tier.name}")
+        Text(text = "Pro tier: ${proEntitlementStore.statusLabel}")
         if (proEntitlementStore.isPro) {
             Button(onClick = {
                 proEntitlementStore.resetToFreeForDebug()

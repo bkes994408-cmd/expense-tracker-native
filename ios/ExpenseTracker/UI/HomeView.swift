@@ -47,14 +47,8 @@ struct HomeView: View {
             }
 
             Section("Pro 預算系統") {
-                LabeledContent("方案狀態", value: proEntitlementStore.subscriptionStatus.permissionSummary)
+                LabeledContent("方案狀態", value: proEntitlementStore.statusText)
                     .font(.caption)
-                LabeledContent("目前 Tier", value: proEntitlementStore.tier.rawValue)
-                    .font(.caption)
-                if let updatedAt = proEntitlementStore.subscriptionStatus.lastUpdatedAt {
-                    LabeledContent("權限更新時間", value: updatedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                }
 
                 if let errorMessage = budgetViewModel.errorMessage {
                     Text(errorMessage)
@@ -78,7 +72,7 @@ struct HomeView: View {
 
                     Picker("結轉模式", selection: $budgetViewModel.carryOverMode) {
                         Text("不結轉").tag(CarryOverMode.none)
-                        if proEntitlementStore.hasAccess(to: .budgetUnlimitedCategories) {
+                        if proEntitlementStore.canAccess(.rolloverBudget) {
                             Text("可結轉").tag(CarryOverMode.rollover)
                         }
                     }
@@ -86,17 +80,17 @@ struct HomeView: View {
 
                     Button("儲存本月分類預算") {
                         let addingNewCategory = !budgetViewModel.hasBudget(for: budgetViewModel.selectedCategoryName)
-                        if !proEntitlementStore.hasAccess(to: .budgetUnlimitedCategories) && addingNewCategory && budgetViewModel.activeBudgetCount >= 2 {
-                            openProFeature(.budgetUnlimitedCategories, trigger: "budget_limit")
+                        if !proEntitlementStore.canAccess(.unlimitedBudgets) && addingNewCategory && budgetViewModel.activeBudgetCount >= 2 {
+                            openProFeature(trigger: "budget_limit")
                             return
                         }
                         budgetViewModel.saveBudget()
                     }
 
                     Button("快速複製上月預算") {
-                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.hasAccess(to: .budgetCopyLastMonth))
+                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.canAccess(.unlimitedBudgets))
                         if result == .requiresProUpgrade {
-                            openProFeature(.budgetCopyLastMonth, trigger: "budget_limit_copy_last_month")
+                            openProFeature(trigger: "budget_limit_copy_last_month")
                         }
                     }
                     .font(.footnote)
@@ -137,9 +131,9 @@ struct HomeView: View {
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: reportViewModel.selectedRange) { newValue in
-                    if !proEntitlementStore.hasAccess(to: .advancedReportMultiMonth) && newValue.months > 1 {
+                    if !proEntitlementStore.canAccess(.advancedReports) && newValue.months > 1 {
                         reportViewModel.selectedRange = .oneMonth
-                        openProFeature(.advancedReportMultiMonth, trigger: "advanced_report_3m")
+                        openProFeature(trigger: "advanced_report_3m")
                     } else {
                         reportViewModel.refresh()
                     }
@@ -195,7 +189,7 @@ struct HomeView: View {
                 }
 
                 Button("匯出 PDF 報表（示範）") {
-                    openProFeature(.reportPdfExport, trigger: "report_pdf_export")
+                    openProFeature(trigger: "report_pdf_export")
                 }
             }
 
@@ -250,8 +244,18 @@ struct HomeView: View {
         .navigationTitle("Expense Tracker")
     }
 
-    private func openProFeature(_ feature: ProEntitlementStore.ProFeature, trigger: String) {
-        if !proEntitlementStore.hasAccess(to: feature) {
+    private func openProFeature(trigger: String) {
+        let feature: ProEntitlementStore.Feature
+        switch trigger {
+        case "report_pdf_export":
+            feature = .pdfExport
+        case "advanced_report_3m":
+            feature = .advancedReports
+        default:
+            feature = .unlimitedBudgets
+        }
+
+        if !proEntitlementStore.canAccess(feature) {
             paywallTrigger = trigger
             isPaywallPresented = true
         }
@@ -314,6 +318,7 @@ struct PaywallView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("月付 NT$90") {
                         Task {
@@ -322,6 +327,7 @@ struct PaywallView: View {
                         }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("年付 NT$790") {
                         Task {
@@ -330,6 +336,7 @@ struct PaywallView: View {
                         }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(entitlementStore.isProcessing)
 
                     Button("恢復購買") {
                         Task {
@@ -338,6 +345,7 @@ struct PaywallView: View {
                         }
                     }
                     .font(.footnote)
+                    .disabled(entitlementStore.isProcessing)
                 }
 
                 Spacer()
@@ -416,7 +424,7 @@ final class AdvancedReportViewModel: ObservableObject {
     }
 
     func refresh() {
-        let monthCount = proEntitlementStore.hasAccess(to: .advancedReportMultiMonth) ? selectedRange.months : 1
+        let monthCount = proEntitlementStore.canAccess(.advancedReports) ? selectedRange.months : 1
         let now = Date()
         var snapshots: [MonthlyOverview] = []
 
