@@ -68,4 +68,4 @@
 - 測試補強：新增 iOS `BudgetViewModelTests`（覆蓋預算進度計算與上月複製）、Android `BudgetProgressCalculatorTest`（覆蓋 warning/overspent 規則）與 `BudgetProgressCalculator` domain helper。
 - 進階報表與數據分析：iOS `HomeView` 新增 `AdvancedReportViewModel` 與 1/3/6/12 月趨勢摘要、MoM 分類變化分析（Top growth/decline）；Android `HomeScreen` 透過 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料（`FileExpenseStore` / `expenses.json`），再由 `AdvancedReportCalculator` 依 `createdAt` 進行區間過濾與平均值摘要，並沿用 paywall 觸發（Free 限 1M）。`FileExpenseStore` 在首次啟動且檔案不存在時會回傳空清單，不再寫入示範資料。
 - 測試：iOS `BudgetViewModelTests` 新增進階報表權限與 MoM 分析語義案例（無成長/下降時回傳 nil）；Android 新增 `AdvancedReportCalculatorTest`（createdAt 區間）、`HomeReportIntegrationTest`（區間切換、資料變化、Free/Pro gating）、`FileExpenseStoreTest`（檔案存在/不存在與讀取一致性）與 `ExpenseRepositoryImplTest`（repository 讀取持久化資料來源）。
-- Web/Desktop 規劃：新增 `docs/WEB_DESKTOP_PLAN.md`，定義 Web MVP + Desktop 打包範圍、技術路線（React + TypeScript + Tauri）、Auth/Sync/權限對齊策略、資安隱私要求、里程碑與 DoD，作為跨平台擴展執行藍圖。
+- Web/Desktop 規劃：新增 `docs/WEB_DESKTOP_PLAN.md`，定義 Web 與 Desktop 分階段範圍、技術路線（React + TypeScript + Tauri）、DoD、風險與緩解，以及 CI/測試策略，作為跨平台擴展實作藍圖。
