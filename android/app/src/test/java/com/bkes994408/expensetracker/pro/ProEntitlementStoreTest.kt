@@ -1,12 +1,15 @@
 package com.bkes994408.expensetracker.pro
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProEntitlementStoreTest {
     @Test
-    fun subscribeMonthly_updatesTier() {
+    fun subscribeMonthly_updatesTierAndStatusMetadata() {
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
             purchaseService = MockProPurchaseService(purchaseResult = Result.success(ProTier.MONTHLY)),
@@ -15,7 +18,23 @@ class ProEntitlementStoreTest {
         store.subscribeMonthly()
 
         assertEquals(ProTier.MONTHLY, store.tier)
+        assertEquals("paywall_monthly", store.source)
+        assertNotNull(store.lastUpdatedAtMillis)
         assertNull(store.lastError)
+    }
+
+    @Test
+    fun permissionCheck_followsTier() {
+        val store = ProEntitlementStore(
+            storage = InMemoryEntitlementStorage(),
+            purchaseService = MockProPurchaseService(purchaseResult = Result.success(ProTier.YEARLY)),
+        )
+
+        assertFalse(store.hasAccess(ProFeature.REPORT_PDF_EXPORT))
+        store.subscribeYearly()
+
+        assertTrue(store.hasAccess(ProFeature.REPORT_PDF_EXPORT))
+        assertTrue(store.hasAccess(ProFeature.ADVANCED_REPORT_MULTI_MONTH))
     }
 
     @Test
@@ -73,6 +92,7 @@ class ProEntitlementStoreTest {
         store.restorePurchase()
 
         assertEquals(ProTier.YEARLY, store.tier)
+        assertEquals("restore_purchase", store.source)
         assertNull(store.lastError)
     }
 
@@ -107,16 +127,31 @@ class ProEntitlementStoreTest {
         store.restorePurchase()
 
         assertEquals(ProTier.FREE, store.tier)
+        assertEquals("restore_purchase", store.source)
         assertNull(store.lastError)
     }
 }
 
 private class InMemoryEntitlementStorage : EntitlementStorage {
     private var tierName: String = ProTier.FREE.name
+    private var source: String = "none"
+    private var updatedAtMillis: Long? = null
 
     override fun readTierName(): String = tierName
 
     override fun writeTierName(value: String) {
         tierName = value
+    }
+
+    override fun readSource(): String = source
+
+    override fun writeSource(value: String) {
+        source = value
+    }
+
+    override fun readUpdatedAtMillis(): Long? = updatedAtMillis
+
+    override fun writeUpdatedAtMillis(value: Long) {
+        updatedAtMillis = value
     }
 }

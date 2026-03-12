@@ -11,8 +11,27 @@ final class ProEntitlementStore: ObservableObject {
         var isPro: Bool { self != .free }
     }
 
+    enum ProFeature {
+        case advancedReportMultiMonth
+        case budgetUnlimitedCategories
+        case budgetCopyLastMonth
+        case reportPdfExport
+    }
+
+    struct SubscriptionStatus {
+        let tier: Tier
+        let source: String
+        let lastUpdatedAt: Date?
+
+        var isActive: Bool { tier.isPro }
+        var permissionSummary: String {
+            isActive ? "Pro 已啟用" : "Free（僅基礎功能）"
+        }
+    }
+
     @Published private(set) var tier: Tier
     @Published private(set) var source: String
+    @Published private(set) var lastUpdatedAt: Date?
     @Published private(set) var isProcessing: Bool = false
     @Published var errorMessage: String?
 
@@ -20,6 +39,7 @@ final class ProEntitlementStore: ObservableObject {
     private let purchaseService: InAppPurchaseService
     private let tierKey = "pro.entitlement.tier"
     private let sourceKey = "pro.entitlement.source"
+    private let updatedAtKey = "pro.entitlement.updatedAt"
 
     init(
         defaults: UserDefaults = .standard,
@@ -29,9 +49,24 @@ final class ProEntitlementStore: ObservableObject {
         self.purchaseService = purchaseService
         self.tier = Tier(rawValue: defaults.string(forKey: tierKey) ?? "") ?? .free
         self.source = defaults.string(forKey: sourceKey) ?? "none"
+        self.lastUpdatedAt = defaults.object(forKey: updatedAtKey) as? Date
     }
 
     var isPro: Bool { tier.isPro }
+
+    var subscriptionStatus: SubscriptionStatus {
+        SubscriptionStatus(tier: tier, source: source, lastUpdatedAt: lastUpdatedAt)
+    }
+
+    func hasAccess(to feature: ProFeature) -> Bool {
+        switch feature {
+        case .advancedReportMultiMonth,
+             .budgetUnlimitedCategories,
+             .budgetCopyLastMonth,
+             .reportPdfExport:
+            return isPro
+        }
+    }
 
     func startTrial() async {
         await runPurchase(source: "paywall_trial") {
@@ -77,7 +112,9 @@ final class ProEntitlementStore: ObservableObject {
     private func update(tier: Tier, source: String) {
         self.tier = tier
         self.source = source
+        self.lastUpdatedAt = Date()
         defaults.set(tier.rawValue, forKey: tierKey)
         defaults.set(source, forKey: sourceKey)
+        defaults.set(lastUpdatedAt, forKey: updatedAtKey)
     }
 }
