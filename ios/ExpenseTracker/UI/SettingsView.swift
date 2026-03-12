@@ -27,7 +27,7 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section("Pro") {
-                LabeledContent("目前方案", value: proEntitlementStore.tier.rawValue)
+                LabeledContent("目前方案", value: proEntitlementStore.statusText)
                 if proEntitlementStore.isPro {
                     Text("已解鎖 Pro 功能")
                         .font(.caption)
