@@ -27,32 +27,37 @@
 		4E16D8911D4CA442BAC66419 /* BudgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50497D960FE6D7FFCC4B01DF /* BudgetStore.swift */; };
 		581F93EA6F351463CFFFE44A /* InstallmentManagementViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21833D1667675E5A07217BB0 /* InstallmentManagementViewModelTests.swift */; };
 		61879D31B3585D9E8069C4D3 /* SyncStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 807C80AF6F246FC43581A43F /* SyncStateStore.swift */; };
+		6701C8D6A150C4775441DC77 /* PaywallExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17B72C674475A35385915D3 /* PaywallExperience.swift */; };
 		6F6E88EB86561D738E50805A /* SubscriptionManagementViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A8C7A81C72D6885430FAE2 /* SubscriptionManagementViewModelTests.swift */; };
+		700B57A5B64B79FB7C398578 /* GroupLedgerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B990638C95E2DB5E7D036A /* GroupLedgerModels.swift */; };
 		708D87CF377ED53A57320BC4 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FBFDF58B41D5F08C05857E /* Expense.swift */; };
 		7946C13B9CC48C6CEFAB946D /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFC184F315BCCFFB5F598B7 /* Category.swift */; };
 		794C165237D202A80ECDA435 /* GRDBCategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3C0639A8B435881EF652177 /* GRDBCategoryStore.swift */; };
 		7A73343DACE1BE8009D4617F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7BB09075D54A99B83C25DFDB /* Assets.xcassets */; };
 		7B082A23C252B9AC23DE7381 /* SubscriptionManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A02D9EA83D184E91DA96C01 /* SubscriptionManagementViewModel.swift */; };
+		8510D049A9D73733C781682A /* GroupLedgerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D23FBC4E25FA0540528585 /* GroupLedgerViewModelTests.swift */; };
 		8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */; };
 		8BAF99B2A8AE47A8154884DE /* CategoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 051AECCBF3231565B38B1AE1 /* CategoryStore.swift */; };
 		8C80FA75939C39EC51ADE26A /* ExpenseListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72AE1BBE76FF6AAD6ECF3C3 /* ExpenseListViewModel.swift */; };
 		91C3225F11CB2DC8CD37F9B5 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2266BE7F38B29341E9C8BD54 /* SyncModels.swift */; };
 		95D8E17CB7B2B23EF8678AF0 /* ExpenseListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 738E02D56F0BCA2CE6400E61 /* ExpenseListViewModelTests.swift */; };
 		95DE86AD0DFF7964AED1DE81 /* BudgetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D6D41D96C8077B29D84A3E /* BudgetViewModel.swift */; };
+		98F518C34AAF9F3D7E159ECF /* GroupLedgerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9AD1BCE204190ED8C40347 /* GroupLedgerStore.swift */; };
 		9B5915835B67F6D7EBA7609F /* CategoryManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFD0C3015345E94958050D3 /* CategoryManagementViewModel.swift */; };
 		9D81C6107482764585B3B7DA /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 998393A7C7FB120F61EC4FDD /* APIClient.swift */; };
 		A08CE5C7C7A28FAE34CE4C6E /* InstallmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3079114D7F15FB28F54BAB16 /* InstallmentStore.swift */; };
 		A1CB5DB0A5FABA2D27728A8F /* ProEntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8A5443CC93AA65E91DC610 /* ProEntitlementStore.swift */; };
-		F1A2B3C4D5E6F7890A1B2C3D /* PaywallExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */; };
+		AB6BBC24BE540EFC4262D6BD /* GRDBGroupLedgerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99F92868A8E143E4C822E893 /* GRDBGroupLedgerStore.swift */; };
 		B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46EFDA8D7DCED1725934DEE3 /* RootView.swift */; };
+		B5FDEC91D7F6DC0E6AC18BE3 /* PaywallExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A331CBAF615129415A53AC2 /* PaywallExperienceTests.swift */; };
 		BA36B41E6F1C4CEEE0A2E475 /* GRDBInstallmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B326F83D2231CBBF6BC44B /* GRDBInstallmentStore.swift */; };
 		C22C8B690213C7B0A29EEE95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C47014370B7F790330BA2FFD /* Assets.xcassets */; };
 		C449BE2E2E8EE6843F6ECAE9 /* ExpenseCSVExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C3343E171FDCDCF8B61178 /* ExpenseCSVExporterTests.swift */; };
 		C73F2AA3B1EB2361DAA7C69C /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05DCEB17BAFFE4930C4A1FF /* MockAuthService.swift */; };
+		C82792B001D698AB5BB5FAE1 /* GroupLedgerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1D4819A1372DB963876C35 /* GroupLedgerViewModel.swift */; };
 		D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */; };
 		DEE36AF13E29700390EB8133 /* InAppPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FA8474E2AF3E81C8CEAA82 /* InAppPurchaseService.swift */; };
 		E83423937D6FA3A653334296 /* ProEntitlementStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF1AEE684BED85F31BEE2B8 /* ProEntitlementStoreTests.swift */; };
-		E8A35A41B9C2410F90D3B112 /* PaywallExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A35A40B9C2410F90D3B112 /* PaywallExperienceTests.swift */; };
 		E90F85244A60E35BB379C463 /* SubscriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F75EB9A45938B6264A44A80 /* SubscriptionStore.swift */; };
 		E9F423CC4FE2F3C93CD15974 /* Telemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB86F0FCFDD709940767D6B /* Telemetry.swift */; };
 		EFCD7EB9973B1C3178102844 /* GRDBBudgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D093A814386927F7606D9F89 /* GRDBBudgetStore.swift */; };
@@ -80,13 +85,14 @@
 		026E4D228E035A1D75DA317F /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		051AECCBF3231565B38B1AE1 /* CategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryStore.swift; sourceTree = "<group>"; };
 		120B2020840294EFEA00ABB0 /* BudgetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetModels.swift; sourceTree = "<group>"; };
+		1C1D4819A1372DB963876C35 /* GroupLedgerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupLedgerViewModel.swift; sourceTree = "<group>"; };
 		1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseTrackerApp.swift; sourceTree = "<group>"; };
 		1EF1AEE684BED85F31BEE2B8 /* ProEntitlementStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProEntitlementStoreTests.swift; sourceTree = "<group>"; };
 		21833D1667675E5A07217BB0 /* InstallmentManagementViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentManagementViewModelTests.swift; sourceTree = "<group>"; };
-		E8A35A40B9C2410F90D3B112 /* PaywallExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallExperienceTests.swift; sourceTree = "<group>"; };
 		2266BE7F38B29341E9C8BD54 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
 		2C126B9E82517DFD361B9A71 /* ExpenseTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExpenseTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CE84F9A05EBB0DBC1B5905F /* CategoryManagementViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryManagementViewModelTests.swift; sourceTree = "<group>"; };
+		2D9AD1BCE204190ED8C40347 /* GroupLedgerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupLedgerStore.swift; sourceTree = "<group>"; };
 		2F40F655838EF1638270AC55 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		3004F35FAAC8FA02A8183900 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3079114D7F15FB28F54BAB16 /* InstallmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentStore.swift; sourceTree = "<group>"; };
@@ -97,6 +103,8 @@
 		4D903EBD9C90440561FB6BDC /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		4FFC184F315BCCFFB5F598B7 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
 		50497D960FE6D7FFCC4B01DF /* BudgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetStore.swift; sourceTree = "<group>"; };
+		5A331CBAF615129415A53AC2 /* PaywallExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallExperienceTests.swift; sourceTree = "<group>"; };
+		61D23FBC4E25FA0540528585 /* GroupLedgerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupLedgerViewModelTests.swift; sourceTree = "<group>"; };
 		635DBCA04D85C2751692C042 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		67A99EF21C4667746A9B3EF7 /* MonthlyOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyOverview.swift; sourceTree = "<group>"; };
 		71A8C7A81C72D6885430FAE2 /* SubscriptionManagementViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManagementViewModelTests.swift; sourceTree = "<group>"; };
@@ -111,6 +119,8 @@
 		90F04F1EBA66988ABC357A3F /* InstallmentManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentManagementViewModel.swift; sourceTree = "<group>"; };
 		9308B0B1B315334850284F42 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		998393A7C7FB120F61EC4FDD /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		99B990638C95E2DB5E7D036A /* GroupLedgerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupLedgerModels.swift; sourceTree = "<group>"; };
+		99F92868A8E143E4C822E893 /* GRDBGroupLedgerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBGroupLedgerStore.swift; sourceTree = "<group>"; };
 		9A02D9EA83D184E91DA96C01 /* SubscriptionManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManagementViewModel.swift; sourceTree = "<group>"; };
 		A27C06AA410A67CC036F2582 /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
 		ABA313E8FC7FA9C94B2E57B5 /* ExpenseTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExpenseTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +129,7 @@
 		BB4D3F4984EEACC2D09F03C2 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BEA3631766DF02127D131B2F /* GRDBExpenseStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBExpenseStore.swift; sourceTree = "<group>"; };
 		C05DCEB17BAFFE4930C4A1FF /* MockAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthService.swift; sourceTree = "<group>"; };
+		C17B72C674475A35385915D3 /* PaywallExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallExperience.swift; sourceTree = "<group>"; };
 		C240A4A1080BC8623F717691 /* ExpenseCSVExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseCSVExporter.swift; sourceTree = "<group>"; };
 		C3C0639A8B435881EF652177 /* GRDBCategoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBCategoryStore.swift; sourceTree = "<group>"; };
 		C47014370B7F790330BA2FFD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -129,7 +140,6 @@
 		D59920AF0F3A966613D3D67A /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		DDB86F0FCFDD709940767D6B /* Telemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Telemetry.swift; sourceTree = "<group>"; };
 		EAF35A88661C2C25280D8DF3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallExperience.swift; sourceTree = "<group>"; };
 		F9A83AE955BFBF5B77C09A66 /* SyncStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStateStoreTests.swift; sourceTree = "<group>"; };
 		FA172C7B9651C727DD14A205 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		FB56F3639E4CC504043B52CA /* BudgetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetViewModelTests.swift; sourceTree = "<group>"; };
@@ -147,11 +157,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0543A2F9EF69520BCCCA45B6 /* GroupLedger */ = {
+			isa = PBXGroup;
+			children = (
+				99F92868A8E143E4C822E893 /* GRDBGroupLedgerStore.swift */,
+				99B990638C95E2DB5E7D036A /* GroupLedgerModels.swift */,
+				2D9AD1BCE204190ED8C40347 /* GroupLedgerStore.swift */,
+				1C1D4819A1372DB963876C35 /* GroupLedgerViewModel.swift */,
+			);
+			path = GroupLedger;
+			sourceTree = "<group>";
+		};
 		0CE1E4410E615DC70AB58499 /* Pro */ = {
 			isa = PBXGroup;
 			children = (
 				41FA8474E2AF3E81C8CEAA82 /* InAppPurchaseService.swift */,
-				E1F2A3B4C5D6E7F8091A2B3C /* PaywallExperience.swift */,
+				C17B72C674475A35385915D3 /* PaywallExperience.swift */,
 				3C8A5443CC93AA65E91DC610 /* ProEntitlementStore.swift */,
 			);
 			path = Pro;
@@ -229,6 +250,7 @@
 				A761B144C5B4B6A628EAC778 /* Auth */,
 				EFE707673D50544DF8D9DA4F /* Budget */,
 				C45A4C92C7D6B472558C09D6 /* Expense */,
+				F58B770C02E4EC2235E2F0FC /* GroupLedger */,
 				0F5EDAB33B36353401CFDCF3 /* Installment */,
 				9B48BDA08571DC9B04444E51 /* Pro */,
 				D18627BAA19F0CD36A77FD1A /* Subscription */,
@@ -271,7 +293,7 @@
 		9B48BDA08571DC9B04444E51 /* Pro */ = {
 			isa = PBXGroup;
 			children = (
-				E8A35A40B9C2410F90D3B112 /* PaywallExperienceTests.swift */,
+				5A331CBAF615129415A53AC2 /* PaywallExperienceTests.swift */,
 				1EF1AEE684BED85F31BEE2B8 /* ProEntitlementStoreTests.swift */,
 			);
 			path = Pro;
@@ -372,6 +394,7 @@
 				E93DA613DC8C3BF9BFC7998A /* DB */,
 				A744E00684729854438F5739 /* Domain */,
 				660F2D0CD882F52AF2F10365 /* Expense */,
+				0543A2F9EF69520BCCCA45B6 /* GroupLedger */,
 				AE2A90741AE77150D467FA97 /* Installment */,
 				A90EF31CB865AC764A1ACD37 /* Network */,
 				0CE1E4410E615DC70AB58499 /* Pro */,
@@ -408,6 +431,14 @@
 				FB56F3639E4CC504043B52CA /* BudgetViewModelTests.swift */,
 			);
 			path = Budget;
+			sourceTree = "<group>";
+		};
+		F58B770C02E4EC2235E2F0FC /* GroupLedger */ = {
+			isa = PBXGroup;
+			children = (
+				61D23FBC4E25FA0540528585 /* GroupLedgerViewModelTests.swift */,
+			);
+			path = GroupLedger;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -532,8 +563,12 @@
 				EFCD7EB9973B1C3178102844 /* GRDBBudgetStore.swift in Sources */,
 				794C165237D202A80ECDA435 /* GRDBCategoryStore.swift in Sources */,
 				43003E632A7C2EDA540EB16E /* GRDBExpenseStore.swift in Sources */,
+				AB6BBC24BE540EFC4262D6BD /* GRDBGroupLedgerStore.swift in Sources */,
 				BA36B41E6F1C4CEEE0A2E475 /* GRDBInstallmentStore.swift in Sources */,
 				16DEBB63F50A1EDC8D423A4D /* GRDBSubscriptionStore.swift in Sources */,
+				700B57A5B64B79FB7C398578 /* GroupLedgerModels.swift in Sources */,
+				98F518C34AAF9F3D7E159ECF /* GroupLedgerStore.swift in Sources */,
+				C82792B001D698AB5BB5FAE1 /* GroupLedgerViewModel.swift in Sources */,
 				8B4D24DC4E7288F942E82577 /* HomeView.swift in Sources */,
 				DEE36AF13E29700390EB8133 /* InAppPurchaseService.swift in Sources */,
 				30159D2EE9BD3DDCCBC7FF2A /* InstallmentManagementViewModel.swift in Sources */,
@@ -543,7 +578,7 @@
 				139AE1BCFBC97B496CE89C88 /* LocalStore.swift in Sources */,
 				C73F2AA3B1EB2361DAA7C69C /* MockAuthService.swift in Sources */,
 				FE950538BB8A39BE57F71AC3 /* MonthlyOverview.swift in Sources */,
-				F1A2B3C4D5E6F7890A1B2C3D /* PaywallExperience.swift in Sources */,
+				6701C8D6A150C4775441DC77 /* PaywallExperience.swift in Sources */,
 				A1CB5DB0A5FABA2D27728A8F /* ProEntitlementStore.swift in Sources */,
 				B2688E39C3A50FE064A2B788 /* RootView.swift in Sources */,
 				19909A3B4971190C3712D358 /* SettingsView.swift in Sources */,
@@ -565,8 +600,9 @@
 				F1753AB84FD4C9F282102565 /* CategoryManagementViewModelTests.swift in Sources */,
 				C449BE2E2E8EE6843F6ECAE9 /* ExpenseCSVExporterTests.swift in Sources */,
 				95D8E17CB7B2B23EF8678AF0 /* ExpenseListViewModelTests.swift in Sources */,
+				8510D049A9D73733C781682A /* GroupLedgerViewModelTests.swift in Sources */,
 				581F93EA6F351463CFFFE44A /* InstallmentManagementViewModelTests.swift in Sources */,
-				E8A35A41B9C2410F90D3B112 /* PaywallExperienceTests.swift in Sources */,
+				B5FDEC91D7F6DC0E6AC18BE3 /* PaywallExperienceTests.swift in Sources */,
 				E83423937D6FA3A653334296 /* ProEntitlementStoreTests.swift in Sources */,
 				6F6E88EB86561D738E50805A /* SubscriptionManagementViewModelTests.swift in Sources */,
 				307A29C54B9178CBD92A3BF0 /* SyncStateStoreTests.swift in Sources */,

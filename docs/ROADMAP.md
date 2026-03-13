@@ -72,3 +72,10 @@
 - 用戶訂閱狀態與權限管理：iOS/Android `ProEntitlementStore` 新增 `subscriptionState`（free/active/expired）、trial 到期時間持久化、`statusText/statusLabel` 與 `canAccess(feature)` 權限檢查；Home/Settings 畫面與 Pro 功能入口（報表、PDF、預算）改以 feature-level gating。另統一 restore 規則：restore 到 trial 不會重置 7 天試用、若缺少 trial 到期資訊則視為已過期，避免 iOS 延長試用與 Android trial 永久有效風險。iOS 同步 wrapper 改為純 async 呼叫，移除主執行緒 semaphore deadlock 風險。新增測試：iOS `ProEntitlementStoreTests.testTrialExpiryRevokesProAccess` / `testRestoreTrialDoesNotExtendExistingTrialWindow` / `testRestoreTrialWithoutStoredExpiryIsImmediatelyExpired`、Android `ProEntitlementStoreTest.trialExpires_changesStateToExpiredAndRevokesFeature` / `restoreTrial_preservesExistingTrialExpiry` / `restoreTrial_withoutStoredExpiry_isImmediatelyExpired`。
 - Pro 功能用戶體驗優化與市場策略：新增 iOS/Android `PaywallExperience`，依 trigger（`budget_limit` / `advanced_report_3m` / `report_pdf_export`）動態調整 paywall headline/subheadline/推薦方案；paywall 新增事件追蹤 `pro_paywall_viewed`、`pro_paywall_cta_tapped`；新增測試 iOS `PaywallExperienceTests`、Android `PaywallExperienceTest`；策略文件見 `docs/PRO_UX_MARKET_STRATEGY.md`。
 - IAP 整合：Android 新增 `GooglePlayBillingProPurchaseService` + `GooglePlayBillingClient`（Billing v7），完成商品對應（trial/monthly/yearly）、購買結果處理（success/cancelled/pending）與 restore 流程（query purchases + acknowledge）；`RootNavHost` 改為注入實際 Billing service 給 `ProEntitlementStore`。新增測試 `GooglePlayBillingProPurchaseServiceTest`（monthly mapping、pending error、restore unknown product、restore yearly）。
+- 家庭/群組帳本：iOS 新增 `GroupLedgerStore` / `GRDBGroupLedgerStore`（`group_ledgers`, `group_members`, `shared_expenses`, `shared_expense_splits`）與 `GroupLedgerViewModel`；`HomeView` 新增「家庭/群組帳本」區塊，支援建立帳本、加入成員、共享支出與平均分攤、成員淨額（paid-owed）結算檢視。
+
+### Iteration-1 (MVP-7: 社交與數據共享)
+- [x] 家庭/群組帳本：支持多人共同記帳，實現家庭或小團體費用共享與分攤。
+- [ ] 帳目數據導入/導出增強：支持更多格式（如 OFX, QIF），或與銀行 API 介接，簡化數據錄入。
+- [ ] 進階視覺化報表與圖表：提供更多元的圖表類型（如圓餅圖、長條圖）與自定義報表選項，深入分析消費習慣。
+- [ ] 預算管理智能建議：根據歷史消費數據，AI 自動推薦預算設定，並提供超支預警。

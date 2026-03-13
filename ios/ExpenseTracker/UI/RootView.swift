@@ -14,6 +14,7 @@ struct RootView: View {
             HomeView(
                 store: LocalStore.shared.expenseStore,
                 budgetStore: LocalStore.shared.budgetStore,
+                groupLedgerStore: LocalStore.shared.groupLedgerStore,
                 proEntitlementStore: proEntitlementStore,
                 onOpenSettings: { path.append(.settings) }
             )

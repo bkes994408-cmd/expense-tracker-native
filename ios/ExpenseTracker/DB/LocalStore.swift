@@ -47,6 +47,14 @@ final class LocalStore {
         }
     }()
 
+    lazy var groupLedgerStore: GroupLedgerStore = {
+        do {
+            return try GRDBGroupLedgerStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize group ledger store: \(error)")
+        }
+    }()
+
     private lazy var dbQueue: DatabaseQueue = {
         do {
             if ProcessInfo.processInfo.arguments.contains("UITEST_IN_MEMORY_DB") {
