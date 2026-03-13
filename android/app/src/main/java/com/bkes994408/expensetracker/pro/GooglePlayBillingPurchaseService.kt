@@ -14,7 +14,7 @@ class GooglePlayBillingPurchaseService(
     private val gateway: GooglePlayBillingGateway,
 ) : ProPurchaseService {
 
-    override fun purchase(plan: ProPlan): Result<ProTier> {
+    override suspend fun purchase(plan: ProPlan): Result<ProTier> {
         val productId = when (plan) {
             ProPlan.TRIAL -> ProductIds.TRIAL
             ProPlan.MONTHLY -> ProductIds.MONTHLY
@@ -25,7 +25,7 @@ class GooglePlayBillingPurchaseService(
             .mapCatching { purchasedProductId -> mapProductIdToTier(purchasedProductId) }
     }
 
-    override fun restore(): Result<ProTier?> {
+    override suspend fun restore(): Result<ProTier?> {
         return gateway.queryActivePurchases()
             .mapCatching { productIds ->
                 val tiers = productIds.mapNotNull { productId ->

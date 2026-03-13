@@ -1,5 +1,6 @@
 package com.bkes994408.expensetracker.pro
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,7 +12,7 @@ class GooglePlayBillingPurchaseServiceTest {
             gateway = FakeGateway(purchaseResult = Result.success(ProductIds.MONTHLY)),
         )
 
-        val result = service.purchase(ProPlan.MONTHLY)
+        val result = runBlocking { service.purchase(ProPlan.MONTHLY) }
 
         assertTrue(result.isSuccess)
         assertEquals(ProTier.MONTHLY, result.getOrNull())
@@ -23,7 +24,7 @@ class GooglePlayBillingPurchaseServiceTest {
             gateway = FakeGateway(purchaseResult = Result.success("unknown.sku")),
         )
 
-        val result = service.purchase(ProPlan.YEARLY)
+        val result = runBlocking { service.purchase(ProPlan.YEARLY) }
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IllegalArgumentException)
@@ -39,7 +40,7 @@ class GooglePlayBillingPurchaseServiceTest {
             ),
         )
 
-        val result = service.restore()
+        val result = runBlocking { service.restore() }
 
         assertTrue(result.isSuccess)
         assertEquals(ProTier.YEARLY, result.getOrNull())
@@ -51,7 +52,7 @@ class GooglePlayBillingPurchaseServiceTest {
             gateway = FakeGateway(restoreResult = Result.success(emptyList())),
         )
 
-        val result = service.restore()
+        val result = runBlocking { service.restore() }
 
         assertTrue(result.isSuccess)
         assertEquals(null, result.getOrNull())
@@ -67,7 +68,7 @@ class GooglePlayBillingPurchaseServiceTest {
             ),
         )
 
-        val result = service.restore()
+        val result = runBlocking { service.restore() }
 
         assertTrue(result.isSuccess)
         assertEquals(null, result.getOrNull())
@@ -83,7 +84,7 @@ class GooglePlayBillingPurchaseServiceTest {
             ),
         )
 
-        val result = service.restore()
+        val result = runBlocking { service.restore() }
 
         assertTrue(result.isSuccess)
         assertEquals(ProTier.MONTHLY, result.getOrNull())

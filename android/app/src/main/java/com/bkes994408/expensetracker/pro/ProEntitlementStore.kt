@@ -113,11 +113,11 @@ class ProEntitlementStore(
         }
     }
 
-    fun startTrial() = updateFromResult(purchaseService.purchase(ProPlan.TRIAL), activateTrial = true)
-    fun subscribeMonthly() = updateFromResult(purchaseService.purchase(ProPlan.MONTHLY))
-    fun subscribeYearly() = updateFromResult(purchaseService.purchase(ProPlan.YEARLY))
+    suspend fun startTrial() = updateFromResult(purchaseService.purchase(ProPlan.TRIAL), activateTrial = true)
+    suspend fun subscribeMonthly() = updateFromResult(purchaseService.purchase(ProPlan.MONTHLY))
+    suspend fun subscribeYearly() = updateFromResult(purchaseService.purchase(ProPlan.YEARLY))
 
-    fun restorePurchase() {
+    suspend fun restorePurchase() {
         purchaseService.restore()
             .onSuccess {
                 if (it == null) {
