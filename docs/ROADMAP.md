@@ -44,7 +44,7 @@
 ## MVP-6：Pro 功能實作與變現
 - [x] 應用程式內購買 (In-App Purchase) 整合與測試
 - [x] Pro 預算系統 (Advanced Budgeting System) 開發
-- [ ] 進階報表與數據分析功能（iOS 完成；Android 已串接持久化帳目資料來源，持續補強）
+- [x] 進階報表與數據分析功能（iOS + Android 均完成；Android 已補齊持久化資料來源、區間分析與測試 DoD）
 - [x] 用戶訂閱狀態與權限管理
 - [x] Pro 功能用戶體驗優化與市場策略
 

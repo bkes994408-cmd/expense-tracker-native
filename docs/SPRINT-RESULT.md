@@ -1,37 +1,51 @@
-# Sprint Result - MVP-6（Pro 功能用戶體驗優化與市場策略）
+# Sprint Result - MVP-6（進階報表與數據分析功能收斂）
 
 日期：2026-03-13
 
-## 完成項目
+## 完成項目（DoD 對照）
 
-1. **情境化 Paywall UX**
-   - iOS / Android 新增 `PaywallExperience`，依觸發來源（預算上限、進階報表、PDF 匯出）動態呈現 paywall 文案。
-   - Paywall 由固定文案升級為場景化 headline + subheadline + 推薦方案提示。
+1. **Android 進階報表功能補強完成**
+   - `HomeScreen` 以 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料，交由 `AdvancedReportCalculator` 計算 1M/3M/6M/12M 區間平均收入、支出、淨額。
+   - `HomeReportController` 完整管理區間切換與 Free/Pro gating（Free 只能 1M，切到 3M+ 觸發 paywall）。
+   - UI 層清理不必要狀態讀取 hack，維持功能一致並降低 Compose warning。
 
-2. **Pro 轉換漏斗事件埋點**
-   - iOS 新增 analytics event：`pro_paywall_viewed`、`pro_paywall_cta_tapped`。
-   - Android 新增 analytics event：`PRO_PAYWALL_VIEWED`、`PRO_PAYWALL_CTA_TAPPED`。
-   - CTA（trial/monthly/yearly/restore）皆會附帶 `trigger` 與 `cta` metadata。
+2. **資料來源與邏輯正確性驗證**
+   - `FileExpenseStore`：驗證檔案不存在時回傳空清單、存在時正確讀取 persisted JSON。
+   - `ExpenseRepositoryImpl`：驗證 repository 直接回傳持久化資料來源內容。
+   - `AdvancedReportCalculator`：驗證 createdAt 區間過濾與 Pro/Free 月區間差異。
 
-3. **市場策略文件化**
-   - 新增 `docs/PRO_UX_MARKET_STRATEGY.md`，定義推薦方案策略、A/B 測試與 KPI。
+3. **測試補強與回歸**
+   - 新增 `HomeReportControllerTest`，覆蓋：
+     - Free 由 1M 切換時必定觸發 `advanced_report_3m` paywall。
+     - Pro 可完整循環 1M→3M→6M→12M→1M。
+   - 既有整合測試 `HomeReportIntegrationTest` 持續覆蓋資料異動後報表更新與 gating 行為。
 
-## 測試結果
+4. **Roadmap 與文件證據更新**
+   - `docs/ROADMAP.md`：MVP-6「進階報表與數據分析功能」已勾選完成。
+   - 本文件作為本輪 Android 補強與 DoD 達成證據。
 
-- ⚠️ Android 單元測試：`./gradlew testDebugUnitTest` 在目前環境失敗（JDK `25.0.2` 與現行 Gradle/Android 設定不相容，輸出為 `What went wrong: 25.0.2`）。
-- ✅ iOS 編譯驗證：`xcodebuild -project ios/ExpenseTracker.xcodeproj -scheme ExpenseTracker -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 成功，確認 `PaywallExperience.swift` 已納入 app target。
-- ⚠️ iOS 單元測試：已新增 `PaywallExperienceTests`，本輪未於 CLI 執行（需在 macOS Xcode 測試流程中補跑）。
+## 測試指令與結果
 
-## 變更檔案
+> 執行環境注意：需使用 Android Studio JBR（Java 21）與本機 Android SDK。
 
-- `ios/ExpenseTracker/Pro/PaywallExperience.swift`（新增）
-- `ios/ExpenseTracker/UI/HomeView.swift`
-- `ios/ExpenseTracker/Telemetry/Telemetry.swift`
-- `ios/ExpenseTrackerTests/Pro/PaywallExperienceTests.swift`（新增）
-- `android/app/src/main/java/com/bkes994408/expensetracker/pro/PaywallExperience.kt`（新增）
-- `android/app/src/main/java/com/bkes994408/expensetracker/ui/PaywallDialog.kt`
-- `android/app/src/main/java/com/bkes994408/expensetracker/telemetry/Telemetry.kt`
-- `android/app/src/test/java/com/bkes994408/expensetracker/pro/PaywallExperienceTest.kt`（新增）
-- `docs/PRO_UX_MARKET_STRATEGY.md`（新增）
-- `docs/ROADMAP.md`
-- `docs/SPRINT-RESULT.md`
+```bash
+cd android
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+./gradlew app:testDebugUnitTest \
+  --tests "*AdvancedReportCalculatorTest" \
+  --tests "*HomeReportIntegrationTest" \
+  --tests "*HomeReportControllerTest" \
+  --tests "*FileExpenseStoreTest" \
+  --tests "*ExpenseRepositoryImplTest" \
+  --tests "*ProEntitlementStoreTest"
+```
+
+結果：**BUILD SUCCESSFUL**。
+
+## 已知限制
+
+- 進階報表目前為平均值摘要（income/expense/net）；尚未加入更細維度圖表（例如 category-level trend chart）與匯出視覺化報表。
+- 單元測試執行對 JDK 版本敏感；若使用系統預設 Java 25，Gradle Kotlin DSL 會因版本解析問題失敗（需切換 Java 21）。

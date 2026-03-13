@@ -38,13 +38,15 @@ fun SettingsScreen(
     val categories by viewModel.categories.collectAsState()
     val nameInput by viewModel.nameInput.collectAsState()
     var entitlementVersion by remember { mutableStateOf(0) }
+    val isPro = remember(entitlementVersion) { proEntitlementStore.isPro }
+    val statusLabel = remember(entitlementVersion) { proEntitlementStore.statusLabel }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = "Pro tier: ${proEntitlementStore.statusLabel}")
-        if (proEntitlementStore.isPro) {
+        Text(text = "Pro tier: $statusLabel")
+        if (isPro) {
             Button(onClick = {
                 proEntitlementStore.resetToFreeForDebug()
                 entitlementVersion++
@@ -100,5 +102,4 @@ fun SettingsScreen(
         Text(text = "Version: 0.0.1")
     }
 
-    entitlementVersion
 }
