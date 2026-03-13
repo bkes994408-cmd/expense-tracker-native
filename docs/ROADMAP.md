@@ -46,7 +46,7 @@
 - [x] Pro 預算系統 (Advanced Budgeting System) 開發
 - [ ] 進階報表與數據分析功能（iOS 完成；Android 已串接持久化帳目資料來源，持續補強）
 - [x] 用戶訂閱狀態與權限管理
-- [ ] Pro 功能用戶體驗優化與市場策略
+- [x] Pro 功能用戶體驗優化與市場策略
 
 ## 驗證證據（本輪）
 - CSV 匯出：`HomeView` 新增「匯出CSV」按鈕，呼叫 `ExpenseListViewModel.exportCSV()`，並透過 `ShareLink` 匯出。
@@ -70,3 +70,4 @@
 - 測試：iOS `BudgetViewModelTests` 新增進階報表權限與 MoM 分析語義案例（無成長/下降時回傳 nil）；Android 新增 `AdvancedReportCalculatorTest`（createdAt 區間）、`HomeReportIntegrationTest`（區間切換、資料變化、Free/Pro gating）、`FileExpenseStoreTest`（檔案存在/不存在與讀取一致性）與 `ExpenseRepositoryImplTest`（repository 讀取持久化資料來源）。
 - Web/Desktop 規劃：新增 `docs/WEB_DESKTOP_PLAN.md`，定義 Web 與 Desktop 分階段範圍、技術路線（React + TypeScript + Tauri）、DoD、風險與緩解，以及 CI/測試策略，作為跨平台擴展實作藍圖。
 - 用戶訂閱狀態與權限管理：iOS/Android `ProEntitlementStore` 新增 `subscriptionState`（free/active/expired）、trial 到期時間持久化、`statusText/statusLabel` 與 `canAccess(feature)` 權限檢查；Home/Settings 畫面與 Pro 功能入口（報表、PDF、預算）改以 feature-level gating。另統一 restore 規則：restore 到 trial 不會重置 7 天試用、若缺少 trial 到期資訊則視為已過期，避免 iOS 延長試用與 Android trial 永久有效風險。iOS 同步 wrapper 改為純 async 呼叫，移除主執行緒 semaphore deadlock 風險。新增測試：iOS `ProEntitlementStoreTests.testTrialExpiryRevokesProAccess` / `testRestoreTrialDoesNotExtendExistingTrialWindow` / `testRestoreTrialWithoutStoredExpiryIsImmediatelyExpired`、Android `ProEntitlementStoreTest.trialExpires_changesStateToExpiredAndRevokesFeature` / `restoreTrial_preservesExistingTrialExpiry` / `restoreTrial_withoutStoredExpiry_isImmediatelyExpired`。
+- Pro 功能用戶體驗優化與市場策略：新增 iOS/Android `PaywallExperience`，依 trigger（`budget_limit` / `advanced_report_3m` / `report_pdf_export`）動態調整 paywall headline/subheadline/推薦方案；paywall 新增事件追蹤 `pro_paywall_viewed`、`pro_paywall_cta_tapped`；新增測試 iOS `PaywallExperienceTests`、Android `PaywallExperienceTest`；策略文件見 `docs/PRO_UX_MARKET_STRATEGY.md`。
