@@ -36,7 +36,7 @@ cd android
 
 ## CI
 - iOS build：`.github/workflows/ios.yml`（macos runner）
-- Android build：`.github/workflows/android.yml`（ubuntu runner）
+- Android build + unit tests：`.github/workflows/android.yml`（ubuntu runner，`assembleDebug` + `testDebugUnitTest`）
 
 ## Pro 預算功能規則（MVP-6）
 

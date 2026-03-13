@@ -30,3 +30,6 @@ jobs:
 
       - name: Gradle build
         run: ./gradlew :app:assembleDebug
+
+      - name: Android unit tests
+        run: ./gradlew :app:testDebugUnitTest

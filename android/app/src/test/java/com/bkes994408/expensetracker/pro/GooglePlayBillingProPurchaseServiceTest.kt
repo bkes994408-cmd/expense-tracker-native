@@ -1,12 +1,13 @@
 package com.bkes994408.expensetracker.pro
 
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GooglePlayBillingProPurchaseServiceTest {
     @Test
-    fun purchaseMonthly_mapsToProTierMonthly() {
+    fun purchaseMonthly_mapsToProTierMonthly() = runTest {
         val service = GooglePlayBillingProPurchaseService(
             billingClient = FakePlayBillingClient(
                 purchaseOutcome = PurchaseOutcome.Success(GooglePlayBillingProPurchaseService.MONTHLY_PRODUCT_ID),
@@ -20,7 +21,7 @@ class GooglePlayBillingProPurchaseServiceTest {
     }
 
     @Test
-    fun purchasePending_returnsPendingError() {
+    fun purchasePending_returnsPendingError() = runTest {
         val service = GooglePlayBillingProPurchaseService(
             billingClient = FakePlayBillingClient(purchaseOutcome = PurchaseOutcome.Pending),
         )
@@ -32,7 +33,7 @@ class GooglePlayBillingProPurchaseServiceTest {
     }
 
     @Test
-    fun restoreUnknownProduct_returnsFailure() {
+    fun restoreUnknownProduct_returnsFailure() = runTest {
         val service = GooglePlayBillingProPurchaseService(
             billingClient = FakePlayBillingClient(restoreProductId = "unknown.sku"),
         )
@@ -44,7 +45,7 @@ class GooglePlayBillingProPurchaseServiceTest {
     }
 
     @Test
-    fun restoreYearly_mapsToYearlyTier() {
+    fun restoreYearly_mapsToYearlyTier() = runTest {
         val service = GooglePlayBillingProPurchaseService(
             billingClient = FakePlayBillingClient(
                 restoreProductId = GooglePlayBillingProPurchaseService.YEARLY_PRODUCT_ID,

@@ -12,7 +12,6 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -24,31 +23,31 @@ enum class ProPlan {
 }
 
 interface ProPurchaseService {
-    fun purchase(plan: ProPlan): Result<ProTier>
-    fun restore(): Result<ProTier?>
+    suspend fun purchase(plan: ProPlan): Result<ProTier>
+    suspend fun restore(): Result<ProTier?>
 }
 
 class MockProPurchaseService(
     private val purchaseResult: Result<ProTier> = Result.success(ProTier.MONTHLY),
     private val restoreResult: Result<ProTier?> = Result.success(null),
 ) : ProPurchaseService {
-    override fun purchase(plan: ProPlan): Result<ProTier> = purchaseResult
-    override fun restore(): Result<ProTier?> = restoreResult
+    override suspend fun purchase(plan: ProPlan): Result<ProTier> = purchaseResult
+    override suspend fun restore(): Result<ProTier?> = restoreResult
 }
 
 class GooglePlayBillingProPurchaseService(
     private val billingClient: PlayBillingClient,
 ) : ProPurchaseService {
-    override fun purchase(plan: ProPlan): Result<ProTier> = runCatching {
-        when (val outcome = runBlocking { billingClient.purchase(plan) }) {
+    override suspend fun purchase(plan: ProPlan): Result<ProTier> = runCatching {
+        when (val outcome = billingClient.purchase(plan)) {
             is PurchaseOutcome.Success -> mapProductIdToTier(outcome.productId)
             PurchaseOutcome.Cancelled -> throw BillingError.UserCancelled
             PurchaseOutcome.Pending -> throw BillingError.Pending
         }
     }
 
-    override fun restore(): Result<ProTier?> = runCatching {
-        runBlocking { billingClient.restore() }?.let(::mapProductIdToTier)
+    override suspend fun restore(): Result<ProTier?> = runCatching {
+        billingClient.restore()?.let(::mapProductIdToTier)
     }
 
     fun mapProductIdToTier(productId: String): ProTier {
@@ -133,15 +132,18 @@ class GooglePlayBillingClient(
         }
 
         val productDetails = queryProductDetails(productId)
+        val offerToken = resolveOfferToken(productDetails)
         val detailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(productDetails)
+            .setOfferToken(offerToken)
             .build()
 
         return suspendCancellableCoroutine { continuation ->
             purchaseContinuation = { result ->
-                if (!continuation.isActive) return@purchaseContinuation
-                result.onSuccess { continuation.resume(it) }
-                    .onFailure { continuation.resumeWithException(it) }
+                if (continuation.isActive) {
+                    result.onSuccess { continuation.resume(it) }
+                        .onFailure { continuation.resumeWithException(it) }
+                }
             }
 
             val launchResult = client.launchBillingFlow(
@@ -161,13 +163,8 @@ class GooglePlayBillingClient(
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        val purchasesResult = client.queryPurchasesAsync(params)
-        val billingResult = purchasesResult.billingResult
-        if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-            throw BillingError.SdkError(billingResult.responseCode, billingResult.debugMessage)
-        }
-
-        val purchase = purchasesResult.purchasesList.firstOrNull() ?: return null
+        val purchases = queryPurchases(params)
+        val purchase = purchases.firstOrNull() ?: return null
         val productId = purchase.products.firstOrNull() ?: return null
         acknowledgeIfNeeded(purchase)
         return productId
@@ -192,6 +189,18 @@ class GooglePlayBillingClient(
                     }
                 }
             })
+        }
+    }
+
+    private suspend fun queryPurchases(params: QueryPurchasesParams): List<Purchase> {
+        return suspendCancellableCoroutine { continuation ->
+            client.queryPurchasesAsync(params) { billingResult, purchasesList ->
+                if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    continuation.resumeWithException(BillingError.SdkError(billingResult.responseCode, billingResult.debugMessage))
+                } else {
+                    continuation.resume(purchasesList)
+                }
+            }
         }
     }
 
@@ -221,6 +230,13 @@ class GooglePlayBillingClient(
                 }
             }
         }
+    }
+
+    private fun resolveOfferToken(productDetails: ProductDetails): String {
+        return productDetails.subscriptionOfferDetails
+            ?.firstOrNull()
+            ?.offerToken
+            ?: throw IllegalStateException("此訂閱商品未配置可購買方案（缺少 offerToken）：${productDetails.productId}")
     }
 
     private fun acknowledgeIfNeeded(purchase: Purchase) {

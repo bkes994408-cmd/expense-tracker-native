@@ -1,5 +1,6 @@
 package com.bkes994408.expensetracker.pro
 
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -8,7 +9,7 @@ import org.junit.Test
 
 class ProEntitlementStoreTest {
     @Test
-    fun subscribeMonthly_updatesTier() {
+    fun subscribeMonthly_updatesTier() = runTest {
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
             purchaseService = MockProPurchaseService(purchaseResult = Result.success(ProTier.MONTHLY)),
@@ -22,7 +23,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun trialExpires_changesStateToExpiredAndRevokesFeature() {
+    fun trialExpires_changesStateToExpiredAndRevokesFeature() = runTest {
         val now = 1_000_000L
         val storage = InMemoryEntitlementStorage()
         val store = ProEntitlementStore(
@@ -45,7 +46,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun purchaseFailure_keepsFreeAndStoresError() {
+    fun purchaseFailure_keepsFreeAndStoresError() = runTest {
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
             purchaseService = MockProPurchaseService(
@@ -60,7 +61,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun restorePurchase_updatesTierFromService() {
+    fun restorePurchase_updatesTierFromService() = runTest {
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
             purchaseService = MockProPurchaseService(restoreResult = Result.success(ProTier.YEARLY)),
@@ -74,7 +75,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun restoreNil_setsFreeAndClearsError() {
+    fun restoreNil_setsFreeAndClearsError() = runTest {
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
             purchaseService = MockProPurchaseService(
@@ -92,7 +93,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun restoreTrial_preservesExistingTrialExpiry() {
+    fun restoreTrial_preservesExistingTrialExpiry() = runTest {
         val now = 1_000_000L
         val storage = InMemoryEntitlementStorage()
 
@@ -115,7 +116,7 @@ class ProEntitlementStoreTest {
     }
 
     @Test
-    fun restoreTrial_withoutStoredExpiry_isImmediatelyExpired() {
+    fun restoreTrial_withoutStoredExpiry_isImmediatelyExpired() = runTest {
         val now = 1_000_000L
         val store = ProEntitlementStore(
             storage = InMemoryEntitlementStorage(),
