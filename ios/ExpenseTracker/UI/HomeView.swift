@@ -4,6 +4,7 @@ struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
     @StateObject private var budgetViewModel: BudgetViewModel
     @StateObject private var reportViewModel: AdvancedReportViewModel
+    @StateObject private var groupLedgerViewModel: GroupLedgerViewModel
     @ObservedObject var proEntitlementStore: ProEntitlementStore
     let onOpenSettings: () -> Void
 
@@ -13,12 +14,14 @@ struct HomeView: View {
     init(
         store: ExpenseStore,
         budgetStore: BudgetStore,
+        groupLedgerStore: GroupLedgerStore,
         proEntitlementStore: ProEntitlementStore,
         onOpenSettings: @escaping () -> Void
     ) {
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
+        _groupLedgerViewModel = StateObject(wrappedValue: GroupLedgerViewModel(store: groupLedgerStore))
         self.proEntitlementStore = proEntitlementStore
         self.onOpenSettings = onOpenSettings
     }
@@ -42,6 +45,82 @@ struct HomeView: View {
                                 .foregroundStyle(item.amount < 0 ? .red : .green)
                         }
                         .font(.caption)
+                    }
+                }
+            }
+
+            Section("家庭/群組帳本") {
+                if let errorMessage = groupLedgerViewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                HStack {
+                    TextField("新帳本名稱（例如：家庭）", text: $groupLedgerViewModel.newLedgerName)
+                    Button("建立") { groupLedgerViewModel.createLedger() }
+                }
+
+                if groupLedgerViewModel.ledgers.isEmpty {
+                    Text("尚未建立群組帳本")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Picker("帳本", selection: Binding(
+                        get: { groupLedgerViewModel.selectedLedgerId ?? 0 },
+                        set: {
+                            groupLedgerViewModel.selectedLedgerId = $0
+                            groupLedgerViewModel.refreshOverview()
+                        }
+                    )) {
+                        ForEach(groupLedgerViewModel.ledgers) { ledger in
+                            Text(ledger.name).tag(ledger.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    if let overview = groupLedgerViewModel.overview {
+                        HStack {
+                            TextField("新增成員", text: $groupLedgerViewModel.newMemberName)
+                            Button("加入") { groupLedgerViewModel.addMember() }
+                        }
+
+                        if overview.members.isEmpty {
+                            Text("至少加入 1 位成員才能共享記帳")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
+                            TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
+                                .keyboardType(.decimalPad)
+
+                            Picker("由誰付款", selection: Binding(
+                                get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
+                                set: { groupLedgerViewModel.selectedPayerId = $0 }
+                            )) {
+                                ForEach(overview.members) { member in
+                                    Text(member.name).tag(member.id)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            Button("新增共享支出（平均分攤）") {
+                                groupLedgerViewModel.addSharedExpense()
+                            }
+
+                            if overview.balances.isEmpty {
+                                Text("尚無分攤紀錄")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(overview.balances) { item in
+                                    HStack {
+                                        Text(item.member.name)
+                                        Spacer()
+                                        Text(item.net.formatted())
+                                            .foregroundStyle(item.net >= 0 ? .green : .red)
+                                    }
+                                    .font(.caption)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -275,6 +354,7 @@ struct HomeView: View {
         HomeView(
             store: PreviewExpenseStore(),
             budgetStore: PreviewBudgetStore(),
+            groupLedgerStore: PreviewGroupLedgerStore(),
             proEntitlementStore: ProEntitlementStore(),
             onOpenSettings: {}
         )
@@ -545,4 +625,41 @@ private final class PreviewBudgetStore: BudgetStore {
     func upsert(monthKey: String, categoryName: String, amount: Decimal, carryOverMode: CarryOverMode) throws {}
     func delete(id: Int64) throws {}
     func copy(from fromMonthKey: String, to toMonthKey: String) throws {}
+}
+
+private final class PreviewGroupLedgerStore: GroupLedgerStore {
+    func fetchLedgers() throws -> [GroupLedger] {
+        [GroupLedger(id: 1, name: "家庭帳本", createdAt: Date())]
+    }
+
+    func createLedger(name: String) throws -> GroupLedger {
+        GroupLedger(id: 1, name: name, createdAt: Date())
+    }
+
+    func fetchMembers(ledgerId: Int64) throws -> [LedgerMember] {
+        [
+            LedgerMember(id: 1, ledgerId: ledgerId, name: "Bruce", createdAt: Date()),
+            LedgerMember(id: 2, ledgerId: ledgerId, name: "Alex", createdAt: Date())
+        ]
+    }
+
+    func addMember(ledgerId: Int64, name: String) throws -> LedgerMember {
+        LedgerMember(id: 3, ledgerId: ledgerId, name: name, createdAt: Date())
+    }
+
+    func addSharedExpense(ledgerId: Int64, title: String, amount: Decimal, paidByMemberId: Int64, splits: [(memberId: Int64, amount: Decimal)]) throws {}
+
+    func fetchOverview(ledgerId: Int64) throws -> GroupLedgerOverview {
+        let ledger = GroupLedger(id: ledgerId, name: "家庭帳本", createdAt: Date())
+        let members = try fetchMembers(ledgerId: ledgerId)
+        return GroupLedgerOverview(
+            ledger: ledger,
+            members: members,
+            recentExpenses: [],
+            balances: [
+                LedgerBalance(member: members[0], paid: 1000, owed: 500),
+                LedgerBalance(member: members[1], paid: 500, owed: 1000)
+            ]
+        )
+    }
 }
