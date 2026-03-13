@@ -96,7 +96,6 @@ fun HomeScreen(
         )
     }
 
-    entitlementVersion
 }
 
 private fun openProFeature(
