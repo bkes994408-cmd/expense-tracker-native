@@ -67,6 +67,7 @@
 - Pro 預算系統（Advanced Budgeting）開發：iOS 新增 `BudgetPlan` / `BudgetProgress` / `BudgetStore` / `GRDBBudgetStore` 與 `BudgetViewModel`，支援每月分類預算設定、上月快速複製、80% 警示與超支狀態計算；`HomeView` 加入 Pro 預算 UI，Free 方案限制每月 2 個分類預算，超出時觸發 paywall。
 - 測試補強：新增 iOS `BudgetViewModelTests`（覆蓋預算進度計算與上月複製）、Android `BudgetProgressCalculatorTest`（覆蓋 warning/overspent 規則）與 `BudgetProgressCalculator` domain helper。
 - 進階報表與數據分析：iOS `HomeView` 新增 `AdvancedReportViewModel` 與 1/3/6/12 月趨勢摘要、MoM 分類變化分析（Top growth/decline）；Android `HomeScreen` 透過 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料（`FileExpenseStore` / `expenses.json`），再由 `AdvancedReportCalculator` 依 `createdAt` 進行區間過濾與平均值摘要，並沿用 paywall 觸發（Free 限 1M）。`FileExpenseStore` 在首次啟動且檔案不存在時會回傳空清單，不再寫入示範資料。
+- MVP-7（iOS 增量）：`HomeView` 進階報表新增 `Charts` 視覺化，支援「折線圖 / 長條圖」切換，並加入「資料篩選（全部 / 僅收入 / 僅支出 / 僅淨額）」自定義選項；沿用既有 1/3/6/12 月區間與 Free/Pro gating。Android 本輪未變更，維持上一版摘要報表 UI。
 - 測試：iOS `BudgetViewModelTests` 新增進階報表權限與 MoM 分析語義案例（無成長/下降時回傳 nil）；Android 新增 `AdvancedReportCalculatorTest`（createdAt 區間）、`HomeReportIntegrationTest`（區間切換、資料變化、Free/Pro gating）、`FileExpenseStoreTest`（檔案存在/不存在與讀取一致性）與 `ExpenseRepositoryImplTest`（repository 讀取持久化資料來源）。
 - Web/Desktop 規劃：新增 `docs/WEB_DESKTOP_PLAN.md`，定義 Web 與 Desktop 分階段範圍、技術路線（React + TypeScript + Tauri）、DoD、風險與緩解，以及 CI/測試策略，作為跨平台擴展實作藍圖。
 - 用戶訂閱狀態與權限管理：iOS/Android `ProEntitlementStore` 新增 `subscriptionState`（free/active/expired）、trial 到期時間持久化、`statusText/statusLabel` 與 `canAccess(feature)` 權限檢查；Home/Settings 畫面與 Pro 功能入口（報表、PDF、預算）改以 feature-level gating。另統一 restore 規則：restore 到 trial 不會重置 7 天試用、若缺少 trial 到期資訊則視為已過期，避免 iOS 延長試用與 Android trial 永久有效風險。iOS 同步 wrapper 改為純 async 呼叫，移除主執行緒 semaphore deadlock 風險。新增測試：iOS `ProEntitlementStoreTests.testTrialExpiryRevokesProAccess` / `testRestoreTrialDoesNotExtendExistingTrialWindow` / `testRestoreTrialWithoutStoredExpiryIsImmediatelyExpired`、Android `ProEntitlementStoreTest.trialExpires_changesStateToExpiredAndRevokesFeature` / `restoreTrial_preservesExistingTrialExpiry` / `restoreTrial_withoutStoredExpiry_isImmediatelyExpired`。
@@ -77,5 +78,5 @@
 ### Iteration-1 (MVP-7: 社交與數據共享)
 - [x] 家庭/群組帳本：支持多人共同記帳，實現家庭或小團體費用共享與分攤。
 - [ ] 帳目數據導入/導出增強：支持更多格式（如 OFX, QIF），或與銀行 API 介接，簡化數據錄入。
-- [ ] 進階視覺化報表與圖表：提供更多元的圖表類型（如圓餅圖、長條圖）與自定義報表選項，深入分析消費習慣。
+- [x] 進階視覺化報表與圖表（第一階段）：已提供多圖表類型切換（折線圖 / 長條圖）與自定義報表篩選（全部 / 僅收入 / 僅支出 / 僅淨額）；目前先上線 iOS，Android 後續補齊。
 - [ ] 預算管理智能建議：根據歷史消費數據，AI 自動推薦預算設定，並提供超支預警。
