@@ -100,6 +100,45 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.report?.topDecline)
     }
 
+    func testAdvancedReportMetricFilterKeepsOnlyIncomeSeries() {
+        let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -800)])
+        let defaults = UserDefaults(suiteName: "test.report.filter.income")!
+        defaults.removePersistentDomain(forName: "test.report.filter.income")
+        let entitlement = ProEntitlementStore(defaults: defaults)
+
+        let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
+        viewModel.selectedMetricFilter = .income
+        viewModel.refresh()
+
+        guard let report = viewModel.report else {
+            XCTFail("Expected report")
+            return
+        }
+
+        let series = viewModel.chartSeries(for: report)
+        XCTAssertFalse(series.isEmpty)
+        XCTAssertTrue(series.allSatisfy { $0.seriesName == "收入" })
+    }
+
+    func testAdvancedReportMetricFilterAllContainsThreeSeriesPerMonth() {
+        let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -800)])
+        let defaults = UserDefaults(suiteName: "test.report.filter.all")!
+        defaults.removePersistentDomain(forName: "test.report.filter.all")
+        let entitlement = ProEntitlementStore(defaults: defaults)
+
+        let viewModel = AdvancedReportViewModel(expenseStore: expenseStore, proEntitlementStore: entitlement)
+        viewModel.selectedMetricFilter = .all
+        viewModel.refresh()
+
+        guard let report = viewModel.report else {
+            XCTFail("Expected report")
+            return
+        }
+
+        let series = viewModel.chartSeries(for: report)
+        XCTAssertEqual(series.count, report.monthlyTrend.count * 3)
+    }
+
     func testCopyLastMonthBringsPlansToCurrentMonth() {
         let budgetStore = InMemoryBudgetStore()
         let expenseStore = MockExpenseStore(categoryTotals: [.init(id: "交通", name: "交通", amount: -200)])

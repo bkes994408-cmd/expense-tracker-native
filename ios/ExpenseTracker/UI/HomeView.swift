@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
@@ -218,6 +219,20 @@ struct HomeView: View {
                     }
                 }
 
+                Picker("圖表類型", selection: $reportViewModel.selectedChartType) {
+                    ForEach(ReportChartType.allCases) { type in
+                        Text(type.label).tag(type)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("資料篩選", selection: $reportViewModel.selectedMetricFilter) {
+                    ForEach(ReportMetricFilter.allCases) { filter in
+                        Text(filter.label).tag(filter)
+                    }
+                }
+                .pickerStyle(.menu)
+
                 if let report = reportViewModel.report {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("趨勢摘要")
@@ -227,10 +242,14 @@ struct HomeView: View {
                         LabeledContent("平均月淨額", value: report.averageNet.formatted())
                     }
 
-                    if report.monthlyTrend.isEmpty {
+                    let chartSeries = reportViewModel.chartSeries(for: report)
+                    if chartSeries.isEmpty {
                         Text("資料不足，請先新增更多帳目")
                             .foregroundStyle(.secondary)
                     } else {
+                        AdvancedReportTrendChart(series: chartSeries, chartType: reportViewModel.selectedChartType)
+                            .frame(height: 220)
+
                         ForEach(report.monthlyTrend) { point in
                             HStack {
                                 Text(point.monthLabel)
@@ -453,6 +472,82 @@ struct PaywallView: View {
     }
 }
 
+struct TrendChartSeriesPoint: Identifiable {
+    var id: String { "\(seriesName)-\(monthLabel)" }
+    let monthLabel: String
+    let seriesName: String
+    let value: Decimal
+}
+
+enum ReportChartType: String, CaseIterable, Identifiable {
+    case line
+    case bar
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .line: return "折線圖"
+        case .bar: return "長條圖"
+        }
+    }
+}
+
+enum ReportMetricFilter: String, CaseIterable, Identifiable {
+    case all
+    case income
+    case expense
+    case net
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .all: return "全部"
+        case .income: return "僅收入"
+        case .expense: return "僅支出"
+        case .net: return "僅淨額"
+        }
+    }
+}
+
+struct AdvancedReportTrendChart: View {
+    let series: [TrendChartSeriesPoint]
+    let chartType: ReportChartType
+
+    var body: some View {
+        Chart(series) { point in
+            switch chartType {
+            case .line:
+                LineMark(
+                    x: .value("月份", point.monthLabel),
+                    y: .value("金額", decimalValue(point.value))
+                )
+                .foregroundStyle(by: .value("序列", point.seriesName))
+                PointMark(
+                    x: .value("月份", point.monthLabel),
+                    y: .value("金額", decimalValue(point.value))
+                )
+                .foregroundStyle(by: .value("序列", point.seriesName))
+            case .bar:
+                BarMark(
+                    x: .value("月份", point.monthLabel),
+                    y: .value("金額", decimalValue(point.value))
+                )
+                .foregroundStyle(by: .value("序列", point.seriesName))
+                .position(by: .value("序列", point.seriesName))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+    }
+
+    private func decimalValue(_ value: Decimal) -> Double {
+        NSDecimalNumber(decimal: value).doubleValue
+    }
+}
+
 enum ReportRange: String, CaseIterable, Identifiable {
     case oneMonth
     case threeMonths
@@ -505,6 +600,8 @@ struct AdvancedReport {
 @MainActor
 final class AdvancedReportViewModel: ObservableObject {
     @Published var selectedRange: ReportRange = .oneMonth
+    @Published var selectedChartType: ReportChartType = .line
+    @Published var selectedMetricFilter: ReportMetricFilter = .all
     @Published private(set) var report: AdvancedReport?
 
     private let expenseStore: ExpenseStore
@@ -559,6 +656,25 @@ final class AdvancedReportViewModel: ObservableObject {
             topGrowth: topCategoryDelta(from: snapshots, highest: true),
             topDecline: topCategoryDelta(from: snapshots, highest: false)
         )
+    }
+
+    func chartSeries(for report: AdvancedReport) -> [TrendChartSeriesPoint] {
+        report.monthlyTrend.flatMap { point in
+            switch selectedMetricFilter {
+            case .all:
+                return [
+                    TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "收入", value: point.income),
+                    TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "支出", value: point.expense),
+                    TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "淨額", value: point.net)
+                ]
+            case .income:
+                return [TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "收入", value: point.income)]
+            case .expense:
+                return [TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "支出", value: point.expense)]
+            case .net:
+                return [TrendChartSeriesPoint(monthLabel: point.monthLabel, seriesName: "淨額", value: point.net)]
+            }
+        }
     }
 
     private func topCategoryDelta(from snapshots: [MonthlyOverview], highest: Bool) -> AdvancedReport.CategoryDelta? {

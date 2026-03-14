@@ -1,3 +1,27 @@
+# Sprint Result - MVP-7（進階視覺化報表與圖表）
+
+日期：2026-03-14
+
+## 完成項目（usable increment）
+
+1. **iOS 進階圖表視覺化（本輪 scope）**
+   - `HomeView` 進階報表區塊新增 `Charts` 圖表渲染。
+   - 新增「圖表類型」切換：`折線圖` / `長條圖`。
+   - 新增「資料篩選」選項：`全部` / `僅收入` / `僅支出` / `僅淨額`。
+   - 既有區間選擇（1M/3M/6M/12M）與 Free/Pro gating 保持不變。
+
+2. **測試補強**
+   - `BudgetViewModelTests` 新增：
+     - `testAdvancedReportMetricFilterKeepsOnlyIncomeSeries`
+     - `testAdvancedReportMetricFilterAllContainsThreeSeriesPerMonth`
+   - 驗證自定義篩選會產生正確的圖表 series。
+
+3. **跨平台 scope 說明**
+   - **本輪僅 iOS 落地**（UI 與視覺化邏輯）。
+   - Android 本輪未改動，維持 MVP-6 的摘要報表呈現。
+
+---
+
 # Sprint Result - MVP-6（進階報表與數據分析功能收斂）
 
 日期：2026-03-13
