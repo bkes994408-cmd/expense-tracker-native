@@ -89,28 +89,67 @@ struct HomeView: View {
                             Text("至少加入 1 位成員才能共享記帳")
                                 .foregroundStyle(.secondary)
                         } else {
-                            TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
-                            TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
-                                .keyboardType(.decimalPad)
+                            Group {
+                                TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
+                                TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
+                                    .keyboardType(.decimalPad)
 
-                            Picker("由誰付款", selection: Binding(
-                                get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
-                                set: { groupLedgerViewModel.selectedPayerId = $0 }
-                            )) {
-                                ForEach(overview.members) { member in
-                                    Text(member.name).tag(member.id)
+                                Picker("由誰付款", selection: Binding(
+                                    get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
+                                    set: { groupLedgerViewModel.selectedPayerId = $0 }
+                                )) {
+                                    ForEach(overview.members) { member in
+                                        Text(member.name).tag(member.id)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                Picker("分攤規則", selection: $groupLedgerViewModel.splitRuleMode) {
+                                    ForEach(SplitRuleMode.allCases) { mode in
+                                        Text(mode.label).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .onChange(of: groupLedgerViewModel.splitRuleMode) { mode in
+                                    groupLedgerViewModel.setSplitRuleMode(mode)
+                                }
+
+                                if groupLedgerViewModel.splitRuleMode != .equal {
+                                    ForEach(overview.members) { member in
+                                        TextField(
+                                            groupLedgerViewModel.splitRuleMode == .proportion ? "\(member.name) 比例" : "\(member.name) 分攤金額",
+                                            text: Binding(
+                                                get: { groupLedgerViewModel.splitRuleInputs[member.id] ?? "" },
+                                                set: { groupLedgerViewModel.splitRuleInputs[member.id] = $0 }
+                                            )
+                                        )
+                                        .keyboardType(.decimalPad)
+                                    }
+                                }
+
+                                Button("新增共享支出") {
+                                    groupLedgerViewModel.addSharedExpense()
                                 }
                             }
-                            .pickerStyle(.menu)
 
-                            Button("新增共享支出（平均分攤）") {
-                                groupLedgerViewModel.addSharedExpense()
+                            Group {
+                                TextField("本月群組預算", text: $groupLedgerViewModel.monthlyBudgetAmount)
+                                    .keyboardType(.decimalPad)
+                                Button("儲存群組月預算") {
+                                    groupLedgerViewModel.saveMonthlyBudget()
+                                }
+                                .font(.footnote)
+
+                                LabeledContent("本月支出", value: overview.budgetSnapshot.spent.formatted())
+                                LabeledContent("預算剩餘", value: overview.budgetSnapshot.remaining.formatted())
                             }
 
                             if overview.balances.isEmpty {
                                 Text("尚無分攤紀錄")
                                     .foregroundStyle(.secondary)
                             } else {
+                                Text("成員淨額")
+                                    .font(.subheadline.bold())
                                 ForEach(overview.balances) { item in
                                     HStack {
                                         Text(item.member.name)
@@ -120,6 +159,28 @@ struct HomeView: View {
                                     }
                                     .font(.caption)
                                 }
+
+                                Text("建議結算（最少轉帳）")
+                                    .font(.subheadline.bold())
+                                if overview.settlements.isEmpty {
+                                    Text("目前無需互轉")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    ForEach(overview.settlements) { transfer in
+                                        Text("\(transfer.fromMember.name) → \(transfer.toMember.name)：\(transfer.amount.formatted())")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("群組月報")
+                                    .font(.subheadline.bold())
+                                LabeledContent("本月筆數", value: "\(overview.monthlyReport.expenseCount)")
+                                LabeledContent("本月總支出", value: overview.monthlyReport.totalExpense.formatted())
+                                LabeledContent("平均每筆", value: overview.monthlyReport.averageExpense.formatted())
+                                LabeledContent("最大單筆", value: overview.monthlyReport.topExpenseTitle ?? "暫無")
                             }
                         }
                     }
@@ -861,17 +922,26 @@ private final class PreviewGroupLedgerStore: GroupLedgerStore {
 
     func addSharedExpense(ledgerId: Int64, title: String, amount: Decimal, paidByMemberId: Int64, splits: [(memberId: Int64, amount: Decimal)]) throws {}
 
-    func fetchOverview(ledgerId: Int64) throws -> GroupLedgerOverview {
+    func upsertMonthlyBudget(ledgerId: Int64, month: Date, amount: Decimal) throws {}
+
+    func fetchOverview(ledgerId: Int64, month: Date) throws -> GroupLedgerOverview {
         let ledger = GroupLedger(id: ledgerId, name: "家庭帳本", createdAt: Date())
         let members = try fetchMembers(ledgerId: ledgerId)
+        let balances = [
+            LedgerBalance(member: members[0], paid: 1000, owed: 500),
+            LedgerBalance(member: members[1], paid: 500, owed: 1000)
+        ]
         return GroupLedgerOverview(
             ledger: ledger,
             members: members,
             recentExpenses: [],
-            balances: [
-                LedgerBalance(member: members[0], paid: 1000, owed: 500),
-                LedgerBalance(member: members[1], paid: 500, owed: 1000)
-            ]
+            balances: balances,
+            settlements: [SettlementTransfer(fromMember: members[1], toMember: members[0], amount: 500)],
+            budgetSnapshot: GroupBudgetSnapshot(monthStart: month, budget: 6000, spent: 1500),
+            monthlyReport: GroupMonthlyReport(monthStart: month, expenseCount: 4, totalExpense: 1500, averageExpense: 375, topExpenseTitle: "採買", payerBreakdown: [
+                MemberAmountBreakdown(member: members[0], amount: 1000),
+                MemberAmountBreakdown(member: members[1], amount: 500)
+            ])
         )
     }
 }

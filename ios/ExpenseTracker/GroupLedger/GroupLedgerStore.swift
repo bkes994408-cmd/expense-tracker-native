@@ -15,5 +15,6 @@ protocol GroupLedgerStore {
         splits: [(memberId: Int64, amount: Decimal)]
     ) throws
 
-    func fetchOverview(ledgerId: Int64) throws -> GroupLedgerOverview
+    func upsertMonthlyBudget(ledgerId: Int64, month: Date, amount: Decimal) throws
+    func fetchOverview(ledgerId: Int64, month: Date) throws -> GroupLedgerOverview
 }
