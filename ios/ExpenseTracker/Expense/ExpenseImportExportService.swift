@@ -38,6 +38,88 @@ enum ExpenseImportExportService {
         let categoryId: Int64?
     }
 
+    enum ImportFormat: String {
+        case csv
+        case ofx
+        case qif
+        case json
+    }
+
+    struct CSVColumnMapping: Equatable {
+        enum Field: String, CaseIterable, Identifiable {
+            case title
+            case amount
+            case createdAt
+            case categoryId
+
+            var id: String { rawValue }
+            var label: String {
+                switch self {
+                case .title: return "標題"
+                case .amount: return "金額"
+                case .createdAt: return "日期"
+                case .categoryId: return "分類 ID"
+                }
+            }
+        }
+
+        var titleIndex: Int?
+        var amountIndex: Int?
+        var createdAtIndex: Int?
+        var categoryIdIndex: Int?
+
+        subscript(field: Field) -> Int? {
+            get {
+                switch field {
+                case .title: return titleIndex
+                case .amount: return amountIndex
+                case .createdAt: return createdAtIndex
+                case .categoryId: return categoryIdIndex
+                }
+            }
+            set {
+                switch field {
+                case .title: titleIndex = newValue
+                case .amount: amountIndex = newValue
+                case .createdAt: createdAtIndex = newValue
+                case .categoryId: categoryIdIndex = newValue
+                }
+            }
+        }
+
+        static let empty = CSVColumnMapping(titleIndex: nil, amountIndex: nil, createdAtIndex: nil, categoryIdIndex: nil)
+    }
+
+    struct DuplicateMergeSuggestion: Identifiable {
+        enum MatchType: String {
+            case exact
+            case near
+        }
+
+        enum MergeAction: String, CaseIterable, Identifiable {
+            case keepExisting
+            case replaceExisting
+            case importAsNew
+
+            var id: String { rawValue }
+
+            var label: String {
+                switch self {
+                case .keepExisting: return "保留既有"
+                case .replaceExisting: return "以匯入資料覆蓋"
+                case .importAsNew: return "仍匯入新交易"
+                }
+            }
+        }
+
+        let id: String
+        let matchType: MatchType
+        let similarityScore: Decimal
+        let incoming: ImportRow
+        let existing: Expense
+        var recommendedAction: MergeAction
+    }
+
     static func makeEnhancedCSV(expenses: [Expense]) -> String {
         var lines = ["id,title,amount,createdAt,categoryId"]
         let formatter = ISO8601DateFormatter()
@@ -141,23 +223,68 @@ enum ExpenseImportExportService {
         return url
     }
 
-    static func parseCSV(_ content: String) -> [ImportRow] {
+    static func detectImportFormat(fileName: String) -> ImportFormat {
+        let ext = URL(fileURLWithPath: fileName).pathExtension.lowercased()
+        switch ext {
+        case "csv": return .csv
+        case "ofx": return .ofx
+        case "qif": return .qif
+        case "json": return .json
+        default: return .csv
+        }
+    }
+
+    static func parseCSVPreview(_ content: String) -> (headers: [String], rows: [[String]]) {
         let lines = content
             .split(whereSeparator: \.isNewline)
             .map(String.init)
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
 
-        guard !lines.isEmpty else { return [] }
-        let rows = lines.first?.lowercased().contains("title") == true ? Array(lines.dropFirst()) : lines
+        guard !lines.isEmpty else { return ([], []) }
 
-        return rows.compactMap { line in
-            let columns = parseCSVLine(line)
-            guard columns.count >= 4 else { return nil }
+        let allRows = lines.map(parseCSVLine)
+        let hasHeader = looksLikeHeader(allRows[0])
+        let headers = hasHeader
+            ? allRows[0]
+            : allRows[0].indices.map { "欄位\($0 + 1)" }
+        let rows = hasHeader ? Array(allRows.dropFirst()) : allRows
+        return (headers, rows)
+    }
+
+    static func inferCSVMapping(headers: [String]) -> CSVColumnMapping {
+        func find(_ keywords: [String]) -> Int? {
+            headers.firstIndex { header in
+                let normalized = header.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                return keywords.contains { normalized.contains($0) }
+            }
+        }
+
+        return CSVColumnMapping(
+            titleIndex: find(["title", "name", "memo", "description", "desc", "標題"]),
+            amountIndex: find(["amount", "amt", "money", "金額"]),
+            createdAtIndex: find(["date", "created", "time", "posted", "日期"]),
+            categoryIdIndex: find(["category", "分類"])
+        )
+    }
+
+    static func parseCSV(_ content: String) -> [ImportRow] {
+        let preview = parseCSVPreview(content)
+        let mapping = inferCSVMapping(headers: preview.headers)
+        return mapCSVRows(preview.rows, mapping: mapping)
+    }
+
+    static func mapCSVRows(_ rows: [[String]], mapping: CSVColumnMapping) -> [ImportRow] {
+        rows.compactMap { columns in
+            guard let titleIndex = mapping.titleIndex,
+                  let amountIndex = mapping.amountIndex,
+                  let dateIndex = mapping.createdAtIndex
+            else { return nil }
+
             return ImportRow(
-                title: columns[1],
-                amount: Decimal(string: columns[2]) ?? 0,
-                createdAt: parseDate(columns[3]),
-                categoryId: Int64(columns[safe: 4] ?? "")
+                title: columns[safe: titleIndex] ?? "",
+                amount: Decimal(string: columns[safe: amountIndex] ?? "") ?? 0,
+                createdAt: parseDate(columns[safe: dateIndex] ?? ""),
+                categoryId: mapping.categoryIdIndex.flatMap { Int64(columns[safe: $0] ?? "") }
             )
         }
     }
@@ -187,6 +314,34 @@ enum ExpenseImportExportService {
         }
     }
 
+    static func parseQIF(_ content: String) -> [ImportRow] {
+        let blocks = content
+            .components(separatedBy: "^")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        return blocks.compactMap { block in
+            var title = ""
+            var amount: Decimal = .zero
+            var createdAt = Date()
+
+            for line in block.split(whereSeparator: \.isNewline).map(String.init) {
+                guard let type = line.first else { continue }
+                let value = String(line.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
+
+                switch type {
+                case "D": createdAt = parseQIFDate(value)
+                case "T": amount = Decimal(string: value.replacingOccurrences(of: ",", with: "")) ?? .zero
+                case "P", "M": if title.isEmpty { title = value }
+                default: break
+                }
+            }
+
+            guard !title.isEmpty, amount != .zero else { return nil }
+            return ImportRow(title: title, amount: amount, createdAt: createdAt, categoryId: nil)
+        }
+    }
+
     static func parseJSON(_ content: String) -> [ImportRow] {
         guard let data = content.data(using: .utf8),
               let items = try? JSONDecoder().decode([JSONExpense].self, from: data) else {
@@ -203,11 +358,55 @@ enum ExpenseImportExportService {
         }
     }
 
-    static func importRows(_ rows: [ImportRow], to store: ExpenseStore) throws -> ImportResult {
+    static func parseImportContent(_ content: String, format: ImportFormat, csvMapping: CSVColumnMapping? = nil) -> [ImportRow] {
+        switch format {
+        case .csv:
+            if let csvMapping {
+                return mapCSVRows(parseCSVPreview(content).rows, mapping: csvMapping)
+            }
+            return parseCSV(content)
+        case .ofx: return parseOFX(content)
+        case .qif: return parseQIF(content)
+        case .json: return parseJSON(content)
+        }
+    }
+
+    static func duplicateSuggestions(rows: [ImportRow], existing: [Expense]) -> [DuplicateMergeSuggestion] {
+        var suggestions: [DuplicateMergeSuggestion] = []
+
+        for row in rows {
+            for expense in existing {
+                let score = duplicateScore(row: row, expense: expense)
+                guard score >= Decimal(string: "0.75")! else { continue }
+                let matchType: DuplicateMergeSuggestion.MatchType = score >= Decimal(string: "0.95")! ? .exact : .near
+                let recommended: DuplicateMergeSuggestion.MergeAction = matchType == .exact ? .keepExisting : .replaceExisting
+                suggestions.append(
+                    DuplicateMergeSuggestion(
+                        id: "\(expense.id)-\(duplicateKey(for: row))",
+                        matchType: matchType,
+                        similarityScore: score,
+                        incoming: row,
+                        existing: expense,
+                        recommendedAction: recommended
+                    )
+                )
+                break
+            }
+        }
+
+        return suggestions
+    }
+
+    static func importRows(
+        _ rows: [ImportRow],
+        to store: ExpenseStore,
+        mergeSuggestions: [DuplicateMergeSuggestion] = []
+    ) throws -> ImportResult {
         var imported = 0
         var skipped = 0
         var duplicates = 0
 
+        let suggestionMap = Dictionary(uniqueKeysWithValues: mergeSuggestions.map { (duplicateKey(for: $0.incoming), $0) })
         let existing = (try? store.fetchAll(searchText: nil)) ?? []
         var seenKeys = Set(existing.map(duplicateKey(for:)))
 
@@ -220,7 +419,15 @@ enum ExpenseImportExportService {
 
             let key = duplicateKey(for: row)
             if seenKeys.contains(key) {
-                duplicates += 1
+                if let suggestion = suggestionMap[key], suggestion.recommendedAction == .replaceExisting {
+                    try store.update(id: suggestion.existing.id, title: title, amount: row.amount, categoryId: row.categoryId)
+                    imported += 1
+                } else if suggestionMap[key]?.recommendedAction == .importAsNew {
+                    try store.add(title: title, amount: row.amount, categoryId: row.categoryId, createdAt: row.createdAt)
+                    imported += 1
+                } else {
+                    duplicates += 1
+                }
                 continue
             }
 
@@ -354,6 +561,44 @@ enum ExpenseImportExportService {
         }
         fields.append(current)
         return fields
+    }
+
+    private static func looksLikeHeader(_ row: [String]) -> Bool {
+        let normalized = row.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        let keywords = ["title", "name", "amount", "date", "category", "標題", "金額", "日期", "分類"]
+        return normalized.contains { value in
+            keywords.contains { value.contains($0) }
+        }
+    }
+
+    private static func parseQIFDate(_ raw: String) -> Date {
+        let candidates = ["MM/dd'yy", "MM/dd/yyyy", "yyyy-MM-dd", "dd/MM/yyyy"]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+
+        for format in candidates {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: raw) { return date }
+        }
+
+        return Date()
+    }
+
+    private static func duplicateScore(row: ImportRow, expense: Expense) -> Decimal {
+        let amountDistance = absDecimal(row.amount - expense.amount)
+        let amountScore: Decimal = amountDistance <= Decimal(string: "0.01")! ? 1 : (amountDistance <= 1 ? Decimal(string: "0.8")! : 0)
+
+        let titleScore: Decimal = normalizeTitle(row.title) == normalizeTitle(expense.title) ? 1 : (normalizeTitle(row.title).contains(normalizeTitle(expense.title)) || normalizeTitle(expense.title).contains(normalizeTitle(row.title)) ? Decimal(string: "0.75")! : 0)
+
+        let dayDiff = abs(Calendar.current.dateComponents([.day], from: row.createdAt, to: expense.createdAt).day ?? 999)
+        let dateScore: Decimal = dayDiff == 0 ? 1 : (dayDiff <= 1 ? Decimal(string: "0.8")! : 0)
+
+        return roundToCurrency((amountScore * Decimal(string: "0.5")!) + (titleScore * Decimal(string: "0.3")!) + (dateScore * Decimal(string: "0.2")!))
+    }
+
+    private static func absDecimal(_ value: Decimal) -> Decimal {
+        value < 0 ? -value : value
     }
 
     private static func duplicateKey(for row: ImportRow) -> String {
