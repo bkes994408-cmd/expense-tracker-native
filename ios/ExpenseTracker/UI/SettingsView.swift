@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @StateObject private var categoryViewModel: CategoryManagementViewModel
@@ -9,6 +10,16 @@ struct SettingsView: View {
 
     @State private var exportedCSVURL: URL?
     @State private var exportStatusMessage: String?
+    @State private var importStatusMessage: String?
+    @State private var isFileImporterPresented = false
+    @State private var isImportWizardPresented = false
+    @State private var importFileName = ""
+    @State private var importFileContent = ""
+    @State private var importFormat: ExpenseImportExportService.ImportFormat = .csv
+    @State private var csvHeaders: [String] = []
+    @State private var csvRows: [[String]] = []
+    @State private var csvMapping: ExpenseImportExportService.CSVColumnMapping = .empty
+    @State private var mergeSuggestions: [ExpenseImportExportService.DuplicateMergeSuggestion] = []
 
     init(
         categoryStore: CategoryStore,
@@ -106,9 +117,13 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Export") {
+            Section("Export / Import") {
                 Button("匯出 CSV") {
                     exportCSV()
+                }
+
+                Button("匯入 CSV / OFX / QIF") {
+                    isFileImporterPresented = true
                 }
 
                 if let exportedCSVURL {
@@ -125,6 +140,12 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                if let importStatusMessage {
+                    Text(importStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("About") {
@@ -133,6 +154,132 @@ struct SettingsView: View {
         }
         .toolbar { EditButton() }
         .navigationTitle("Settings")
+        .fileImporter(
+            isPresented: $isFileImporterPresented,
+            allowedContentTypes: [.commaSeparatedText, .plainText, .json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
+        }
+        .sheet(isPresented: $isImportWizardPresented) {
+            importWizardView
+        }
+    }
+
+    @ViewBuilder
+    private var importWizardView: some View {
+        NavigationStack {
+            List {
+                Section("檔案") {
+                    LabeledContent("檔名", value: importFileName)
+                    LabeledContent("格式", value: importFormat.rawValue.uppercased())
+                }
+
+                if importFormat == .csv {
+                    Section("欄位映射") {
+                        mappingPicker(title: "標題", field: .title)
+                        mappingPicker(title: "金額", field: .amount)
+                        mappingPicker(title: "日期", field: .createdAt)
+                        mappingPicker(title: "分類 ID（可選）", field: .categoryId)
+                    }
+
+                    Section("資料預覽（前 5 筆）") {
+                        ForEach(Array(csvRows.prefix(5).enumerated()), id: \.offset) { _, row in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(row[safe: csvMapping.titleIndex ?? -1] ?? "(無標題)")
+                                Text("金額: \(row[safe: csvMapping.amountIndex ?? -1] ?? "-") · 日期: \(row[safe: csvMapping.createdAtIndex ?? -1] ?? "-")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                if !mergeSuggestions.isEmpty {
+                    Section("重複交易合併建議") {
+                        ForEach($mergeSuggestions) { $suggestion in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("\(suggestion.incoming.title) ↔︎ \(suggestion.existing.title)")
+                                Text("相似度 \(NSDecimalNumber(decimal: suggestion.similarityScore).stringValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Picker("處理方式", selection: $suggestion.recommendedAction) {
+                                    ForEach(ExpenseImportExportService.DuplicateMergeSuggestion.MergeAction.allCases) { action in
+                                        Text(action.label).tag(action)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("匯入精靈")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { isImportWizardPresented = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("開始匯入") { executeImport() }
+                }
+            }
+        }
+    }
+
+    private func mappingPicker(title: String, field: ExpenseImportExportService.CSVColumnMapping.Field) -> some View {
+        Picker(title, selection: Binding(
+            get: { csvMapping[field] ?? -1 },
+            set: { csvMapping[field] = $0 < 0 ? nil : $0 }
+        )) {
+            Text("未指定").tag(-1)
+            ForEach(Array(csvHeaders.enumerated()), id: \.offset) { index, header in
+                Text(header).tag(index)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        do {
+            let url = try result.get().first
+            guard let url else { return }
+            let access = url.startAccessingSecurityScopedResource()
+            defer {
+                if access { url.stopAccessingSecurityScopedResource() }
+            }
+
+            let content = try String(contentsOf: url, encoding: .utf8)
+            importFileName = url.lastPathComponent
+            importFileContent = content
+            importFormat = ExpenseImportExportService.detectImportFormat(fileName: url.lastPathComponent)
+
+            if importFormat == .csv {
+                let preview = ExpenseImportExportService.parseCSVPreview(content)
+                csvHeaders = preview.headers
+                csvRows = preview.rows
+                csvMapping = ExpenseImportExportService.inferCSVMapping(headers: preview.headers)
+            }
+
+            let rows = ExpenseImportExportService.parseImportContent(content, format: importFormat, csvMapping: csvMapping)
+            let existing = (try? expenseStore.fetchAll(searchText: nil)) ?? []
+            mergeSuggestions = ExpenseImportExportService.duplicateSuggestions(rows: rows, existing: existing)
+            isImportWizardPresented = true
+        } catch {
+            importStatusMessage = "匯入讀檔失敗：\(error.localizedDescription)"
+            Telemetry.shared.record(error: error, metadata: ["operation": "import_read_file"])
+        }
+    }
+
+    private func executeImport() {
+        do {
+            let rows = ExpenseImportExportService.parseImportContent(importFileContent, format: importFormat, csvMapping: csvMapping)
+            let result = try ExpenseImportExportService.importRows(rows, to: expenseStore, mergeSuggestions: mergeSuggestions)
+            importStatusMessage = "匯入完成：新增 \(result.importedCount) 筆，略過 \(result.skippedCount) 筆，重複 \(result.duplicateCount) 筆"
+            isImportWizardPresented = false
+        } catch {
+            importStatusMessage = "匯入失敗：\(error.localizedDescription)"
+            Telemetry.shared.record(error: error, metadata: ["operation": "import_execute"])
+        }
     }
 
     private func exportCSV() {
@@ -158,6 +305,13 @@ struct SettingsView: View {
             Telemetry.shared.track(.csvExportFailed)
             Telemetry.shared.record(error: error, metadata: ["operation": "export_csv"])
         }
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        guard indices.contains(index) else { return nil }
+        return self[index]
     }
 }
 

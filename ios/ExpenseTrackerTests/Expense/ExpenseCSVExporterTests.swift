@@ -50,6 +50,45 @@ final class ExpenseCSVExporterTests: XCTestCase {
         XCTAssertEqual(rows[1].amount, Decimal(string: "888"))
     }
 
+    func testParseQIFReturnsImportRows() {
+        let content = """
+        !Type:Bank
+        D03/15'26
+        T-120.5
+        PMorning Coffee
+        ^
+        D03/16'26
+        T30000
+        PSalary
+        ^
+        """
+
+        let rows = ExpenseImportExportService.parseQIF(content)
+
+        XCTAssertEqual(rows.count, 2)
+        XCTAssertEqual(rows[0].title, "Morning Coffee")
+        XCTAssertEqual(rows[0].amount, Decimal(string: "-120.5"))
+        XCTAssertEqual(rows[1].title, "Salary")
+    }
+
+    func testCSVPreviewMappingAndRowConversion() {
+        let csv = """
+        txn_date,desc,amt
+        2026-03-01,Coffee,-90
+        2026-03-02,Salary,30000
+        """
+
+        let preview = ExpenseImportExportService.parseCSVPreview(csv)
+        let mapping = ExpenseImportExportService.inferCSVMapping(headers: preview.headers)
+        let rows = ExpenseImportExportService.mapCSVRows(preview.rows, mapping: mapping)
+
+        XCTAssertEqual(preview.headers, ["txn_date", "desc", "amt"])
+        XCTAssertEqual(rows.count, 2)
+        guard rows.count == 2 else { return }
+        XCTAssertEqual(rows[0].title, "Coffee")
+        XCTAssertEqual(rows[0].amount, Decimal(string: "-90"))
+    }
+
     func testImportRowsSkipsDuplicatesFromExistingAndBatch() throws {
         let sameDay = Date(timeIntervalSince1970: 1_700_000_000)
         let store = FakeImportExpenseStore(seed: [
@@ -69,6 +108,18 @@ final class ExpenseCSVExporterTests: XCTestCase {
         XCTAssertEqual(result.skippedCount, 0)
         XCTAssertEqual(store.items.count, 2)
     }
+    func testDuplicateSuggestionsDetectExactMatch() {
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let rows = [ExpenseImportExportService.ImportRow(title: "Coffee", amount: -99.5, createdAt: date, categoryId: nil)]
+        let existing = [Expense(id: 1, title: "coffee", amount: -99.5, createdAt: date, categoryId: nil)]
+
+        let suggestions = ExpenseImportExportService.duplicateSuggestions(rows: rows, existing: existing)
+
+        XCTAssertEqual(suggestions.count, 1)
+        XCTAssertEqual(suggestions[0].matchType, .exact)
+        XCTAssertEqual(suggestions[0].recommendedAction, .keepExisting)
+    }
+
     func testMakeCSVContainsHeaderAndEscapedRows() {
         let expenses = [
             Expense(id: 1, title: "Lunch, team", amount: 120.5, createdAt: Date(timeIntervalSince1970: 1_700_000_000), categoryId: nil),
