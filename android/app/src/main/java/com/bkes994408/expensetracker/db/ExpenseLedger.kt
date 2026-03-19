@@ -118,6 +118,10 @@ class ExpenseLedger {
         return array.toString(2)
     }
 
+    fun replaceAll(entries: List<Entry>) {
+        _entries.value = entries
+    }
+
     fun currentMonthExpenseTotal(now: LocalDate = LocalDate.now()): BigDecimal {
         val zone = ZoneId.systemDefault()
         return _entries.value

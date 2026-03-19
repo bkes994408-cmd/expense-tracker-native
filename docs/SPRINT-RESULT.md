@@ -1,3 +1,27 @@
+# Sprint Result - Iteration-6（成長與變現優化）
+
+日期：2026-03-20
+
+## 完成項目（usable increment）
+
+1. **年度財務回顧（Wrapped）**
+   - iOS 新增 `AnnualWrappedReportBuilder`；Android 新增 `AnnualWrappedCalculator`。
+   - 產出年度收入/支出/淨額、儲蓄率、支出最高分類、最佳/艱困月份。
+
+2. **歷史快照備份與還原（Snapshot）**
+   - iOS 新增 `ExpenseSnapshotService`，支援 JSON 匯出與還原。
+   - Android 新增 `ExpenseSnapshotManager`，可將 `ExpenseLedger` 完整快照並一鍵還原。
+
+3. **訂閱挽留與續訂策略（Retention Strategy）**
+   - iOS 新增 `RetentionStrategy`（trial 最後 48h / trial 到期 winback / monthly 轉年付）。
+   - Android 新增 `retentionStrategy()` 擴充，輸出 headline/cta/offer code。
+
+4. **測試**
+   - iOS：`Iteration6FeatureTests`（Wrapped、Snapshot round-trip、Retention offer）。
+   - Android：`Iteration6FeatureTest`（Wrapped、Snapshot restore、Retention offer）。
+
+---
+
 # Sprint Result - MVP-7（進階視覺化報表與圖表）
 
 日期：2026-03-14

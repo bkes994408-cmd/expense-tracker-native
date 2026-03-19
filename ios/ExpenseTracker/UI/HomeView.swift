@@ -11,6 +11,11 @@ struct HomeView: View {
 
     @State private var paywallTrigger: String = ""
     @State private var isPaywallPresented = false
+    @State private var annualWrapped: AnnualWrappedReport?
+    @State private var snapshotPayload: String = ""
+    @State private var snapshotMessage: String?
+
+    private let expenseStore: ExpenseStore
 
     init(
         store: ExpenseStore,
@@ -19,6 +24,7 @@ struct HomeView: View {
         proEntitlementStore: ProEntitlementStore,
         onOpenSettings: @escaping () -> Void
     ) {
+        self.expenseStore = store
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
@@ -364,6 +370,70 @@ struct HomeView: View {
 
                 Button("匯出 PDF 報表（示範）") {
                     openProFeature(trigger: "report_pdf_export")
+                }
+            }
+
+            Section("年度財務回顧（Wrapped）") {
+                Button("產生今年 Wrapped") {
+                    let year = Calendar.current.component(.year, from: Date())
+                    annualWrapped = AnnualWrappedReportBuilder(store: expenseStore).build(year: year)
+                }
+
+                if let annualWrapped {
+                    LabeledContent("年度淨額", value: annualWrapped.totalNet.formatted())
+                    LabeledContent("儲蓄率", value: "\(annualWrapped.savingRate.formatted())%")
+                    LabeledContent("支出最高分類", value: annualWrapped.topExpenseCategory?.name ?? "暫無")
+                    LabeledContent("最佳月份", value: annualWrapped.bestMonth?.month.formatted(date: .abbreviated, time: .omitted) ?? "暫無")
+                } else {
+                    Text("尚未產生 Wrapped")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("歷史快照（Snapshot）") {
+                Button("匯出 Snapshot") {
+                    do {
+                        snapshotPayload = try ExpenseSnapshotService(store: expenseStore).exportSnapshot()
+                        snapshotMessage = "已產生快照，可直接貼上還原"
+                    } catch {
+                        snapshotMessage = error.localizedDescription
+                    }
+                }
+
+                TextEditor(text: $snapshotPayload)
+                    .frame(minHeight: 110)
+
+                Button("還原 Snapshot") {
+                    do {
+                        try ExpenseSnapshotService(store: expenseStore).restoreSnapshot(from: snapshotPayload)
+                        viewModel.reload()
+                        budgetViewModel.refresh()
+                        reportViewModel.refresh()
+                        snapshotMessage = "還原完成"
+                    } catch {
+                        snapshotMessage = error.localizedDescription
+                    }
+                }
+
+                if let snapshotMessage {
+                    Text(snapshotMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("訂閱挽留與續訂策略") {
+                if let retention = proEntitlementStore.retentionStrategy {
+                    Text(retention.headline)
+                        .font(.subheadline.bold())
+                    Text("CTA：\(retention.cta)")
+                        .font(.caption)
+                    Text("Offer：\(retention.offerCode)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("目前無需挽留策略")
+                        .foregroundStyle(.secondary)
                 }
             }
 
