@@ -240,6 +240,8 @@ struct HomeView: View {
                         LabeledContent("平均月收入", value: report.averageIncome.formatted())
                         LabeledContent("平均月支出", value: report.averageExpense.formatted())
                         LabeledContent("平均月淨額", value: report.averageNet.formatted())
+                        LabeledContent("MoM（本月淨額較上月）", value: report.momNetDelta?.formatted() ?? "暫無")
+                        LabeledContent("YoY（本月淨額較去年同月）", value: report.yoyNetDelta?.formatted() ?? "暫無")
                     }
 
                     let chartSeries = reportViewModel.chartSeries(for: report)
@@ -255,6 +257,19 @@ struct HomeView: View {
                                 Text(point.monthLabel)
                                 Spacer()
                                 Text("收 \(point.income.formatted()) / 支 \(point.expense.formatted()) / 淨 \(point.net.formatted())")
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
+                    if !report.pieSlices.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("圓餅圖分析（收入/支出占比）")
+                                .font(.subheadline.bold())
+                            AdvancedReportPieChart(slices: report.pieSlices)
+                                .frame(height: 220)
+                            ForEach(report.pieSlices) { slice in
+                                Text("• \(slice.label)：\(slice.value.formatted())")
                                     .font(.caption)
                             }
                         }
@@ -548,6 +563,55 @@ struct AdvancedReportTrendChart: View {
     }
 }
 
+struct AdvancedReportPieChart: View {
+    let slices: [AdvancedReport.PieSlice]
+
+    var body: some View {
+        let total = slices.reduce(Decimal.zero) { $0 + $1.value }
+
+        ZStack {
+            ForEach(Array(slices.enumerated()), id: \.element.id) { index, slice in
+                let start = startFraction(at: index)
+                let end = endFraction(at: index)
+
+                Circle()
+                    .trim(from: start, to: end)
+                    .stroke(color(at: index), style: StrokeStyle(lineWidth: 30, lineCap: .butt))
+                    .rotationEffect(.degrees(-90))
+            }
+
+            VStack(spacing: 2) {
+                Text("總額")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(total.formatted())
+                    .font(.caption)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func startFraction(at index: Int) -> CGFloat {
+        guard index > 0 else { return 0 }
+        let numerator = slices.prefix(index).reduce(Decimal.zero) { $0 + $1.value }
+        let denominator = slices.reduce(Decimal.zero) { $0 + $1.value }
+        guard denominator != .zero else { return 0 }
+        return CGFloat(NSDecimalNumber(decimal: numerator / denominator).doubleValue)
+    }
+
+    private func endFraction(at index: Int) -> CGFloat {
+        let numerator = slices.prefix(index + 1).reduce(Decimal.zero) { $0 + $1.value }
+        let denominator = slices.reduce(Decimal.zero) { $0 + $1.value }
+        guard denominator != .zero else { return 0 }
+        return CGFloat(NSDecimalNumber(decimal: numerator / denominator).doubleValue)
+    }
+
+    private func color(at index: Int) -> Color {
+        let palette: [Color] = [.blue, .red, .green, .orange]
+        return palette[index % palette.count]
+    }
+}
+
 enum ReportRange: String, CaseIterable, Identifiable {
     case oneMonth
     case threeMonths
@@ -589,12 +653,21 @@ struct AdvancedReport {
         let delta: Decimal
     }
 
+    struct PieSlice: Identifiable {
+        var id: String { label }
+        let label: String
+        let value: Decimal
+    }
+
     let monthlyTrend: [TrendPoint]
     let averageIncome: Decimal
     let averageExpense: Decimal
     let averageNet: Decimal
     let topGrowth: CategoryDelta?
     let topDecline: CategoryDelta?
+    let momNetDelta: Decimal?
+    let yoyNetDelta: Decimal?
+    let pieSlices: [PieSlice]
 }
 
 @MainActor
@@ -648,13 +721,27 @@ final class AdvancedReportViewModel: ObservableObject {
         let totalExpense = snapshots.reduce(Decimal.zero) { $0 + $1.expense }
         let totalNet = snapshots.reduce(Decimal.zero) { $0 + $1.net }
 
+        let currentMonthOverview = snapshots.last
+        let previousMonthOverview = Calendar.current.date(byAdding: .month, value: -1, to: now).flatMap {
+            try? expenseStore.fetchMonthlyOverview(for: $0)
+        }
+        let previousYearOverview = Calendar.current.date(byAdding: .year, value: -1, to: now).flatMap {
+            try? expenseStore.fetchMonthlyOverview(for: $0)
+        }
+
         report = AdvancedReport(
             monthlyTrend: trend,
             averageIncome: totalIncome / count,
             averageExpense: totalExpense / count,
             averageNet: totalNet / count,
             topGrowth: topCategoryDelta(from: snapshots, highest: true),
-            topDecline: topCategoryDelta(from: snapshots, highest: false)
+            topDecline: topCategoryDelta(from: snapshots, highest: false),
+            momNetDelta: netDelta(current: currentMonthOverview?.net, baseline: previousMonthOverview?.net),
+            yoyNetDelta: netDelta(current: currentMonthOverview?.net, baseline: previousYearOverview?.net),
+            pieSlices: [
+                .init(label: "收入", value: totalIncome),
+                .init(label: "支出", value: totalExpense)
+            ].filter { $0.value > .zero }
         )
     }
 
@@ -705,6 +792,15 @@ final class AdvancedReportViewModel: ObservableObject {
 
     private func absDecimal(_ value: Decimal) -> Decimal {
         value < 0 ? -value : value
+    }
+
+    private func netDelta(current: Decimal?, baseline: Decimal?) -> Decimal? {
+        guard let current else { return nil }
+        guard let baseline else {
+            return current == .zero ? nil : current
+        }
+        if current == .zero && baseline == .zero { return nil }
+        return current - baseline
     }
 }
 
