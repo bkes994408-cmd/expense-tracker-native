@@ -14,6 +14,7 @@ class LocalStore private constructor(context: Context) {
     ).build()
 
     val categoryRepository: CategoryRepository = CategoryRepositoryImpl(database.categoryDao())
+    val expenseLedger: ExpenseLedger = ExpenseLedger()
 
     companion object {
         @Volatile

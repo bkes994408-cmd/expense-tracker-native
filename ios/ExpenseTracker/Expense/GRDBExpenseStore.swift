@@ -33,14 +33,14 @@ final class GRDBExpenseStore: ExpenseStore {
         }
     }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         try dbQueue.write { db in
             try db.execute(
                 sql: "INSERT INTO expenses (title, amount, createdAt, categoryId) VALUES (?, ?, ?, ?)",
-                arguments: [trimmed, NSDecimalNumber(decimal: amount).stringValue, Date().timeIntervalSince1970, categoryId]
+                arguments: [trimmed, NSDecimalNumber(decimal: amount).stringValue, createdAt.timeIntervalSince1970, categoryId]
             )
         }
     }
