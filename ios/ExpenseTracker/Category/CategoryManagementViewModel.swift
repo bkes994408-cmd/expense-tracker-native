@@ -5,6 +5,10 @@ final class CategoryManagementViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var newCategoryName = ""
 
+    var canAddCategory: Bool {
+        !newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private let store: CategoryStore
 
     init(store: CategoryStore) {
@@ -18,7 +22,7 @@ final class CategoryManagementViewModel: ObservableObject {
 
     func addCategory() {
         let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return }
+        guard canAddCategory else { return }
 
         do {
             try store.add(name: trimmedName)
