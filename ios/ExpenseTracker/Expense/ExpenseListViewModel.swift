@@ -7,6 +7,8 @@ final class ExpenseListViewModel: ObservableObject {
     @Published var newTitle = ""
     @Published var newAmount = ""
     @Published var isIncome = false
+    @Published var budgetSuggestions: [ExpenseImportExportService.BudgetSuggestion] = []
+    @Published var overspendAlerts: [ExpenseImportExportService.OverspendAlert] = []
     @Published var searchText = "" {
         didSet { reload() }
     }
@@ -21,6 +23,15 @@ final class ExpenseListViewModel: ObservableObject {
     func reload() {
         expenses = (try? store.fetchAll(searchText: searchText)) ?? []
         monthlyOverview = (try? store.fetchMonthlyOverview(for: Date())) ?? .empty(month: Date())
+
+        let allExpenses = (try? store.fetchAll(searchText: nil)) ?? []
+        budgetSuggestions = ExpenseImportExportService.makeBudgetSuggestion(from: allExpenses)
+
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let currentMonth = allExpenses.filter { $0.createdAt >= startOfMonth }
+        overspendAlerts = ExpenseImportExportService.detectOverspend(currentMonthExpenses: currentMonth, suggestions: budgetSuggestions)
     }
 
     func addExpense() {

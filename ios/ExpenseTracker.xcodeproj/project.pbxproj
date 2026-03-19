@@ -55,6 +55,7 @@
 		C449BE2E2E8EE6843F6ECAE9 /* ExpenseCSVExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C3343E171FDCDCF8B61178 /* ExpenseCSVExporterTests.swift */; };
 		C73F2AA3B1EB2361DAA7C69C /* MockAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05DCEB17BAFFE4930C4A1FF /* MockAuthService.swift */; };
 		C82792B001D698AB5BB5FAE1 /* GroupLedgerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1D4819A1372DB963876C35 /* GroupLedgerViewModel.swift */; };
+		C9B8C7759C5C56FA4EF6CFFA /* ExpenseImportExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 890D4BCCCD152B522B6C2E5B /* ExpenseImportExportService.swift */; };
 		D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D82FEA89F391EA4A9CFB575 /* ExpenseTrackerApp.swift */; };
 		DEE36AF13E29700390EB8133 /* InAppPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FA8474E2AF3E81C8CEAA82 /* InAppPurchaseService.swift */; };
 		E83423937D6FA3A653334296 /* ProEntitlementStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF1AEE684BED85F31BEE2B8 /* ProEntitlementStoreTests.swift */; };
@@ -115,6 +116,7 @@
 		807C80AF6F246FC43581A43F /* SyncStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStateStore.swift; sourceTree = "<group>"; };
 		8081F9D4B5D95259C03B4D78 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		85C3343E171FDCDCF8B61178 /* ExpenseCSVExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseCSVExporterTests.swift; sourceTree = "<group>"; };
+		890D4BCCCD152B522B6C2E5B /* ExpenseImportExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseImportExportService.swift; sourceTree = "<group>"; };
 		89D6D41D96C8077B29D84A3E /* BudgetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetViewModel.swift; sourceTree = "<group>"; };
 		90F04F1EBA66988ABC357A3F /* InstallmentManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallmentManagementViewModel.swift; sourceTree = "<group>"; };
 		9308B0B1B315334850284F42 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -236,6 +238,7 @@
 			isa = PBXGroup;
 			children = (
 				C240A4A1080BC8623F717691 /* ExpenseCSVExporter.swift */,
+				890D4BCCCD152B522B6C2E5B /* ExpenseImportExportService.swift */,
 				B72AE1BBE76FF6AAD6ECF3C3 /* ExpenseListViewModel.swift */,
 				0049022494BD20333AB95977 /* ExpenseStore.swift */,
 				BEA3631766DF02127D131B2F /* GRDBExpenseStore.swift */,
@@ -557,6 +560,7 @@
 				00D9ED2059F793A872D7BFA0 /* ContentView.swift in Sources */,
 				708D87CF377ED53A57320BC4 /* Expense.swift in Sources */,
 				233CAA845D86640C2EC99E12 /* ExpenseCSVExporter.swift in Sources */,
+				C9B8C7759C5C56FA4EF6CFFA /* ExpenseImportExportService.swift in Sources */,
 				8C80FA75939C39EC51ADE26A /* ExpenseListViewModel.swift in Sources */,
 				F7A64A1BF19CD04EF791D967 /* ExpenseStore.swift in Sources */,
 				D3A22F613CD499DC58AB0FB3 /* ExpenseTrackerApp.swift in Sources */,
