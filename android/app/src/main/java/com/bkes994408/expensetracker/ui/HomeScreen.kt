@@ -1,13 +1,18 @@
 package com.bkes994408.expensetracker.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.bkes994408.expensetracker.domain.ExpenseRepository
 import com.bkes994408.expensetracker.pro.AdvancedReport
@@ -26,7 +36,9 @@ import com.bkes994408.expensetracker.pro.AdvancedReportCalculator
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
 import com.bkes994408.expensetracker.pro.ProFeature
 import com.bkes994408.expensetracker.pro.ReportRange
+import com.bkes994408.expensetracker.pro.TrendPoint
 import java.math.BigDecimal
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -48,7 +60,15 @@ fun HomeScreen(
     var selectedRange by remember { mutableStateOf(ReportRange.ONE_MONTH) }
 
     val report by produceState(
-        initialValue = AdvancedReport(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
+        initialValue = AdvancedReport(
+            averageIncome = BigDecimal.ZERO,
+            averageExpense = BigDecimal.ZERO,
+            averageNet = BigDecimal.ZERO,
+            monthlyTrend = emptyList(),
+            momDelta = null,
+            yoyDelta = null,
+            pieSlices = emptyList(),
+        ),
         selectedRange,
         entitlementVersion,
     ) {
@@ -134,6 +154,45 @@ fun HomeScreen(
         item { Text(text = "平均月收入：${report.averageIncome}") }
         item { Text(text = "平均月支出：${report.averageExpense}") }
         item { Text(text = "平均月淨額：${report.averageNet}") }
+
+        item {
+            Text(
+                text = "MoM（本月淨額較上月）：${report.momDelta?.toPlainString() ?: "暫無"}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        item {
+            Text(
+                text = "YoY（本月淨額較去年同月）：${report.yoyDelta?.toPlainString() ?: "暫無"}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+
+        if (report.monthlyTrend.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("趨勢圖分析")
+                    TrendChart(report.monthlyTrend)
+                    report.monthlyTrend.forEach { point ->
+                        Text("${point.monthLabel} 收${point.income} / 支${point.expense} / 淨${point.net}")
+                    }
+                }
+            }
+        }
+
+        if (report.pieSlices.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("圓餅圖分析（收入/支出占比）")
+                    PieChart(report = report)
+                    report.pieSlices.forEachIndexed { index, slice ->
+                        val percent = piePercent(report, slice.value)
+                        Text("${chartColorName(index)} ${slice.label}：${slice.value}（${percent}%）")
+                    }
+                }
+            }
+        }
+
         item {
             Button(onClick = {
                 openProFeature("report_pdf_export", ProFeature.PDF_EXPORT, proEntitlementStore) { paywallTrigger = it }
@@ -156,6 +215,87 @@ fun HomeScreen(
             onEntitlementChanged = { entitlementVersion++ },
         )
     }
+}
+
+@Composable
+private fun TrendChart(points: List<TrendPoint>) {
+    val maxValue = points.maxOfOrNull { maxOf(it.income, it.expense, it.net) } ?: BigDecimal.ONE
+    val safeMax = if (maxValue <= BigDecimal.ZERO) BigDecimal.ONE else maxValue
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp),
+    ) {
+        if (points.size <= 1) return@Canvas
+
+        val stepX = size.width / (points.size - 1)
+        val chartHeight = size.height - 24f
+
+        fun yFor(value: BigDecimal): Float {
+            val ratio = value.toFloat() / safeMax.toFloat()
+            return chartHeight - (chartHeight * ratio)
+        }
+
+        fun drawSeries(values: List<BigDecimal>, color: Color) {
+            values.zipWithNext().forEachIndexed { index, pair ->
+                val start = Offset(index * stepX, yFor(pair.first))
+                val end = Offset((index + 1) * stepX, yFor(pair.second))
+                drawLine(color = color, start = start, end = end, strokeWidth = 4f, cap = StrokeCap.Round)
+            }
+        }
+
+        drawSeries(points.map { it.income }, Color(0xFF1E88E5))
+        drawSeries(points.map { it.expense }, Color(0xFFE53935))
+        drawSeries(points.map { it.net }, Color(0xFF43A047))
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("🔵 收入")
+        Text("🔴 支出")
+        Text("🟢 淨額")
+    }
+}
+
+@Composable
+private fun PieChart(report: AdvancedReport) {
+    val total = report.pieSlices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
+    if (total <= BigDecimal.ZERO) return
+
+    Canvas(modifier = Modifier.size(180.dp)) {
+        var startAngle = -90f
+        report.pieSlices.forEachIndexed { index, slice ->
+            val sweep = (slice.value.toFloat() / total.toFloat()) * 360f
+            drawArc(
+                color = chartColor(index),
+                startAngle = startAngle,
+                sweepAngle = sweep,
+                useCenter = false,
+                topLeft = Offset(12f, 12f),
+                size = Size(size.width - 24f, size.height - 24f),
+                style = Stroke(width = 30f),
+            )
+            startAngle += sweep
+        }
+    }
+}
+
+private fun chartColor(index: Int): Color {
+    val palette = listOf(Color(0xFF1E88E5), Color(0xFFE53935), Color(0xFF43A047), Color(0xFFFDD835))
+    return palette[index % palette.size]
+}
+
+private fun chartColorName(index: Int): String = when (index % 4) {
+    0 -> "🔵"
+    1 -> "🔴"
+    2 -> "🟢"
+    else -> "🟡"
+}
+
+private fun piePercent(report: AdvancedReport, value: BigDecimal): Int {
+    val total = report.pieSlices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
+    if (total == BigDecimal.ZERO) return 0
+    return ((value.toDouble() / total.toDouble()) * 100).roundToInt()
 }
 
 private fun openProFeature(

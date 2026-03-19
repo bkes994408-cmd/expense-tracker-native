@@ -44,6 +44,12 @@ final class BudgetViewModelTests: XCTestCase {
             expense: 3000,
             categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -900), .init(id: "交通", name: "交通", amount: -400)]
         )
+        let yearAgoMonth = MonthlyOverview(
+            month: Calendar.current.date(byAdding: .year, value: -1, to: Date())!,
+            income: 5700,
+            expense: 3100,
+            categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -1000), .init(id: "交通", name: "交通", amount: -350)]
+        )
         let currentMonth = MonthlyOverview(
             month: Date(),
             income: 6000,
@@ -51,7 +57,7 @@ final class BudgetViewModelTests: XCTestCase {
             categoryTotals: [.init(id: "餐飲", name: "餐飲", amount: -1200), .init(id: "交通", name: "交通", amount: -300)]
         )
 
-        let expenseStore = MonthlyOverviewStubStore(snapshots: [previousMonth, currentMonth])
+        let expenseStore = MonthlyOverviewStubStore(snapshots: [yearAgoMonth, previousMonth, currentMonth])
         let defaults = UserDefaults(suiteName: "test.report.pro")!
         defaults.removePersistentDomain(forName: "test.report.pro")
         let entitlement = ProEntitlementStore(
@@ -67,6 +73,9 @@ final class BudgetViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.report?.monthlyTrend.count, 3)
         XCTAssertEqual(viewModel.report?.topGrowth?.categoryName, "餐飲")
         XCTAssertEqual(viewModel.report?.topDecline?.categoryName, "交通")
+        XCTAssertEqual(viewModel.report?.momNetDelta, 800)
+        XCTAssertEqual(viewModel.report?.yoyNetDelta, 200)
+        XCTAssertEqual(viewModel.report?.pieSlices.count, 2)
     }
 
     func testAdvancedReportReturnsNilWhenNoGrowthOrDecline() async {
