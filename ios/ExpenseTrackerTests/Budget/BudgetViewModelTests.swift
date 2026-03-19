@@ -222,7 +222,7 @@ private final class MonthlyOverviewStubStore: ExpenseStore {
 
     func fetchAll(searchText: String?) throws -> [Expense] { [] }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {}
 
     func delete(id: Int64) throws {}
 
@@ -245,7 +245,7 @@ private final class MockExpenseStore: ExpenseStore {
 
     func fetchAll(searchText: String?) throws -> [Expense] { [] }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {}
 
     func delete(id: Int64) throws {}
 

@@ -4,6 +4,13 @@ enum ExpenseImportExportService {
     struct ImportResult {
         let importedCount: Int
         let skippedCount: Int
+        let duplicateCount: Int
+
+        init(importedCount: Int, skippedCount: Int, duplicateCount: Int = 0) {
+            self.importedCount = importedCount
+            self.skippedCount = skippedCount
+            self.duplicateCount = duplicateCount
+        }
     }
 
     struct BudgetSuggestion: Identifiable, Equatable {
@@ -50,6 +57,70 @@ enum ExpenseImportExportService {
         return lines.joined(separator: "\n") + "\n"
     }
 
+    static func makeOFX(expenses: [Expense]) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMddHHmmss"
+
+        let dtServer = formatter.string(from: Date())
+        let dtStart = formatter.string(from: expenses.map(\.createdAt).min() ?? Date())
+        let dtEnd = formatter.string(from: expenses.map(\.createdAt).max() ?? Date())
+
+        let transactions = expenses.sorted { $0.createdAt < $1.createdAt }.map { expense in
+            let type = expense.amount < 0 ? "DEBIT" : "CREDIT"
+            let amount = NSDecimalNumber(decimal: expense.amount).stringValue
+            let date = formatter.string(from: expense.createdAt)
+            let name = xmlEscaped(expense.title)
+            return """
+            <STMTTRN>
+            <TRNTYPE>\(type)
+            <DTPOSTED>\(date)
+            <TRNAMT>\(amount)
+            <FITID>exp-\(expense.id)-\(date)
+            <NAME>\(name)
+            </STMTTRN>
+            """
+        }.joined(separator: "\n")
+
+        return """
+        OFXHEADER:100
+        DATA:OFXSGML
+        VERSION:102
+        SECURITY:NONE
+        ENCODING:UTF-8
+        CHARSET:UTF-8
+        COMPRESSION:NONE
+        OLDFILEUID:NONE
+        NEWFILEUID:NONE
+
+        <OFX>
+        <SIGNONMSGSRSV1>
+        <SONRS>
+        <STATUS><CODE>0<SEVERITY>INFO</STATUS>
+        <DTSERVER>\(dtServer)
+        <LANGUAGE>ENG
+        </SONRS>
+        </SIGNONMSGSRSV1>
+        <BANKMSGSRSV1>
+        <STMTTRNRS>
+        <TRNUID>1
+        <STATUS><CODE>0<SEVERITY>INFO</STATUS>
+        <STMTRS>
+        <CURDEF>TWD
+        <BANKTRANLIST>
+        <DTSTART>\(dtStart)
+        <DTEND>\(dtEnd)
+        \(transactions)
+        </BANKTRANLIST>
+        </STMTRS>
+        </STMTTRNRS>
+        </BANKMSGSRSV1>
+        </OFX>
+        """
+    }
+
     static func makeJSON(expenses: [Expense]) throws -> String {
         let payload = expenses.map {
             JSONExpense(
@@ -91,6 +162,31 @@ enum ExpenseImportExportService {
         }
     }
 
+    static func parseOFX(_ content: String) -> [ImportRow] {
+        let blocks = content.components(separatedBy: "<STMTTRN>")
+            .dropFirst()
+            .map { segment in
+                segment.components(separatedBy: "</STMTTRN>").first ?? segment
+            }
+
+        return blocks.compactMap { block in
+            let amountRaw = extractOFXField("TRNAMT", from: block)
+            let dateRaw = extractOFXField("DTPOSTED", from: block)
+            let name = extractOFXField("NAME", from: block) ?? extractOFXField("MEMO", from: block) ?? ""
+
+            guard let amountRaw, let dateRaw else { return nil }
+            let amount = Decimal(string: amountRaw.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .zero
+            let createdAt = parseOFXDate(dateRaw)
+
+            return ImportRow(
+                title: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                amount: amount,
+                createdAt: createdAt,
+                categoryId: nil
+            )
+        }
+    }
+
     static func parseJSON(_ content: String) -> [ImportRow] {
         guard let data = content.data(using: .utf8),
               let items = try? JSONDecoder().decode([JSONExpense].self, from: data) else {
@@ -110,6 +206,10 @@ enum ExpenseImportExportService {
     static func importRows(_ rows: [ImportRow], to store: ExpenseStore) throws -> ImportResult {
         var imported = 0
         var skipped = 0
+        var duplicates = 0
+
+        let existing = (try? store.fetchAll(searchText: nil)) ?? []
+        var seenKeys = Set(existing.map(duplicateKey(for:)))
 
         for row in rows {
             let title = row.title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -117,11 +217,19 @@ enum ExpenseImportExportService {
                 skipped += 1
                 continue
             }
+
+            let key = duplicateKey(for: row)
+            if seenKeys.contains(key) {
+                duplicates += 1
+                continue
+            }
+
             try store.add(title: title, amount: row.amount, categoryId: row.categoryId, createdAt: row.createdAt)
+            seenKeys.insert(key)
             imported += 1
         }
 
-        return ImportResult(importedCount: imported, skippedCount: skipped)
+        return ImportResult(importedCount: imported, skippedCount: skipped, duplicateCount: duplicates)
     }
 
     static func makeBudgetSuggestion(from expenses: [Expense], at now: Date = Date()) -> [BudgetSuggestion] {
@@ -246,6 +354,83 @@ enum ExpenseImportExportService {
         }
         fields.append(current)
         return fields
+    }
+
+    private static func duplicateKey(for row: ImportRow) -> String {
+        let amount = normalizeAmountString(row.amount)
+        let title = normalizeTitle(row.title)
+        let day = duplicateDayString(from: row.createdAt)
+        let category = row.categoryId.map(String.init) ?? "nil"
+        return "\(title)|\(amount)|\(day)|\(category)"
+    }
+
+    private static func duplicateKey(for expense: Expense) -> String {
+        let amount = normalizeAmountString(expense.amount)
+        let title = normalizeTitle(expense.title)
+        let day = duplicateDayString(from: expense.createdAt)
+        let category = expense.categoryId.map(String.init) ?? "nil"
+        return "\(title)|\(amount)|\(day)|\(category)"
+    }
+
+    private static func duplicateDayString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: date)
+    }
+
+    private static func normalizeTitle(_ title: String) -> String {
+        title
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+    }
+
+    private static func normalizeAmountString(_ amount: Decimal) -> String {
+        var rounded = Decimal()
+        var input = amount
+        NSDecimalRound(&rounded, &input, 2, .plain)
+        return NSDecimalNumber(decimal: rounded).stringValue
+    }
+
+    private static func extractOFXField(_ field: String, from block: String) -> String? {
+        guard let range = block.range(of: "<\(field)>", options: .caseInsensitive) else { return nil }
+        let tail = block[range.upperBound...]
+        if let lineEnd = tail.firstIndex(where: \.isNewline) {
+            return String(tail[..<lineEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let candidates: [Character] = ["<", "\r"]
+        let endIndex = candidates.compactMap { token in
+            tail.firstIndex(of: token)
+        }.min() ?? tail.endIndex
+
+        return String(tail[..<endIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func parseOFXDate(_ raw: String) -> Date {
+        let digits = raw.prefix(14)
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = digits.count >= 14 ? "yyyyMMddHHmmss" : "yyyyMMdd"
+
+        if digits.count >= 14, let date = formatter.date(from: String(digits)) {
+            return date
+        }
+
+        let day = raw.prefix(8)
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.date(from: String(day)) ?? Date()
+    }
+
+    private static func xmlEscaped(_ raw: String) -> String {
+        raw
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
     }
 
     private static func roundToCurrency(_ value: Decimal) -> Decimal {

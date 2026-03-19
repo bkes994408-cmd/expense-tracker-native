@@ -95,9 +95,9 @@ private final class FakeExpenseStore: ExpenseStore {
         )
     }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {
         let nextID = (items.map(\.id).max() ?? 0) + 1
-        items.append(Expense(id: nextID, title: title, amount: amount, createdAt: Date(), categoryId: categoryId))
+        items.append(Expense(id: nextID, title: title, amount: amount, createdAt: createdAt, categoryId: categoryId))
     }
 
     func delete(id: Int64) throws {

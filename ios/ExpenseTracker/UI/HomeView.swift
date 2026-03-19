@@ -728,7 +728,7 @@ private final class PreviewExpenseStore: ExpenseStore {
         )
     }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {}
     func delete(id: Int64) throws {}
     func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {}
 }
