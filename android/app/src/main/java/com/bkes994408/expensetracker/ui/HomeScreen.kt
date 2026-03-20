@@ -50,6 +50,7 @@ fun HomeScreen(
     val entries by homeViewModel.entries.collectAsState()
     val titleInput by homeViewModel.titleInput.collectAsState()
     val amountInput by homeViewModel.amountInput.collectAsState()
+    val predictedCategory by homeViewModel.predictedCategory.collectAsState()
 
     val monthlySummary = homeViewModel.monthlySummary()
     val suggestions = homeViewModel.suggestions()
@@ -105,6 +106,9 @@ fun HomeScreen(
                     label = { Text("支出金額") },
                     singleLine = true,
                 )
+                predictedCategory?.let {
+                    Text("AI 分類：${it.category}（信心 ${(it.confidence * 100).roundToInt()}%）")
+                }
                 Button(onClick = homeViewModel::addExpense) { Text("新增支出") }
                 Button(onClick = onOpenSettings) { Text("Go to Settings") }
             }
@@ -115,7 +119,7 @@ fun HomeScreen(
             item { Text("資料不足，請先累積過往支出") }
         } else {
             items(suggestions.take(3)) {
-                Text("${it.category}: 建議 ${it.suggestedBudget}（近 3 月平均 ${it.averageSpend}）")
+                Text("${it.category}: 建議 ${it.suggestedBudget}（基準 ${it.averageSpend}，趨勢 ${it.trend}）")
             }
         }
 
@@ -203,7 +207,7 @@ fun HomeScreen(
 
         item { Text("最近帳目（${entries.size}）") }
         items(entries.takeLast(5).reversed()) {
-            Text("• ${it.title} ${it.amount}")
+            Text("• [${it.category}] ${it.title} ${it.amount}")
         }
     }
 
