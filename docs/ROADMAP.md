@@ -85,3 +85,9 @@
 - [ ] 帳目數據導入/導出增強：支持更多格式（如 OFX, QIF），或與銀行 API 介接，簡化數據錄入。
 - [x] 進階視覺化報表與圖表（第一階段）：已提供多圖表類型切換（折線圖 / 長條圖）與自定義報表篩選（全部 / 僅收入 / 僅支出 / 僅淨額）；目前先上線 iOS，Android 後續補齊。
 - [ ] 預算管理智能建議：根據歷史消費數據，AI 自動推薦預算設定，並提供超支預警。
+
+### Iteration-7（跨裝置擴展）
+- [x] Web 報表中心（React + TypeScript）骨架與月總覽/分類分析初版
+- [x] Desktop 快速輸入工具（Tauri + React）骨架與基本輸入驗證
+- [x] 雲端同步架構基礎（TypeScript mutation + cursor orchestrator）
+- [x] 實作紀錄文件：`docs/ITERATION-7_CROSS_DEVICE.md`
