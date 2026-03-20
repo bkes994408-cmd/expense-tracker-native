@@ -21,11 +21,12 @@ struct HomeView: View {
         store: ExpenseStore,
         budgetStore: BudgetStore,
         groupLedgerStore: GroupLedgerStore,
+        categoryStore: CategoryStore? = nil,
         proEntitlementStore: ProEntitlementStore,
         onOpenSettings: @escaping () -> Void
     ) {
         self.expenseStore = store
-        _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
+        _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store, categoryStore: categoryStore))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
         _groupLedgerViewModel = StateObject(wrappedValue: GroupLedgerViewModel(store: groupLedgerStore))
