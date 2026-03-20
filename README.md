@@ -58,6 +58,29 @@ cd android
 - **iOS**：預算功能（建立/刪除/複製上月/狀態計算/Free gating）已完成可用。
 - **Android**：已提供 Pro 預算 gating 與進階報表區間摘要（1M/3M/6M/12M）；報表透過 `ExpenseRepository.fetchExpenses()` 讀取持久化帳目資料（`FileExpenseStore`，預設檔案 `expenses.json`）計算區間平均。首次啟動若尚無持久化檔案將回傳空資料，不再自動注入示範數據；如需示範資料，需由上層流程明確啟用示範模式。完整帳目 CRUD 仍在後續里程碑持續補強。
 
+## Iteration-7 模組（跨平台擴展）
+
+### Web 報表中心
+```bash
+cd web-report-center
+npm install
+npm run dev
+```
+
+### Desktop Quick Entry（前端）
+```bash
+cd desktop-quick-entry/web
+npm install
+npm run dev
+```
+
+### Cloud Sync Shared Module
+```bash
+cd shared/cloud-sync
+npm install
+npm test
+```
+
 Docs:
 - `docs/ARCHITECTURE.md`（MVP-0 分層基礎）
 - `docs/ROADMAP.md`（整體路線圖）

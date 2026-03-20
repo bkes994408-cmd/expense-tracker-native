@@ -74,11 +74,19 @@
 - Pro 功能用戶體驗優化與市場策略：新增 iOS/Android `PaywallExperience`，依 trigger（`budget_limit` / `advanced_report_3m` / `report_pdf_export`）動態調整 paywall headline/subheadline/推薦方案；paywall 新增事件追蹤 `pro_paywall_viewed`、`pro_paywall_cta_tapped`；新增測試 iOS `PaywallExperienceTests`、Android `PaywallExperienceTest`；策略文件見 `docs/PRO_UX_MARKET_STRATEGY.md`。
 - IAP 整合：Android 新增 `GooglePlayBillingProPurchaseService` + `GooglePlayBillingClient`（Billing v7），完成商品對應（trial/monthly/yearly）、購買結果處理（success/cancelled/pending）與 restore 流程（query purchases + acknowledge）；`RootNavHost` 改為注入實際 Billing service 給 `ProEntitlementStore`。新增測試 `GooglePlayBillingProPurchaseServiceTest`（monthly mapping、pending error、restore unknown product、restore yearly）。
 - 家庭/群組帳本：iOS 新增 `GroupLedgerStore` / `GRDBGroupLedgerStore`（`group_ledgers`, `group_members`, `shared_expenses`, `shared_expense_splits`）與 `GroupLedgerViewModel`；`HomeView` 新增「家庭/群組帳本」區塊，支援建立帳本、加入成員、共享支出與平均分攤、成員淨額（paid-owed）結算檢視。
+- Iteration-7（Web 報表中心）：新增 `web-report-center` React+TypeScript 專案（Vite），包含月總覽、報表 filter（全部/收入/支出/淨額）、Pro gating 與 CSV 匯出入口。
+- Iteration-7（Desktop 快速輸入）：新增 `desktop-quick-entry`（Tauri + React），包含 tray/menu、快速輸入表單與 `quick_add_expense` command。
+- Iteration-7（Sync 架構基礎）：新增 `shared/cloud-sync` TypeScript 模組，提供 `SyncMutation` / `SyncCursor` / `SyncTransport`、`InMemorySyncStateStore`、`SyncEngine` 與 `syncEngine.test.ts`。
 
 ### Iteration-6（成長與變現優化）
 - [x] 年度財務回顧（Wrapped 報告）：新增年度財務摘要生成器（年度收入/支出/淨額、儲蓄率、支出最高分類、最佳/艱困月份）。
 - [x] 歷史快照備份與還原（Snapshot）：新增 JSON Snapshot 匯出/貼上還原機制，支援快速資料備份與復原。
 - [x] 訂閱挽留與續訂優化（Retention Strategy）：新增 trial 近到期、trial 到期、monthly 轉年付等策略建議與 offer code。
+
+### Iteration-7（跨平台擴展：Web + Desktop + Sync 基礎）
+- [x] Web 報表中心（React + TypeScript）：新增 `web-report-center/`，提供月總覽、報表篩選、Pro gating 與 CSV 匯出。
+- [x] Desktop 快速輸入工具（Tauri Menu Bar）：新增 `desktop-quick-entry/`，包含 tray menu、快速輸入 UI 與 `quick_add_expense` command。
+- [x] 雲端同步架構基礎：新增 `shared/cloud-sync/`，實作 `SyncMutation` / `SyncCursor` / `SyncTransport` 型別、`InMemorySyncStateStore`、`SyncEngine` 與測試。
 
 ### Iteration-1 (MVP-7: 社交與數據共享)
 - [x] 家庭/群組帳本：支持多人共同記帳，實現家庭或小團體費用共享與分攤。

@@ -1,3 +1,54 @@
+# Sprint Result - Iteration-7（跨平台擴展）
+
+日期：2026-03-20
+
+## 完成項目（usable increment）
+
+1. **Web 報表中心（React + TypeScript）**
+   - 新增 `web-report-center/`（Vite + React + TS）。
+   - 提供月總覽（收入/支出/淨額/筆數）、報表篩選（全部/僅收入/僅支出/僅淨額）、CSV 匯出。
+   - 實作 Web Pro gating 展示（Free 顯示鎖定提示，Pro 顯示進階報表可用）。
+
+2. **Desktop 快速輸入工具（Tauri Menu Bar）**
+   - 新增 `desktop-quick-entry/`，包含 `web/` 前端與 `src-tauri/` shell。
+   - Rust 端建立 tray menu（顯示視窗/離開）與 `quick_add_expense` command。
+   - 前端快速輸入表單可呼叫 command，完成 Menu Bar 快速記帳基礎流程。
+
+3. **跨裝置雲端同步架構基礎（SyncMutation / SyncCursor / SyncTransport）**
+   - 新增 `shared/cloud-sync/` TypeScript 模組。
+   - 建立 `SyncMutation`、`SyncCursor`、`SyncTransport` 協議型別。
+   - 實作 `InMemorySyncStateStore`、`InMemorySyncTransport`、`SyncEngine`（stage mutation + push/pull + cursor 更新）。
+   - 新增 `tests/syncEngine.test.ts` 驗證同步主流程。
+
+## 測試與驗證
+
+```bash
+# sync 架構單元測試
+cd shared/cloud-sync
+npm install
+npm test
+
+# Web 報表中心 build
+cd ../../web-report-center
+npm install
+npm run build
+
+# Desktop quick entry 前端 build
+cd ../desktop-quick-entry/web
+npm install
+npm run build
+```
+
+結果：三組指令皆成功（build/test 綠燈）。
+
+## 已知限制
+
+- `desktop-quick-entry/src-tauri` 尚未在本機執行 `cargo check`（環境缺少 cargo）。
+- `quick_add_expense` 目前先記錄 payload，下一步需串接 `SyncMutation` enqueue 與本地 store。
+- Web 報表中心目前使用 seed data，下一步需接入實際 API / Sync pull 結果。
+
+---
+
 # Sprint Result - Iteration-6（成長與變現優化）
 
 日期：2026-03-20

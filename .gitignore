@@ -1,0 +1,11 @@
+# JS / TS workspaces
+**/node_modules/
+**/dist/
+**/.vite/
+**/*.tsbuildinfo
+
+# Tauri / Rust
+**/target/
+
+# OS
+.DS_Store

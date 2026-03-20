@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ExpenseTracker Quick Entry",
+  "version": "0.1.0",
+  "identifier": "com.bkes994408.expense.quickentry",
+  "build": {
+    "beforeDevCommand": "cd ../web && npm run dev",
+    "beforeBuildCommand": "cd ../web && npm run build",
+    "frontendDist": "../web/dist"
+  },
+  "app": {
+    "windows": [{ "title": "Quick Entry", "width": 320, "height": 260, "visible": true }],
+    "trayIcon": { "iconPath": "icons/icon.png", "iconAsTemplate": true }
+  }
+}
