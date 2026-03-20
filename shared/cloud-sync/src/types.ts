@@ -7,6 +7,7 @@ export interface SyncMutation {
   type: SyncMutationType;
   payload: string;
   updatedAt: string;
+  deviceId?: string;
 }
 
 export interface SyncCursor {
@@ -17,4 +18,10 @@ export interface SyncCursor {
 export interface SyncPullResult {
   cursor: SyncCursor;
   patches: SyncMutation[];
+}
+
+export interface SyncFlushResult {
+  pushed: number;
+  patched: number;
+  hasPending: boolean;
 }
