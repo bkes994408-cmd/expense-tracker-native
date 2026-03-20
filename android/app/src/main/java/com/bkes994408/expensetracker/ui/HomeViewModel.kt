@@ -2,6 +2,7 @@ package com.bkes994408.expensetracker.ui
 
 import androidx.lifecycle.ViewModel
 import com.bkes994408.expensetracker.db.ExpenseLedger
+import com.bkes994408.expensetracker.ai.OnDeviceCategoryClassifier
 import java.math.BigDecimal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,13 @@ class HomeViewModel(
     private val _amountInput = MutableStateFlow("")
     val amountInput: StateFlow<String> = _amountInput
 
-    fun onTitleChanged(value: String) { _titleInput.value = value }
+    private val _predictedCategory = MutableStateFlow<OnDeviceCategoryClassifier.Prediction?>(null)
+    val predictedCategory: StateFlow<OnDeviceCategoryClassifier.Prediction?> = _predictedCategory
+
+    fun onTitleChanged(value: String) {
+        _titleInput.value = value
+        _predictedCategory.value = value.trim().takeIf { it.isNotEmpty() }?.let(ledger::predictCategory)
+    }
     fun onAmountChanged(value: String) { _amountInput.value = value }
 
     fun addExpense() {
@@ -25,9 +32,11 @@ class HomeViewModel(
         val amount = _amountInput.value.toBigDecimalOrNull() ?: return
         if (title.isBlank() || amount <= BigDecimal.ZERO) return
 
-        ledger.addExpense(title = title, amount = amount.negate())
+        val predicted = _predictedCategory.value ?: ledger.predictCategory(title)
+        ledger.addExpense(title = title, amount = amount.negate(), category = predicted.category)
         _titleInput.value = ""
         _amountInput.value = ""
+        _predictedCategory.value = null
     }
 
     fun monthlySummary(): BigDecimal = ledger.currentMonthExpenseTotal()
