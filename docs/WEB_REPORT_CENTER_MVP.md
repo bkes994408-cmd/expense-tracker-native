@@ -10,6 +10,10 @@
   - 區間篩選：`1M / 3M / 6M / 12M`
   - 資料篩選：`all / income / expense / net`
   - 圖表模式：`line / bar`
+- 訂閱狀態切換（Free / Pro）與區間權限 gating：
+  - Free 僅可使用 `1M`
+  - `3M / 6M / 12M` 顯示為 `（Pro）` 並鎖定
+  - 切換回 Free 會自動回落到 `1M`
 - 大螢幕友善版面（1200px container + 卡片式 summary + chart panel）
 - 趨勢圖（Recharts）
 - 匯總卡片：收入 / 支出 / 淨額
@@ -34,7 +38,6 @@ npm run dev
 ## 下一步（TODO）
 
 1. 串接正式同步資料源（Supabase sync 完成後改為實際用戶資料）
-2. 對齊 iOS/Android Pro gating 與 entitlement state
-3. 新增分類占比、分類 drill-down 與 MoM/YoY 詳細分析卡
-4. 加入 PDF 匯出（Web print/PDF pipeline）
-5. 導入 e2e 測試（Playwright）與 CI job（web build/test）
+2. 新增分類占比、分類 drill-down 與 MoM/YoY 詳細分析卡
+3. 加入 PDF 匯出（Web print/PDF pipeline）
+4. 導入 e2e 測試（Playwright）與 CI job（web build/test）

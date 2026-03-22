@@ -11,6 +11,7 @@ import {
   YAxis
 } from 'recharts'
 import { sampleEntries } from './data/sampleEntries'
+import { canAccessPeriod, type EntitlementPlan } from './lib/entitlement'
 import { aggregateByMonth, filterByPeriod, mapForFilter, summarize } from './lib/reportCalculator'
 import type { PeriodOption, ReportFilter } from './types'
 
@@ -23,7 +24,8 @@ const currency = (value: number) =>
   new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(value)
 
 export const App = () => {
-  const [period, setPeriod] = useState<PeriodOption>(3)
+  const [plan, setPlan] = useState<EntitlementPlan>('free')
+  const [period, setPeriod] = useState<PeriodOption>(1)
   const [filter, setFilter] = useState<ReportFilter>('all')
   const [mode, setMode] = useState<ChartMode>('line')
 
@@ -38,13 +40,42 @@ export const App = () => {
         <p>大螢幕檢視跨月份收支趨勢，與 iOS/Android 的進階報表篩選邏輯對齊。</p>
       </header>
 
+      <section className="plan-panel" aria-label="entitlement controls">
+        <div>
+          <span className="plan-label">方案狀態</span>
+          <div className="plan-toggle" role="group" aria-label="subscription state">
+            <button
+              type="button"
+              className={plan === 'free' ? 'is-active' : ''}
+              onClick={() => {
+                setPlan('free')
+                setPeriod(1)
+              }}
+            >
+              Free
+            </button>
+            <button type="button" className={plan === 'pro' ? 'is-active' : ''} onClick={() => setPlan('pro')}>
+              Pro
+            </button>
+          </div>
+        </div>
+        {plan === 'free' ? (
+          <p className="plan-hint">Free 方案僅提供 1M 報表。升級 Pro 可解鎖 3M / 6M / 12M 趨勢分析。</p>
+        ) : (
+          <p className="plan-hint">Pro 已啟用：可使用完整報表區間與進階分析。</p>
+        )}
+      </section>
+
       <section className="toolbar" aria-label="report controls">
         <div>
           <label htmlFor="period">區間</label>
           <select id="period" value={period} onChange={(e) => setPeriod(Number(e.target.value) as PeriodOption)}>
-            {periodOptions.map((value) => (
-              <option key={value} value={value}>{`${value}M`}</option>
-            ))}
+            {periodOptions.map((value) => {
+              const locked = !canAccessPeriod(plan, value)
+              return (
+                <option key={value} value={value} disabled={locked}>{`${value}M${locked ? '（Pro）' : ''}`}</option>
+              )
+            })}
           </select>
         </div>
 

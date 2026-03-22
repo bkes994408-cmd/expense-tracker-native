@@ -145,7 +145,7 @@
 > 目標：依 `docs/WEB_DESKTOP_PLAN.md` 執行，待商業模式穩定後啟動。
 > 前置條件：跨裝置同步後端（雲端 Auth 實作）需在本 Iteration 完成。
 
-- [ ] Web 報表中心（React + TypeScript；大螢幕優化的進階圖表與數據篩選介面）【Pro】
+- [x] Web 報表中心（React + TypeScript；大螢幕優化的進階圖表與數據篩選介面，含 Free/Pro 區間權限 gating）【Pro】
 - [ ] Desktop 快速輸入工具（Tauri Menu Bar 常駐，快速鍵呼出 → 填金額分類 → 儲存）【Pro】
 - [ ] 跨裝置同步正式版（`SyncMutation` / `SyncCursor` 骨架接上 Supabase，iOS + Android + Web 三端同步）【Pro】
 - [ ] 管理後台與資料維護功能（用戶自助後台：帳號管理、完整資料匯出、GDPR 刪除申請）【Pro】
