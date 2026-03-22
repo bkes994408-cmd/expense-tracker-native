@@ -1,0 +1,8 @@
+.DS_Store
+**/.DS_Store
+node_modules/
+web/node_modules/
+web/dist/
+android/.gradle/
+android/app/build/
+ios/ExpenseTracker.xcodeproj/project.xcworkspace/xcuserdata/
