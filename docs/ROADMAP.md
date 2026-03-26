@@ -74,6 +74,80 @@
 - Pro 功能用戶體驗優化與市場策略：新增 iOS/Android `PaywallExperience`，依 trigger（`budget_limit` / `advanced_report_3m` / `report_pdf_export`）動態調整 paywall headline/subheadline/推薦方案；paywall 新增事件追蹤 `pro_paywall_viewed`、`pro_paywall_cta_tapped`；新增測試 iOS `PaywallExperienceTests`、Android `PaywallExperienceTest`；策略文件見 `docs/PRO_UX_MARKET_STRATEGY.md`。
 - IAP 整合：Android 新增 `GooglePlayBillingProPurchaseService` + `GooglePlayBillingClient`（Billing v7），完成商品對應（trial/monthly/yearly）、購買結果處理（success/cancelled/pending）與 restore 流程（query purchases + acknowledge）；`RootNavHost` 改為注入實際 Billing service 給 `ProEntitlementStore`。新增測試 `GooglePlayBillingProPurchaseServiceTest`（monthly mapping、pending error、restore unknown product、restore yearly）。
 - 家庭/群組帳本：iOS 新增 `GroupLedgerStore` / `GRDBGroupLedgerStore`（`group_ledgers`, `group_members`, `shared_expenses`, `shared_expense_splits`）與 `GroupLedgerViewModel`；`HomeView` 新增「家庭/群組帳本」區塊，支援建立帳本、加入成員、共享支出與平均分攤、成員淨額（paid-owed）結算檢視。
+- Iteration-7 / Web 報表中心（MVP Slice）：新增 `web/`（React + TypeScript + Recharts）與大螢幕報表控制列（1/3/6/12M、all/income/expense/net、line/bar）及趨勢圖；測試覆蓋 `reportCalculator` 與 `App` 互動行為。詳見 `docs/WEB_REPORT_CENTER_MVP.md`。
+
+### Iteration-NEXT（MVP-7 剩餘兩項）
+- [x] 帳目導入/導出增強（Android 對齊 iOS，支援 OFX/QIF/CSV）
+- [x] 預算智能建議 v1（基於歷史消費做 category budget baseline）
+- [x] 超支預警（rule + threshold）
+- [x] iOS/Android 行為對齊測試
+- [x] 文件補完：iOS/Android scope 一致化
+
+**DoD**
+- iOS/Android 兩端功能 parity（至少核心路徑）
+- 各 1 條 UI/integration test
+- CI（build + build-test）全綠
+
+### Iteration-2（Data Input & Automation）
+
+> 目標：降低 onboarding 阻力，讓用戶更快帶入既有帳目資料開始使用。
+
+- [x] CSV 匯入精靈（欄位對應 UI、預覽表格、逐筆錯誤提示，支援多種日期格式）
+- [x] 重複交易偵測與合併建議（匯入時比對金額 + 日期 + 標題相似度，提示可能重複的帳目）
+- [x] OFX / QIF 格式匯入（純本機解析，支援各大銀行匯出格式，無需後端）
+- [x] 銀行 API 架構預留（定義 `BankImportProvider` protocol，不實作後端，保留擴充點）
+- [x] 固定支出與分期帳目自動生成（週期到期時自動新增帳目；Free 限 3 筆規則，Pro 無限，整合既有訂閱管理）
+
+### Iteration-3（Analytics Parity & Report Upgrade）
+
+> 目標：Android 補齊 iOS 視覺化功能，強化 Pro 報表差異化價值。
+
+- [x] Android 圖表視覺化補齊（Compose Charts 實作折線圖 / 長條圖，與 iOS 版本功能對等）
+- [x] Android 自定義報表篩選補齊（補齊全部 / 僅收入 / 僅支出 / 淨額篩選，與 iOS 一致）
+- [x] 分類占比圖與比較報表（圓餅圖 + 月間分類比較，點擊分類可下鑽明細帳目）【Pro】
+- [x] 本月 vs 上月 / 年度同比分析（MoM / YoY 變化率，標注成長 / 下降趨勢，含分類細分）【Pro】
+- [x] PDF 月報正式版（含圖表截圖、分類彙總表、月收支趨勢，樣式對齊品牌視覺）【Pro】
+
+### Iteration-4（Smart Budgeting & Retention）
+
+> 目標：AI 功能作為 Pro 核心賣點，覆蓋每次記帳的高頻操作，拉升付費轉換率。
+> 注意：AI 分析依賴歷史帳目，建議在 Iteration-2 數據導入完成後推出，確保新用戶有足夠資料可分析。
+
+- [x] AI 預算建議（分析 3 個月歷史消費，自動推薦各分類預算上限，標注異常消費月）【Pro】
+- [x] 自動分類建議（輸入帳目標題時 on-device ML 推薦分類，Core ML / TFLite，學習個人習慣）【Pro】
+- [x] 異常支出提醒（與個人消費基線比對，即時標記異常大額或非典型時段支出，推播通知）【Pro】
+- [x] 月結提醒 / 帳單提醒（自訂提醒日推播月結通知；整合訂閱扣款前一天預警）【Free】
+- [x] 超支預測與預算草案生成（月中自動預測是否超支，一鍵生成下月預算草案供用戶確認）【Pro】
+
+### Iteration-5（Group Ledger 2.0）
+
+> 目標：將 Iteration-1 的群組帳本 MVP 升級為完整社交記帳功能。
+
+- [x] 自訂分攤規則（平均 / 自訂比例 / 固定金額，每筆支出可獨立設定分攤方式）【Pro】
+- [x] 最佳結算建議（最小化轉帳筆數演算法，一鍵顯示「A 付 B 多少錢」清單）【Pro】
+- [x] 群組共享預算（設定群組月預算，追蹤各分類 / 各成員支出進度）【Pro】
+- [x] 群組月報（群組月結報告，含各成員支出占比、最高分類、結算摘要）【Pro】
+- [x] 成員角色與邀請流程優化（Owner / Editor / Viewer 三層權限；邀請連結 + QR Code 加入）【Free 基礎 / Pro 進階】
+
+### Iteration-6（Pro Growth & Monetization）
+
+> 目標：提升訂閱用戶 LTV，讓 Pro 帳目資料積累形成強留存。
+
+- [x] 年度財務回顧（Wrapped 風格年度報告：最大支出、最常分類、與去年比較，可分享）【Pro】
+- [x] PDF / 年報自動產出（iOS PDFKit + Android PdfDocument；含年度圖表、分類彙總、月間趨勢）【Pro】
+- [x] 多帳本管理（個人 / 工作 / 旅行等多帳本獨立管理，可跨帳本彙總報表）【Pro】
+- [x] 歷史備份版本（每週自動快照，Pro 保留 12 週，可回復至任意版本）【Pro】
+- [x] 試用轉正與續訂優化（試用到期限時折扣、取消訂閱挽留畫面、年費 vs 月費動態比較）【Pro】
+
+### Iteration-7（Web / Desktop Expansion）
+
+> 目標：依 `docs/WEB_DESKTOP_PLAN.md` 執行，待商業模式穩定後啟動。
+> 前置條件：跨裝置同步後端（雲端 Auth 實作）需在本 Iteration 完成。
+
+- [x] Web 報表中心（React + TypeScript；大螢幕優化的進階圖表與數據篩選介面，含 Free/Pro 區間權限 gating）【Pro】
+- [ ] Desktop 快速輸入工具（Tauri Menu Bar 常駐，快速鍵呼出 → 填金額分類 → 儲存）【Pro】
+- [ ] 跨裝置同步正式版（`SyncMutation` / `SyncCursor` 骨架接上 Supabase，iOS + Android + Web 三端同步）【Pro】
+- [ ] 管理後台與資料維護功能（用戶自助後台：帳號管理、完整資料匯出、GDPR 刪除申請）【Pro】
 
 ### Iteration-6（成長與變現優化）
 - [x] 年度財務回顧（Wrapped 報告）：新增年度財務摘要生成器（年度收入/支出/淨額、儲蓄率、支出最高分類、最佳/艱困月份）。

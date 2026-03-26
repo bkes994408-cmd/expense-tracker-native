@@ -1,3 +1,36 @@
+# Sprint Result - MVP-7（Web Report Center Free/Pro 權限切片）
+
+日期：2026-03-22
+
+## 完成項目（safe vertical slice）
+
+1. **Web 報表中心方案權限對齊**
+   - 新增 `web/src/lib/entitlement.ts`，統一 `Free/Pro` 區間權限判斷。
+   - `App.tsx` 新增方案切換（Free / Pro），預設 Free。
+   - Free 僅允許 `1M`，`3M / 6M / 12M` 在下拉選單中標記 `（Pro）` 並鎖定。
+   - 由 Pro 切回 Free 時自動回落 `1M`，避免保留不可用區間。
+
+2. **測試補強**
+   - `web/src/__tests__/app.test.tsx` 新增案例：
+     - 預設 Free 狀態顯示提示文案，且 3M option disabled。
+     - 切到 Pro 後可選 3M，摘要數值正確更新。
+
+3. **文件更新**
+   - `docs/ROADMAP.md`：Iteration-7 的 Web 報表中心項目標記為已完成（含 Free/Pro gating）。
+   - `docs/WEB_REPORT_CENTER_MVP.md`：補充 entitlement gating 行為與後續 TODO 調整。
+
+## 驗證指令與結果
+
+```bash
+cd web
+npm test
+npm run build
+```
+
+結果：測試全綠、build 成功。
+
+---
+
 # Sprint Result - Iteration-6（成長與變現優化）
 
 日期：2026-03-20
@@ -19,8 +52,6 @@
 4. **測試**
    - iOS：`Iteration6FeatureTests`（Wrapped、Snapshot round-trip、Retention offer）。
    - Android：`Iteration6FeatureTest`（Wrapped、Snapshot restore、Retention offer）。
-
----
 
 # Sprint Result - MVP-7（進階視覺化報表與圖表）
 

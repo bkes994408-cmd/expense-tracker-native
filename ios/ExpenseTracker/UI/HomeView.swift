@@ -702,7 +702,7 @@ struct AdvancedReportPieChart: View {
         let total = slices.reduce(Decimal.zero) { $0 + $1.value }
 
         ZStack {
-            ForEach(Array(slices.enumerated()), id: \.element.id) { index, slice in
+            ForEach(Array(slices.enumerated()), id: \.element.id) { index, _ in
                 let start = startFraction(at: index)
                 let end = endFraction(at: index)
 
@@ -743,7 +743,6 @@ struct AdvancedReportPieChart: View {
         return palette[index % palette.count]
     }
 }
-
 enum ReportRange: String, CaseIterable, Identifiable {
     case oneMonth
     case threeMonths
