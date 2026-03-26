@@ -37,13 +37,59 @@ struct LedgerBalance: Identifiable, Equatable {
     var net: Decimal { paid - owed }
 }
 
+struct SettlementTransfer: Identifiable, Equatable {
+    var id: String { "\(fromMember.id)-\(toMember.id)-\(amount)" }
+    let fromMember: LedgerMember
+    let toMember: LedgerMember
+    let amount: Decimal
+}
+
+struct GroupBudgetSnapshot: Equatable {
+    let monthStart: Date
+    let budget: Decimal
+    let spent: Decimal
+
+    var remaining: Decimal { budget - spent }
+    var usageRatio: Decimal {
+        guard budget > 0 else { return .zero }
+        return spent / budget
+    }
+}
+
+struct MemberAmountBreakdown: Identifiable, Equatable {
+    var id: Int64 { member.id }
+    let member: LedgerMember
+    let amount: Decimal
+}
+
+struct GroupMonthlyReport: Equatable {
+    let monthStart: Date
+    let expenseCount: Int
+    let totalExpense: Decimal
+    let averageExpense: Decimal
+    let topExpenseTitle: String?
+    let payerBreakdown: [MemberAmountBreakdown]
+}
+
 struct GroupLedgerOverview: Equatable {
     let ledger: GroupLedger
     let members: [LedgerMember]
     let recentExpenses: [SharedExpense]
     let balances: [LedgerBalance]
+    let settlements: [SettlementTransfer]
+    let budgetSnapshot: GroupBudgetSnapshot
+    let monthlyReport: GroupMonthlyReport
 
     static func empty(ledger: GroupLedger) -> GroupLedgerOverview {
-        .init(ledger: ledger, members: [], recentExpenses: [], balances: [])
+        let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+        return .init(
+            ledger: ledger,
+            members: [],
+            recentExpenses: [],
+            balances: [],
+            settlements: [],
+            budgetSnapshot: GroupBudgetSnapshot(monthStart: monthStart, budget: .zero, spent: .zero),
+            monthlyReport: GroupMonthlyReport(monthStart: monthStart, expenseCount: 0, totalExpense: .zero, averageExpense: .zero, topExpenseTitle: nil, payerBreakdown: [])
+        )
     }
 }

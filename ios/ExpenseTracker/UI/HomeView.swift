@@ -11,15 +11,22 @@ struct HomeView: View {
 
     @State private var paywallTrigger: String = ""
     @State private var isPaywallPresented = false
+    @State private var annualWrapped: AnnualWrappedReport?
+    @State private var snapshotPayload: String = ""
+    @State private var snapshotMessage: String?
+
+    private let expenseStore: ExpenseStore
 
     init(
         store: ExpenseStore,
         budgetStore: BudgetStore,
         groupLedgerStore: GroupLedgerStore,
+        categoryStore: CategoryStore? = nil,
         proEntitlementStore: ProEntitlementStore,
         onOpenSettings: @escaping () -> Void
     ) {
-        _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
+        self.expenseStore = store
+        _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store, categoryStore: categoryStore))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
         _groupLedgerViewModel = StateObject(wrappedValue: GroupLedgerViewModel(store: groupLedgerStore))
@@ -89,28 +96,67 @@ struct HomeView: View {
                             Text("至少加入 1 位成員才能共享記帳")
                                 .foregroundStyle(.secondary)
                         } else {
-                            TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
-                            TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
-                                .keyboardType(.decimalPad)
+                            Group {
+                                TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
+                                TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
+                                    .keyboardType(.decimalPad)
 
-                            Picker("由誰付款", selection: Binding(
-                                get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
-                                set: { groupLedgerViewModel.selectedPayerId = $0 }
-                            )) {
-                                ForEach(overview.members) { member in
-                                    Text(member.name).tag(member.id)
+                                Picker("由誰付款", selection: Binding(
+                                    get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
+                                    set: { groupLedgerViewModel.selectedPayerId = $0 }
+                                )) {
+                                    ForEach(overview.members) { member in
+                                        Text(member.name).tag(member.id)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                Picker("分攤規則", selection: $groupLedgerViewModel.splitRuleMode) {
+                                    ForEach(SplitRuleMode.allCases) { mode in
+                                        Text(mode.label).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .onChange(of: groupLedgerViewModel.splitRuleMode) { mode in
+                                    groupLedgerViewModel.setSplitRuleMode(mode)
+                                }
+
+                                if groupLedgerViewModel.splitRuleMode != .equal {
+                                    ForEach(overview.members) { member in
+                                        TextField(
+                                            groupLedgerViewModel.splitRuleMode == .proportion ? "\(member.name) 比例" : "\(member.name) 分攤金額",
+                                            text: Binding(
+                                                get: { groupLedgerViewModel.splitRuleInputs[member.id] ?? "" },
+                                                set: { groupLedgerViewModel.splitRuleInputs[member.id] = $0 }
+                                            )
+                                        )
+                                        .keyboardType(.decimalPad)
+                                    }
+                                }
+
+                                Button("新增共享支出") {
+                                    groupLedgerViewModel.addSharedExpense()
                                 }
                             }
-                            .pickerStyle(.menu)
 
-                            Button("新增共享支出（平均分攤）") {
-                                groupLedgerViewModel.addSharedExpense()
+                            Group {
+                                TextField("本月群組預算", text: $groupLedgerViewModel.monthlyBudgetAmount)
+                                    .keyboardType(.decimalPad)
+                                Button("儲存群組月預算") {
+                                    groupLedgerViewModel.saveMonthlyBudget()
+                                }
+                                .font(.footnote)
+
+                                LabeledContent("本月支出", value: overview.budgetSnapshot.spent.formatted())
+                                LabeledContent("預算剩餘", value: overview.budgetSnapshot.remaining.formatted())
                             }
 
                             if overview.balances.isEmpty {
                                 Text("尚無分攤紀錄")
                                     .foregroundStyle(.secondary)
                             } else {
+                                Text("成員淨額")
+                                    .font(.subheadline.bold())
                                 ForEach(overview.balances) { item in
                                     HStack {
                                         Text(item.member.name)
@@ -120,6 +166,28 @@ struct HomeView: View {
                                     }
                                     .font(.caption)
                                 }
+
+                                Text("建議結算（最少轉帳）")
+                                    .font(.subheadline.bold())
+                                if overview.settlements.isEmpty {
+                                    Text("目前無需互轉")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    ForEach(overview.settlements) { transfer in
+                                        Text("\(transfer.fromMember.name) → \(transfer.toMember.name)：\(transfer.amount.formatted())")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("群組月報")
+                                    .font(.subheadline.bold())
+                                LabeledContent("本月筆數", value: "\(overview.monthlyReport.expenseCount)")
+                                LabeledContent("本月總支出", value: overview.monthlyReport.totalExpense.formatted())
+                                LabeledContent("平均每筆", value: overview.monthlyReport.averageExpense.formatted())
+                                LabeledContent("最大單筆", value: overview.monthlyReport.topExpenseTitle ?? "暫無")
                             }
                         }
                     }
@@ -240,6 +308,8 @@ struct HomeView: View {
                         LabeledContent("平均月收入", value: report.averageIncome.formatted())
                         LabeledContent("平均月支出", value: report.averageExpense.formatted())
                         LabeledContent("平均月淨額", value: report.averageNet.formatted())
+                        LabeledContent("MoM（本月淨額較上月）", value: report.momNetDelta?.formatted() ?? "暫無")
+                        LabeledContent("YoY（本月淨額較去年同月）", value: report.yoyNetDelta?.formatted() ?? "暫無")
                     }
 
                     let chartSeries = reportViewModel.chartSeries(for: report)
@@ -255,6 +325,19 @@ struct HomeView: View {
                                 Text(point.monthLabel)
                                 Spacer()
                                 Text("收 \(point.income.formatted()) / 支 \(point.expense.formatted()) / 淨 \(point.net.formatted())")
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
+                    if !report.pieSlices.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("圓餅圖分析（收入/支出占比）")
+                                .font(.subheadline.bold())
+                            AdvancedReportPieChart(slices: report.pieSlices)
+                                .frame(height: 220)
+                            ForEach(report.pieSlices) { slice in
+                                Text("• \(slice.label)：\(slice.value.formatted())")
                                     .font(.caption)
                             }
                         }
@@ -288,6 +371,70 @@ struct HomeView: View {
 
                 Button("匯出 PDF 報表（示範）") {
                     openProFeature(trigger: "report_pdf_export")
+                }
+            }
+
+            Section("年度財務回顧（Wrapped）") {
+                Button("產生今年 Wrapped") {
+                    let year = Calendar.current.component(.year, from: Date())
+                    annualWrapped = AnnualWrappedReportBuilder(store: expenseStore).build(year: year)
+                }
+
+                if let annualWrapped {
+                    LabeledContent("年度淨額", value: annualWrapped.totalNet.formatted())
+                    LabeledContent("儲蓄率", value: "\(annualWrapped.savingRate.formatted())%")
+                    LabeledContent("支出最高分類", value: annualWrapped.topExpenseCategory?.name ?? "暫無")
+                    LabeledContent("最佳月份", value: annualWrapped.bestMonth?.month.formatted(date: .abbreviated, time: .omitted) ?? "暫無")
+                } else {
+                    Text("尚未產生 Wrapped")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("歷史快照（Snapshot）") {
+                Button("匯出 Snapshot") {
+                    do {
+                        snapshotPayload = try ExpenseSnapshotService(store: expenseStore).exportSnapshot()
+                        snapshotMessage = "已產生快照，可直接貼上還原"
+                    } catch {
+                        snapshotMessage = error.localizedDescription
+                    }
+                }
+
+                TextEditor(text: $snapshotPayload)
+                    .frame(minHeight: 110)
+
+                Button("還原 Snapshot") {
+                    do {
+                        try ExpenseSnapshotService(store: expenseStore).restoreSnapshot(from: snapshotPayload)
+                        viewModel.reload()
+                        budgetViewModel.refresh()
+                        reportViewModel.refresh()
+                        snapshotMessage = "還原完成"
+                    } catch {
+                        snapshotMessage = error.localizedDescription
+                    }
+                }
+
+                if let snapshotMessage {
+                    Text(snapshotMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("訂閱挽留與續訂策略") {
+                if let retention = proEntitlementStore.retentionStrategy {
+                    Text(retention.headline)
+                        .font(.subheadline.bold())
+                    Text("CTA：\(retention.cta)")
+                        .font(.caption)
+                    Text("Offer：\(retention.offerCode)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("目前無需挽留策略")
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -548,6 +695,54 @@ struct AdvancedReportTrendChart: View {
     }
 }
 
+struct AdvancedReportPieChart: View {
+    let slices: [AdvancedReport.PieSlice]
+
+    var body: some View {
+        let total = slices.reduce(Decimal.zero) { $0 + $1.value }
+
+        ZStack {
+            ForEach(Array(slices.enumerated()), id: \.element.id) { index, _ in
+                let start = startFraction(at: index)
+                let end = endFraction(at: index)
+
+                Circle()
+                    .trim(from: start, to: end)
+                    .stroke(color(at: index), style: StrokeStyle(lineWidth: 30, lineCap: .butt))
+                    .rotationEffect(.degrees(-90))
+            }
+
+            VStack(spacing: 2) {
+                Text("總額")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(total.formatted())
+                    .font(.caption)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func startFraction(at index: Int) -> CGFloat {
+        guard index > 0 else { return 0 }
+        let numerator = slices.prefix(index).reduce(Decimal.zero) { $0 + $1.value }
+        let denominator = slices.reduce(Decimal.zero) { $0 + $1.value }
+        guard denominator != .zero else { return 0 }
+        return CGFloat(NSDecimalNumber(decimal: numerator / denominator).doubleValue)
+    }
+
+    private func endFraction(at index: Int) -> CGFloat {
+        let numerator = slices.prefix(index + 1).reduce(Decimal.zero) { $0 + $1.value }
+        let denominator = slices.reduce(Decimal.zero) { $0 + $1.value }
+        guard denominator != .zero else { return 0 }
+        return CGFloat(NSDecimalNumber(decimal: numerator / denominator).doubleValue)
+    }
+
+    private func color(at index: Int) -> Color {
+        let palette: [Color] = [.blue, .red, .green, .orange]
+        return palette[index % palette.count]
+    }
+}
 enum ReportRange: String, CaseIterable, Identifiable {
     case oneMonth
     case threeMonths
@@ -589,12 +784,21 @@ struct AdvancedReport {
         let delta: Decimal
     }
 
+    struct PieSlice: Identifiable {
+        var id: String { label }
+        let label: String
+        let value: Decimal
+    }
+
     let monthlyTrend: [TrendPoint]
     let averageIncome: Decimal
     let averageExpense: Decimal
     let averageNet: Decimal
     let topGrowth: CategoryDelta?
     let topDecline: CategoryDelta?
+    let momNetDelta: Decimal?
+    let yoyNetDelta: Decimal?
+    let pieSlices: [PieSlice]
 }
 
 @MainActor
@@ -648,13 +852,27 @@ final class AdvancedReportViewModel: ObservableObject {
         let totalExpense = snapshots.reduce(Decimal.zero) { $0 + $1.expense }
         let totalNet = snapshots.reduce(Decimal.zero) { $0 + $1.net }
 
+        let currentMonthOverview = snapshots.last
+        let previousMonthOverview = Calendar.current.date(byAdding: .month, value: -1, to: now).flatMap {
+            try? expenseStore.fetchMonthlyOverview(for: $0)
+        }
+        let previousYearOverview = Calendar.current.date(byAdding: .year, value: -1, to: now).flatMap {
+            try? expenseStore.fetchMonthlyOverview(for: $0)
+        }
+
         report = AdvancedReport(
             monthlyTrend: trend,
             averageIncome: totalIncome / count,
             averageExpense: totalExpense / count,
             averageNet: totalNet / count,
             topGrowth: topCategoryDelta(from: snapshots, highest: true),
-            topDecline: topCategoryDelta(from: snapshots, highest: false)
+            topDecline: topCategoryDelta(from: snapshots, highest: false),
+            momNetDelta: netDelta(current: currentMonthOverview?.net, baseline: previousMonthOverview?.net),
+            yoyNetDelta: netDelta(current: currentMonthOverview?.net, baseline: previousYearOverview?.net),
+            pieSlices: [
+                .init(label: "收入", value: totalIncome),
+                .init(label: "支出", value: totalExpense)
+            ].filter { $0.value > .zero }
         )
     }
 
@@ -706,6 +924,15 @@ final class AdvancedReportViewModel: ObservableObject {
     private func absDecimal(_ value: Decimal) -> Decimal {
         value < 0 ? -value : value
     }
+
+    private func netDelta(current: Decimal?, baseline: Decimal?) -> Decimal? {
+        guard let current else { return nil }
+        guard let baseline else {
+            return current == .zero ? nil : current
+        }
+        if current == .zero && baseline == .zero { return nil }
+        return current - baseline
+    }
 }
 
 private final class PreviewExpenseStore: ExpenseStore {
@@ -728,7 +955,7 @@ private final class PreviewExpenseStore: ExpenseStore {
         )
     }
 
-    func add(title: String, amount: Decimal, categoryId: Int64?) throws {}
+    func add(title: String, amount: Decimal, categoryId: Int64?, createdAt: Date) throws {}
     func delete(id: Int64) throws {}
     func update(id: Int64, title: String, amount: Decimal, categoryId: Int64?) throws {}
 }
@@ -765,17 +992,26 @@ private final class PreviewGroupLedgerStore: GroupLedgerStore {
 
     func addSharedExpense(ledgerId: Int64, title: String, amount: Decimal, paidByMemberId: Int64, splits: [(memberId: Int64, amount: Decimal)]) throws {}
 
-    func fetchOverview(ledgerId: Int64) throws -> GroupLedgerOverview {
+    func upsertMonthlyBudget(ledgerId: Int64, month: Date, amount: Decimal) throws {}
+
+    func fetchOverview(ledgerId: Int64, month: Date) throws -> GroupLedgerOverview {
         let ledger = GroupLedger(id: ledgerId, name: "家庭帳本", createdAt: Date())
         let members = try fetchMembers(ledgerId: ledgerId)
+        let balances = [
+            LedgerBalance(member: members[0], paid: 1000, owed: 500),
+            LedgerBalance(member: members[1], paid: 500, owed: 1000)
+        ]
         return GroupLedgerOverview(
             ledger: ledger,
             members: members,
             recentExpenses: [],
-            balances: [
-                LedgerBalance(member: members[0], paid: 1000, owed: 500),
-                LedgerBalance(member: members[1], paid: 500, owed: 1000)
-            ]
+            balances: balances,
+            settlements: [SettlementTransfer(fromMember: members[1], toMember: members[0], amount: 500)],
+            budgetSnapshot: GroupBudgetSnapshot(monthStart: month, budget: 6000, spent: 1500),
+            monthlyReport: GroupMonthlyReport(monthStart: month, expenseCount: 4, totalExpense: 1500, averageExpense: 375, topExpenseTitle: "採買", payerBreakdown: [
+                MemberAmountBreakdown(member: members[0], amount: 1000),
+                MemberAmountBreakdown(member: members[1], amount: 500)
+            ])
         )
     }
 }

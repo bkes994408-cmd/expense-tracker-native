@@ -32,8 +32,8 @@ fun SettingsScreen(
     proEntitlementStore: ProEntitlementStore,
 ) {
     val context = LocalContext.current
-    val repository = LocalStore.getInstance(context).categoryRepository
-    val viewModel: CategoryViewModel = viewModel(factory = CategoryViewModel.factory(repository))
+    val localStore = LocalStore.getInstance(context)
+    val viewModel: CategoryViewModel = viewModel(factory = CategoryViewModel.factory(localStore.categoryRepository))
 
     val categories by viewModel.categories.collectAsState()
     val nameInput by viewModel.nameInput.collectAsState()
@@ -41,65 +41,111 @@ fun SettingsScreen(
     val isPro = remember(entitlementVersion) { proEntitlementStore.isPro }
     val statusLabel = remember(entitlementVersion) { proEntitlementStore.statusLabel }
 
-    Column(
+    var importInput by remember { mutableStateOf("") }
+    var statusText by remember { mutableStateOf<String?>(null) }
+    var exportText by remember { mutableStateOf("") }
+
+    LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = "Pro tier: $statusLabel")
+        item { Text(text = "Pro tier: $statusLabel") }
         if (isPro) {
-            Button(onClick = {
-                proEntitlementStore.resetToFreeForDebug()
-                entitlementVersion++
-            }) {
-                Text("Reset to FREE (Debug)")
-            }
-        }
-
-        Text(text = "Category Management")
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.weight(1f),
-                value = nameInput,
-                onValueChange = viewModel::onNameChanged,
-                label = { Text("New category") },
-                singleLine = true,
-            )
-            Button(onClick = viewModel::addCategory) {
-                Text("Add")
-            }
-        }
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            itemsIndexed(categories, key = { _, item -> item.id }) { index, item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = item.name)
-                    Row {
-                        IconButton(onClick = { viewModel.moveUp(item.id) }, enabled = index > 0) {
-                            Text("↑")
-                        }
-                        IconButton(onClick = { viewModel.moveDown(item.id) }, enabled = index < categories.lastIndex) {
-                            Text("↓")
-                        }
-                        IconButton(onClick = { viewModel.archive(item.id) }) {
-                            Text("Archive")
-                        }
-                    }
+            item {
+                Button(onClick = {
+                    proEntitlementStore.resetToFreeForDebug()
+                    entitlementVersion++
+                }) {
+                    Text("Reset to FREE (Debug)")
                 }
             }
         }
 
-        Text(text = "Version: 0.0.1")
-    }
+        item { Text(text = "Category Management") }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = nameInput,
+                    onValueChange = viewModel::onNameChanged,
+                    label = { Text("New category") },
+                    singleLine = true,
+                )
+                Button(onClick = viewModel::addCategory) {
+                    Text("Add")
+                }
+            }
+        }
 
+        itemsIndexed(categories, key = { _, item -> item.id }) { index, item ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = item.name)
+                Row {
+                    IconButton(onClick = { viewModel.moveUp(item.id) }, enabled = index > 0) { Text("↑") }
+                    IconButton(onClick = { viewModel.moveDown(item.id) }, enabled = index < categories.lastIndex) { Text("↓") }
+                    IconButton(onClick = { viewModel.archive(item.id) }) { Text("Archive") }
+                }
+            }
+        }
+
+        item { Text("帳務導出（增強）") }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {
+                    exportText = localStore.expenseLedger.exportCsv()
+                    statusText = "CSV 匯出完成"
+                }) { Text("匯出 CSV") }
+                Button(onClick = {
+                    exportText = localStore.expenseLedger.exportJson()
+                    statusText = "JSON 匯出完成"
+                }) { Text("匯出 JSON") }
+            }
+        }
+
+        item { Text("帳務導入（CSV / JSON 文字貼上）") }
+        item {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = importInput,
+                onValueChange = { importInput = it },
+                minLines = 5,
+                label = { Text("貼上資料") },
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {
+                    val (ok, skip) = localStore.expenseLedger.importCsv(importInput)
+                    statusText = "CSV 導入完成：成功 $ok，略過 $skip"
+                }) { Text("導入 CSV") }
+                Button(onClick = {
+                    val (ok, skip) = localStore.expenseLedger.importJson(importInput)
+                    statusText = "JSON 導入完成：成功 $ok，略過 $skip"
+                }) { Text("導入 JSON") }
+            }
+        }
+
+        if (exportText.isNotBlank()) {
+            item {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = exportText,
+                    onValueChange = {},
+                    minLines = 5,
+                    label = { Text("最近匯出內容") },
+                )
+            }
+        }
+
+        statusText?.let { text -> item { Text(text = text) } }
+        item { Text(text = "Version: 0.0.1") }
+    }
 }

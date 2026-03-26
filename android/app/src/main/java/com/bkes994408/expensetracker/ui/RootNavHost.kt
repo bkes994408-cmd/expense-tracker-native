@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bkes994408.expensetracker.data.ExpenseRepositoryImpl
 import com.bkes994408.expensetracker.data.FileExpenseStore
+import com.bkes994408.expensetracker.db.LocalStore
 import com.bkes994408.expensetracker.pro.GooglePlayBillingClient
 import com.bkes994408.expensetracker.pro.GooglePlayBillingProPurchaseService
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
@@ -22,6 +23,7 @@ private object Routes {
 fun RootNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
+
     val purchaseService = remember(context) {
         GooglePlayBillingProPurchaseService(
             billingClient = GooglePlayBillingClient(
@@ -33,9 +35,13 @@ fun RootNavHost() {
     val proEntitlementStore = remember(context, purchaseService) { ProEntitlementStore(context, purchaseService) }
     val expenseRepository = remember(context) { ExpenseRepositoryImpl(FileExpenseStore(context)) }
 
+    val localStore = remember { LocalStore.getInstance(context) }
+    val homeViewModel = remember { HomeViewModel(localStore.expenseLedger) }
+
     NavHost(navController = navController, startDestination = Routes.Home) {
         composable(Routes.Home) {
             HomeScreen(
+                homeViewModel = homeViewModel,
                 onOpenSettings = { navController.navigate(Routes.Settings) },
                 proEntitlementStore = proEntitlementStore,
                 expenseRepository = expenseRepository,

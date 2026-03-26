@@ -88,7 +88,6 @@
 - 各 1 條 UI/integration test
 - CI（build + build-test）全綠
 
-
 ### Iteration-2（Data Input & Automation）
 
 > 目標：降低 onboarding 阻力，讓用戶更快帶入既有帳目資料開始使用。
@@ -149,3 +148,20 @@
 - [ ] Desktop 快速輸入工具（Tauri Menu Bar 常駐，快速鍵呼出 → 填金額分類 → 儲存）【Pro】
 - [ ] 跨裝置同步正式版（`SyncMutation` / `SyncCursor` 骨架接上 Supabase，iOS + Android + Web 三端同步）【Pro】
 - [ ] 管理後台與資料維護功能（用戶自助後台：帳號管理、完整資料匯出、GDPR 刪除申請）【Pro】
+
+### Iteration-6（成長與變現優化）
+- [x] 年度財務回顧（Wrapped 報告）：新增年度財務摘要生成器（年度收入/支出/淨額、儲蓄率、支出最高分類、最佳/艱困月份）。
+- [x] 歷史快照備份與還原（Snapshot）：新增 JSON Snapshot 匯出/貼上還原機制，支援快速資料備份與復原。
+- [x] 訂閱挽留與續訂優化（Retention Strategy）：新增 trial 近到期、trial 到期、monthly 轉年付等策略建議與 offer code。
+
+### Iteration-1 (MVP-7: 社交與數據共享)
+- [x] 家庭/群組帳本：支持多人共同記帳，實現家庭或小團體費用共享與分攤。
+- [ ] 帳目數據導入/導出增強：支持更多格式（如 OFX, QIF），或與銀行 API 介接，簡化數據錄入。
+- [x] 進階視覺化報表與圖表（第一階段）：已提供多圖表類型切換（折線圖 / 長條圖）與自定義報表篩選（全部 / 僅收入 / 僅支出 / 僅淨額）；目前先上線 iOS，Android 後續補齊。
+- [x] 預算管理智能建議：根據歷史消費數據，AI 自動推薦預算設定，並提供超支預警。
+
+### Iteration-7（跨裝置擴展）
+- [x] Web 報表中心（React + TypeScript）骨架與月總覽/分類分析初版
+- [x] Desktop 快速輸入工具（Tauri + React）骨架與基本輸入驗證
+- [x] 雲端同步架構基礎（TypeScript mutation + cursor orchestrator）
+- [x] 實作紀錄文件：`docs/ITERATION-7_CROSS_DEVICE.md`

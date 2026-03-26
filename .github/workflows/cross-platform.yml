@@ -1,0 +1,60 @@
+name: Cross Platform Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  web-report-center:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-report-center
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web-report-center/package-lock.json
+      - name: Install deps
+        run: npm ci
+      - name: Build web report center
+        run: npm run build
+
+  desktop-quick-entry-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop-quick-entry/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop-quick-entry/web/package-lock.json
+      - name: Install deps
+        run: npm ci
+      - name: Build desktop quick entry web
+        run: npm run build
+
+  cloud-sync-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shared/cloud-sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: shared/cloud-sync/package-lock.json
+      - name: Install deps
+        run: npm ci
+      - name: Type check cloud sync
+        run: npm run check

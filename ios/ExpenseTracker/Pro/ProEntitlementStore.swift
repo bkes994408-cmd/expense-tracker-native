@@ -30,7 +30,7 @@ final class ProEntitlementStore: ObservableObject {
 
     private let defaults: UserDefaults
     private let purchaseService: InAppPurchaseService
-    private let nowProvider: () -> Date
+    let nowProvider: () -> Date
     private let tierKey = "pro.entitlement.tier"
     private let sourceKey = "pro.entitlement.source"
     private let trialExpireKey = "pro.entitlement.trial.expireAt"

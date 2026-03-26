@@ -7,20 +7,35 @@ final class ExpenseListViewModel: ObservableObject {
     @Published var newTitle = ""
     @Published var newAmount = ""
     @Published var isIncome = false
+    @Published var budgetSuggestions: [BudgetDraftSuggestion] = []
+    @Published var overspendAlerts: [OverspendForecast] = []
+    @Published var predictedCategory: CategoryPrediction?
     @Published var searchText = "" {
         didSet { reload() }
     }
 
     private let store: ExpenseStore
+    private let categoryStore: CategoryStore?
+    private let categorizer: OnDeviceExpenseCategorizing
 
-    init(store: ExpenseStore) {
+    init(
+        store: ExpenseStore,
+        categoryStore: CategoryStore? = nil,
+        categorizer: OnDeviceExpenseCategorizing = HybridOnDeviceExpenseCategorizer()
+    ) {
         self.store = store
+        self.categoryStore = categoryStore
+        self.categorizer = categorizer
         reload()
     }
 
     func reload() {
         expenses = (try? store.fetchAll(searchText: searchText)) ?? []
         monthlyOverview = (try? store.fetchMonthlyOverview(for: Date())) ?? .empty(month: Date())
+
+        let allExpenses = (try? store.fetchAll(searchText: nil)) ?? []
+        budgetSuggestions = ExpenseAIIntelligence.buildBudgetDraft(from: allExpenses)
+        overspendAlerts = ExpenseAIIntelligence.forecastOverspend(from: allExpenses, drafts: budgetSuggestions)
     }
 
     func addExpense() {
@@ -31,10 +46,20 @@ final class ExpenseListViewModel: ObservableObject {
         }
 
         let signedAmount = isIncome ? rawAmount : -rawAmount
+        let prediction = categorizer.predictCategory(for: trimmedTitle)
+        predictedCategory = prediction
 
         do {
-            try store.add(title: trimmedTitle, amount: signedAmount, categoryId: nil)
-            Telemetry.shared.track(.expenseAdded, metadata: ["type": isIncome ? "income" : "expense"])
+            let categoryId = try resolveCategoryId(prediction: prediction)
+            try store.add(title: trimmedTitle, amount: signedAmount, categoryId: categoryId)
+            Telemetry.shared.track(
+                .expenseAdded,
+                metadata: [
+                    "type": isIncome ? "income" : "expense",
+                    "predicted_category": prediction.category,
+                    "prediction_source": prediction.source.rawValue
+                ]
+            )
             newTitle = ""
             newAmount = ""
             reload()
@@ -55,6 +80,19 @@ final class ExpenseListViewModel: ObservableObject {
             }
         }
         reload()
+    }
+
+    private func resolveCategoryId(prediction: CategoryPrediction) throws -> Int64? {
+        guard prediction.category != "未分類", let categoryStore else { return nil }
+
+        var categories = try categoryStore.fetchActive()
+        if let matched = categories.first(where: { $0.name == prediction.category }) {
+            return matched.id
+        }
+
+        try categoryStore.add(name: prediction.category)
+        categories = try categoryStore.fetchActive()
+        return categories.first(where: { $0.name == prediction.category })?.id
     }
 
     func exportCSV() -> (filename: String, content: String)? {
