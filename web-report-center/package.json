@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@expense-tracker/cloud-sync": "file:../shared/cloud-sync",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -16,6 +18,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "typescript": "^5.6.2",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "vitest": "^3.1.1"
   }
 }

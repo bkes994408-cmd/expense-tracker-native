@@ -39,8 +39,20 @@
   - desktop-quick-entry/web build
   - shared/cloud-sync typecheck
 
-## 下一步建議（Iteration-7.1）
-1. 將 `shared/cloud-sync` 接上實際 backend API（push/pull endpoint）
-2. Web 加入 Auth token 流程與真實資料查詢
-3. Desktop 補上 Tauri 端本地儲存（SQLite）與系統通知
-4. cloud-sync 補齊 unit tests（包括 conflict / partial-ack 案例）
+## Iteration-7.1 / Phase 1（本次）
+1. `shared/cloud-sync` 已接上 Supabase 最小同步後端：`SupabaseSyncTransport`
+2. 新增 `sync_mutations` schema 與 RLS policy（`shared/cloud-sync/supabase/schema.sql`）
+3. 打通 `enqueue -> push -> pull -> merge` 閉環（先針對 expenses/categories）
+4. 新增 merge 基礎測試（`src/merge.test.ts`）
+
+## Iteration-7.2 / Phase 2（本次）
+1. `web-report-center` 已接入 `CloudSyncOrchestrator + SupabaseSyncTransport`
+2. 完成 expenses/categories 最小 smoke flow（按鈕觸發 enqueue -> flush -> pull patch -> merge）
+3. Web 端加入 browser localStorage 型 `SyncStore`，保存 queue/cursor
+4. 新增最小測試：`web-report-center/src/features/syncSmoke.test.ts`
+
+## 下一步建議（Iteration-7.3）
+1. 接上實際 auth session（以 Supabase JWT 對齊 `auth.uid()`）
+2. 補 `delete tombstone`、partial-ack、retry/backoff 測試
+3. Desktop quick-entry 接入 orchestrator + shared fixtures
+4. 規劃 iOS/Android shared contract fixtures，確保跨端 merge 規格一致
