@@ -9,6 +9,7 @@
     "./src/*": "./src/*"
   },
   "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.json",
     "test": "node --test --import tsx tests/**/*.test.ts"
   },
