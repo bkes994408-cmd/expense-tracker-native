@@ -17,6 +17,17 @@ export interface SyncCursor {
   mutationWatermark?: string;
 }
 
+export interface SyncPullResult {
+  cursor: SyncCursor;
+  patches: SyncMutation[];
+}
+
+export interface SyncFlushResult {
+  pushed: number;
+  patched: number;
+  hasPending: boolean;
+}
+
 export interface SyncPushRequest {
   deviceId: string;
   baseCursor?: string;

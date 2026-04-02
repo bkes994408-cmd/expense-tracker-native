@@ -1,5 +1,8 @@
 package com.bkes994408.expensetracker.db
 
+import com.bkes994408.expensetracker.ai.BudgetIntelligenceEngine
+import com.bkes994408.expensetracker.ai.HybridCategoryClassifier
+import com.bkes994408.expensetracker.ai.OnDeviceCategoryClassifier
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
@@ -11,7 +14,9 @@ import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class ExpenseLedger {
+class ExpenseLedger(
+    private val categoryClassifier: OnDeviceCategoryClassifier = HybridCategoryClassifier(),
+) {
     data class Entry(
         val id: String = UUID.randomUUID().toString(),
         val title: String,
@@ -24,6 +29,7 @@ class ExpenseLedger {
         val category: String,
         val averageSpend: BigDecimal,
         val suggestedBudget: BigDecimal,
+        val trend: BigDecimal,
     )
 
     data class Alert(
@@ -37,10 +43,14 @@ class ExpenseLedger {
     private val _entries = MutableStateFlow<List<Entry>>(emptyList())
     val entries: StateFlow<List<Entry>> = _entries
 
-    fun addExpense(title: String, amount: BigDecimal, category: String = "未分類") {
+    fun addExpense(title: String, amount: BigDecimal, category: String? = null) {
         if (title.isBlank() || amount == BigDecimal.ZERO) return
-        _entries.value = _entries.value + Entry(title = title.trim(), amount = amount, category = category)
+        val resolvedCategory = category?.takeIf { it.isNotBlank() }
+            ?: categoryClassifier.classify(title.trim()).category
+        _entries.value = _entries.value + Entry(title = title.trim(), amount = amount, category = resolvedCategory)
     }
+
+    fun predictCategory(title: String): OnDeviceCategoryClassifier.Prediction = categoryClassifier.classify(title)
 
     fun importCsv(raw: String): Pair<Int, Int> {
         val lines = raw.lines().map { it.trim() }.filter { it.isNotBlank() }
@@ -132,47 +142,27 @@ class ExpenseLedger {
     }
 
     fun suggestBudgets(now: LocalDate = LocalDate.now()): List<Suggestion> {
-        val zone = ZoneId.systemDefault()
-        val currentMonthStart = now.withDayOfMonth(1)
-        val lookbackStart = currentMonthStart.minusMonths(3)
-
-        val grouped = _entries.value
-            .filter { it.amount < BigDecimal.ZERO }
-            .filter {
-                val date = LocalDate.ofInstant(it.createdAt, zone)
-                !date.isBefore(lookbackStart) && date.isBefore(currentMonthStart)
-            }
-            .groupBy { it.category }
-
-        return grouped.map { (category, values) ->
-            val total = values.fold(BigDecimal.ZERO) { acc, entry -> acc + entry.amount.abs() }
-            val average = if (values.isEmpty()) BigDecimal.ZERO else total.divide(BigDecimal(values.size), 2, RoundingMode.HALF_UP)
-            val suggestion = average.multiply(BigDecimal("1.10")).setScale(2, RoundingMode.HALF_UP).max(BigDecimal("500"))
-            Suggestion(category, average, suggestion)
-        }.sortedByDescending { it.suggestedBudget }
+        return BudgetIntelligenceEngine.buildDrafts(_entries.value, now).map {
+            Suggestion(
+                category = it.category,
+                averageSpend = it.baseline,
+                suggestedBudget = it.suggestedBudget,
+                trend = it.trend,
+            )
+        }
     }
 
     fun detectOverspend(now: LocalDate = LocalDate.now()): List<Alert> {
-        val zone = ZoneId.systemDefault()
-        val spentByCategory = _entries.value
-            .filter { it.amount < BigDecimal.ZERO }
-            .filter {
-                val date = LocalDate.ofInstant(it.createdAt, zone)
-                date.year == now.year && date.month == now.month
-            }
-            .groupBy { it.category }
-            .mapValues { (_, values) -> values.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount.abs() } }
-
-        return suggestBudgets(now).mapNotNull { suggestion ->
-            val spent = spentByCategory[suggestion.category] ?: BigDecimal.ZERO
-            if (suggestion.suggestedBudget <= BigDecimal.ZERO) return@mapNotNull null
-            val ratio = spent.divide(suggestion.suggestedBudget, 4, RoundingMode.HALF_UP)
-            when {
-                ratio >= BigDecimal.ONE -> Alert(suggestion.category, spent, suggestion.suggestedBudget, ratio, danger = true)
-                ratio >= BigDecimal("0.8") -> Alert(suggestion.category, spent, suggestion.suggestedBudget, ratio, danger = false)
-                else -> null
-            }
-        }.sortedByDescending { it.ratio }
+        val drafts = BudgetIntelligenceEngine.buildDrafts(_entries.value, now)
+        return BudgetIntelligenceEngine.forecastOverspend(_entries.value, drafts, now).map {
+            Alert(
+                category = it.category,
+                spent = it.currentSpent,
+                budget = it.budget,
+                ratio = it.riskScore,
+                danger = it.riskScore >= BigDecimal.ONE,
+            )
+        }
     }
 
     private fun parseCsvLine(line: String): List<String> {

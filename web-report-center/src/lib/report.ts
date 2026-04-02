@@ -9,7 +9,26 @@ export interface ExpenseRecord {
   createdAt: string;
 }
 
-export function summarize(records: ExpenseRecord[], filter: ReportFilter) {
+export interface ReportQuery {
+  filter?: ReportFilter;
+  keyword?: string;
+}
+
+export function applyQuery(records: ExpenseRecord[], query: ReportQuery = {}): ExpenseRecord[] {
+  const filter = query.filter ?? "all";
+  const keyword = query.keyword?.trim();
+
+  return records.filter((record) => {
+    const byType = filter === "all" || filter === "net" || record.type === filter;
+    const byKeyword =
+      !keyword ||
+      record.title.includes(keyword) ||
+      record.category.includes(keyword);
+    return byType && byKeyword;
+  });
+}
+
+export function summarize(records: ExpenseRecord[], filter: ReportFilter = "all") {
   const filtered = records.filter((record) => filter === "all" || record.type === filter || filter === "net");
   const income = filtered.filter((r) => r.type === "income").reduce((sum, r) => sum + r.amount, 0);
   const expense = filtered.filter((r) => r.type === "expense").reduce((sum, r) => sum + r.amount, 0);
