@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import UIKit
 
 struct HomeView: View {
     @StateObject private var viewModel: ExpenseListViewModel
@@ -14,6 +15,8 @@ struct HomeView: View {
     @State private var annualWrapped: AnnualWrappedReport?
     @State private var snapshotPayload: String = ""
     @State private var snapshotMessage: String?
+    @State private var reportPDFURL: URL?
+    @State private var reportPDFMessage: String?
 
     private let expenseStore: ExpenseStore
 
@@ -21,10 +24,12 @@ struct HomeView: View {
         store: ExpenseStore,
         budgetStore: BudgetStore,
         groupLedgerStore: GroupLedgerStore,
+        categoryStore: CategoryStore? = nil,
         proEntitlementStore: ProEntitlementStore,
         onOpenSettings: @escaping () -> Void
     ) {
         self.expenseStore = store
+        _ = categoryStore
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
@@ -368,8 +373,35 @@ struct HomeView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Button("匯出 PDF 報表（示範）") {
-                    openProFeature(trigger: "report_pdf_export")
+                Button("匯出 PDF 月報") {
+                    guard let report = reportViewModel.report else {
+                        reportPDFMessage = "尚無可匯出資料"
+                        return
+                    }
+
+                    if !proEntitlementStore.canAccess(.pdfExport) {
+                        openProFeature(trigger: "report_pdf_export")
+                        return
+                    }
+
+                    do {
+                        reportPDFURL = try ReportPDFExporter().export(report: report, range: reportViewModel.selectedRange)
+                        reportPDFMessage = "PDF 產生完成"
+                    } catch {
+                        reportPDFMessage = "PDF 匯出失敗：\(error.localizedDescription)"
+                    }
+                }
+
+                if let reportPDFURL {
+                    ShareLink(item: reportPDFURL) {
+                        Label("分享 PDF 月報", systemImage: "square.and.arrow.up")
+                    }
+                }
+
+                if let reportPDFMessage {
+                    Text(reportPDFMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -932,6 +964,50 @@ final class AdvancedReportViewModel: ObservableObject {
         }
         if current == .zero && baseline == .zero { return nil }
         return current - baseline
+    }
+}
+
+struct ReportPDFExporter {
+    func export(report: AdvancedReport, range: ReportRange, directory: URL = FileManager.default.temporaryDirectory) throws -> URL {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_Hant_TW")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+
+        let fileURL = directory.appendingPathComponent("expense-report-\(Int(Date().timeIntervalSince1970)).pdf")
+        let pageBounds = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let renderer = UIGraphicsPDFRenderer(bounds: pageBounds)
+
+        try renderer.writePDF(to: fileURL) { context in
+            context.beginPage()
+            var y: CGFloat = 44
+
+            func draw(_ text: String, font: UIFont = .systemFont(ofSize: 12, weight: .regular)) {
+                let attributes: [NSAttributedString.Key: Any] = [.font: font]
+                text.draw(in: CGRect(x: 32, y: y, width: pageBounds.width - 64, height: 24), withAttributes: attributes)
+                y += 22
+            }
+
+            draw("Expense Tracker 月報", font: .systemFont(ofSize: 20, weight: .bold))
+            draw("期間：最近 \(range.months) 個月")
+            draw("產生時間：\(formatter.string(from: Date()))")
+            y += 8
+            draw("平均月收入：\(report.averageIncome.formatted())")
+            draw("平均月支出：\(report.averageExpense.formatted())")
+            draw("平均月淨額：\(report.averageNet.formatted())")
+            draw("MoM：\(report.momNetDelta?.formatted() ?? "暫無")")
+            draw("YoY：\(report.yoyNetDelta?.formatted() ?? "暫無")")
+            y += 8
+            draw("趨勢資料", font: .systemFont(ofSize: 16, weight: .semibold))
+            for point in report.monthlyTrend.prefix(12) {
+                draw("\(point.monthLabel) 收\(point.income.formatted()) / 支\(point.expense.formatted()) / 淨\(point.net.formatted())")
+            }
+            y += 8
+            draw("分類變化（MoM）", font: .systemFont(ofSize: 16, weight: .semibold))
+            draw("增長最多：\(report.topGrowth.map { "\($0.categoryName) (+\($0.delta.formatted()))" } ?? "暫無")")
+            draw("下降最多：\(report.topDecline.map { "\($0.categoryName) (\($0.delta.formatted()))" } ?? "暫無")")
+        }
+
+        return fileURL
     }
 }
 
