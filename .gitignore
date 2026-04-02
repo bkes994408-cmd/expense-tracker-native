@@ -1,10 +1,11 @@
-node_modules/
+# JS / TS workspaces
 **/node_modules/
-dist/
 **/dist/
+**/.vite/
+**/*.tsbuildinfo
+
+# Tauri / Rust
+**/target/
+
+# OS
 .DS_Store
-web/node_modules/
-web/dist/
-android/.gradle/
-android/app/build/
-ios/ExpenseTracker.xcodeproj/project.xcworkspace/xcuserdata/

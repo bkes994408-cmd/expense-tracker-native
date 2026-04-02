@@ -1,33 +1,51 @@
-# Sprint Result - MVP-7（Web Report Center Free/Pro 權限切片）
+# Sprint Result - Iteration-7（跨平台擴展）
 
-日期：2026-03-22
+日期：2026-03-20
 
-## 完成項目（safe vertical slice）
+## 完成項目（usable increment）
 
-1. **Web 報表中心方案權限對齊**
-   - 新增 `web/src/lib/entitlement.ts`，統一 `Free/Pro` 區間權限判斷。
-   - `App.tsx` 新增方案切換（Free / Pro），預設 Free。
-   - Free 僅允許 `1M`，`3M / 6M / 12M` 在下拉選單中標記 `（Pro）` 並鎖定。
-   - 由 Pro 切回 Free 時自動回落 `1M`，避免保留不可用區間。
+1. **Web 報表中心（React + TypeScript）**
+   - 新增 `web-report-center/`（Vite + React + TS）。
+   - 提供月總覽（收入/支出/淨額/筆數）、報表篩選（全部/僅收入/僅支出/僅淨額）、CSV 匯出。
+   - 實作 Web Pro gating 展示（Free 顯示鎖定提示，Pro 顯示進階報表可用）。
 
-2. **測試補強**
-   - `web/src/__tests__/app.test.tsx` 新增案例：
-     - 預設 Free 狀態顯示提示文案，且 3M option disabled。
-     - 切到 Pro 後可選 3M，摘要數值正確更新。
+2. **Desktop 快速輸入工具（Tauri Menu Bar）**
+   - 新增 `desktop-quick-entry/`，包含 `web/` 前端與 `src-tauri/` shell。
+   - Rust 端建立 tray menu（顯示視窗/離開）與 `quick_add_expense` command。
+   - 前端快速輸入表單可呼叫 command，完成 Menu Bar 快速記帳基礎流程。
 
-3. **文件更新**
-   - `docs/ROADMAP.md`：Iteration-7 的 Web 報表中心項目標記為已完成（含 Free/Pro gating）。
-   - `docs/WEB_REPORT_CENTER_MVP.md`：補充 entitlement gating 行為與後續 TODO 調整。
+3. **跨裝置雲端同步架構基礎（SyncMutation / SyncCursor / SyncTransport）**
+   - 新增 `shared/cloud-sync/` TypeScript 模組。
+   - 建立 `SyncMutation`、`SyncCursor`、`SyncTransport` 協議型別。
+   - 實作 `InMemorySyncStateStore`、`InMemorySyncTransport`、`SyncEngine`（stage mutation + push/pull + cursor 更新）。
+   - 新增 `tests/syncEngine.test.ts` 驗證同步主流程。
 
-## 驗證指令與結果
+## 測試與驗證
 
 ```bash
-cd web
+# sync 架構單元測試
+cd shared/cloud-sync
+npm install
 npm test
+
+# Web 報表中心 build
+cd ../../web-report-center
+npm install
+npm run build
+
+# Desktop quick entry 前端 build
+cd ../desktop-quick-entry/web
+npm install
 npm run build
 ```
 
-結果：測試全綠、build 成功。
+結果：三組指令皆成功（build/test 綠燈）。
+
+## 已知限制
+
+- `desktop-quick-entry/src-tauri` 尚未在本機執行 `cargo check`（環境缺少 cargo）。
+- `quick_add_expense` 目前先記錄 payload，下一步需串接 `SyncMutation` enqueue 與本地 store。
+- Web 報表中心目前使用 seed data，下一步需接入實際 API / Sync pull 結果。
 
 ---
 
@@ -52,6 +70,8 @@ npm run build
 4. **測試**
    - iOS：`Iteration6FeatureTests`（Wrapped、Snapshot round-trip、Retention offer）。
    - Android：`Iteration6FeatureTest`（Wrapped、Snapshot restore、Retention offer）。
+
+---
 
 # Sprint Result - MVP-7（進階視覺化報表與圖表）
 

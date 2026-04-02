@@ -1,18 +1,20 @@
-export type SyncMutationType = "create" | "update" | "delete";
+export type EntityType = "expense" | "category" | "subscription" | "installment";
 
-export interface SyncMutation {
+export interface SyncMutation<TPayload = unknown> {
   id: string;
-  entity: "expense" | "category" | "subscription" | "installment";
+  entityType: EntityType;
   entityId: string;
-  type: SyncMutationType;
-  payload: string;
-  updatedAt: string;
-  deviceId?: string;
+  operation: "create" | "update" | "delete";
+  payload: TPayload;
+  clientTimestamp: string;
+  version: number;
 }
 
 export interface SyncCursor {
-  lastPulledAt?: string;
-  lastMutationId?: string;
+  deviceId: string;
+  lastSyncedAt: string;
+  serverCursor?: string;
+  mutationWatermark?: string;
 }
 
 export interface SyncPullResult {
@@ -24,4 +26,20 @@ export interface SyncFlushResult {
   pushed: number;
   patched: number;
   hasPending: boolean;
+}
+
+export interface SyncPushRequest {
+  deviceId: string;
+  baseCursor?: string;
+  mutations: SyncMutation[];
+}
+
+export interface SyncPullRequest {
+  deviceId: string;
+  fromCursor?: string;
+}
+
+export interface SyncTransport {
+  pushMutations(request: SyncPushRequest): Promise<{ acceptedIds: string[]; nextCursor: string }>;
+  pullMutations(request: SyncPullRequest): Promise<{ mutations: SyncMutation[]; nextCursor: string }>;
 }

@@ -1,4 +1,4 @@
-import type { SyncCursor, SyncFlushResult, SyncMutation, SyncPullResult } from "./types";
+import type { SyncCursor, SyncFlushResult, SyncMutation, SyncPullResult } from "./types.js";
 
 export interface SyncTransport {
   push(mutations: SyncMutation[]): Promise<{ acceptedMutationIds: string[] }>;
@@ -23,7 +23,10 @@ export interface CloudSyncOptions {
 
 export class InMemorySyncStore implements SyncStore {
   private queue: SyncMutation[] = [];
-  private cursor: SyncCursor = {};
+  private cursor: SyncCursor = {
+    deviceId: "local-device",
+    lastSyncedAt: new Date(0).toISOString(),
+  };
 
   async loadQueue(): Promise<SyncMutation[]> {
     return [...this.queue];
@@ -43,7 +46,10 @@ export class InMemorySyncStore implements SyncStore {
 }
 
 export class CloudSyncOrchestrator {
-  private cursor: SyncCursor = {};
+  private cursor: SyncCursor = {
+    deviceId: "local-device",
+    lastSyncedAt: new Date(0).toISOString(),
+  };
   private queue: SyncMutation[] = [];
   private readonly batchSize: number;
 

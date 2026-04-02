@@ -1,21 +1,25 @@
 {
-  "name": "expense-tracker-web-report-center",
-  "version": "0.1.0",
+  "name": "web-report-center",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "test": "node --test --import tsx src/lib/*.test.ts",
+    "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@expense-tracker/cloud-sync": "file:../shared/cloud-sync",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "typescript": "^5.6.2",
+    "@vitejs/plugin-react": "^4.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
     "vite": "^5.4.8"
   }
 }
