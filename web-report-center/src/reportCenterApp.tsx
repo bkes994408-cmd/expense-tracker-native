@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InMemorySyncStateStore,
   type SyncMutation,
@@ -9,6 +9,12 @@ import {
 import { summarize, toCsv, type ExpenseRecord, type ReportFilter } from "./lib/report";
 import { applySyncMutations, type SyncDomainState } from "./lib/syncDomain";
 import { runSyncOnce } from "./lib/webSync";
+import {
+  createDebouncedRunner,
+  deriveSyncStatus,
+  summarizePendingQueue,
+  toSyncStatusLabel,
+} from "./lib/syncUx";
 
 const deviceId = "web-report-center";
 
@@ -100,8 +106,10 @@ export function ReportCenterApp() {
   const [filter, setFilter] = useState<ReportFilter>("all");
   const [dataState, setDataState] = useState<SyncDomainState>(initialState);
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSummaryText, setPendingSummaryText] = useState("佇列為空");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [remoteMergeNotice, setRemoteMergeNotice] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const syncDeps = useMemo(() => {
@@ -124,12 +132,22 @@ export function ReportCenterApp() {
 
   const summary = useMemo(() => summarize(records, filter), [records, filter]);
 
-  async function refreshPendingCount() {
+  const refreshPendingCount = useCallback(async () => {
     const pending = await syncDeps.store.listPendingMutations(deviceId);
     setPendingCount(pending.length);
-  }
 
-  async function syncNow() {
+    const summary = summarizePendingQueue(pending);
+    if (summary.total === 0) {
+      setPendingSummaryText("佇列為空");
+      return;
+    }
+
+    setPendingSummaryText(
+      `總計 ${summary.total} 筆（expense ${summary.byEntityType.expense ?? 0} / category ${summary.byEntityType.category ?? 0}），最早 ${summary.oldestClientTimestamp ?? "-"}`,
+    );
+  }, [syncDeps.store]);
+
+  const syncNow = useCallback(async () => {
     setIsSyncing(true);
     setLastError(null);
 
@@ -140,13 +158,20 @@ export function ReportCenterApp() {
 
       setDataState((prev) => applySyncMutations(applySyncMutations(prev, pushedMutations), result.pulledMutations));
       setLastSyncedAt(result.cursor.lastSyncedAt);
+      if (result.pulledMutations.length > 0) {
+        setRemoteMergeNotice(`已合併 ${result.pulledMutations.length} 筆遠端更新`);
+      }
       await refreshPendingCount();
     } catch (error) {
       setLastError(error instanceof Error ? error.message : "同步失敗");
     } finally {
       setIsSyncing(false);
     }
-  }
+  }, [refreshPendingCount, syncDeps.store, syncDeps.transport]);
+
+  const debounceSyncRef = useRef(createDebouncedRunner(() => {
+    void syncNow();
+  }, 900));
 
   async function stageLocalMutation() {
     try {
@@ -169,6 +194,7 @@ export function ReportCenterApp() {
 
       await syncDeps.store.enqueueMutation(mutation);
       await refreshPendingCount();
+      debounceSyncRef.current.schedule();
     } catch (error) {
       setLastError(error instanceof Error ? error.message : "加入待同步資料失敗");
     }
@@ -177,7 +203,25 @@ export function ReportCenterApp() {
   useEffect(() => {
     void refreshPendingCount();
     void syncNow();
-  }, []);
+  }, [refreshPendingCount, syncNow]);
+
+  useEffect(() => {
+    function onFocus() {
+      void syncNow();
+    }
+
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      debounceSyncRef.current.cancel();
+    };
+  }, [syncNow]);
+
+  useEffect(() => {
+    if (!remoteMergeNotice) return;
+    const timer = setTimeout(() => setRemoteMergeNotice(null), 3000);
+    return () => clearTimeout(timer);
+  }, [remoteMergeNotice]);
 
   function downloadCsv() {
     const blob = new Blob([toCsv(records)], { type: "text/csv;charset=utf-8" });
@@ -188,6 +232,8 @@ export function ReportCenterApp() {
     URL.revokeObjectURL(link.href);
   }
 
+  const syncStatus = deriveSyncStatus({ isSyncing, pendingCount, lastError });
+
   return (
     <main className="container">
       <h1>Web 報表中心</h1>
@@ -195,11 +241,19 @@ export function ReportCenterApp() {
 
       <section className="card">
         <h2>同步狀態</h2>
-        <ul>
-          <li>最後同步時間：{lastSyncedAt ?? "尚未同步"}</li>
-          <li>Pending mutations：{pendingCount}</li>
-          <li>最近錯誤：{lastError ?? "無"}</li>
-        </ul>
+        <div className="sync-status-bar">
+          <span className={`sync-badge sync-badge-${syncStatus}`}>{toSyncStatusLabel(syncStatus)}</span>
+          <span>最後同步時間：{lastSyncedAt ?? "尚未同步"}</span>
+          <span>Pending mutations：{pendingCount}</span>
+        </div>
+        <p className="pending-summary">Queue 摘要：{pendingSummaryText}</p>
+        {lastError ? (
+          <div className="sync-error-box">
+            <p>同步錯誤：{lastError}</p>
+            <button onClick={syncNow} disabled={isSyncing}>重試</button>
+          </div>
+        ) : null}
+        {remoteMergeNotice ? <p className="merge-notice">{remoteMergeNotice}</p> : null}
         <div className="row">
           <button onClick={syncNow} disabled={isSyncing}>{isSyncing ? "同步中..." : "手動同步"}</button>
           <button onClick={stageLocalMutation}>新增本地待同步資料</button>

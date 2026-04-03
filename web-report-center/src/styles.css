@@ -5,3 +5,13 @@ body { margin: 0; background: #f5f7fb; color: #111827; }
 .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 button { border: none; border-radius: 8px; padding: 8px 12px; background: #2563eb; color: white; cursor: pointer; }
 select { padding: 6px 10px; border-radius: 8px; }
+
+.sync-status-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+.sync-badge { display: inline-flex; padding: 4px 10px; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 600; }
+.sync-badge-synced { background: #16a34a; }
+.sync-badge-syncing { background: #2563eb; }
+.sync-badge-pending { background: #d97706; }
+.sync-badge-failed { background: #dc2626; }
+.sync-error-box { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+.pending-summary { color: #374151; margin-top: 0; }
+.merge-notice { margin-top: 0; color: #065f46; background: #d1fae5; border-radius: 8px; padding: 8px 10px; }
