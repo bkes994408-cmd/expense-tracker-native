@@ -7,20 +7,14 @@ final class LocalStore {
     /// Auth 不依賴 DB，避免啟動就初始化整個資料層。
     let authService: AuthService = MockAuthService()
 
+    lazy var syncStateStore: SyncStateStore = InMemorySyncStateStore()
+
     lazy var categoryStore: CategoryStore = {
-        do {
-            return try GRDBCategoryStore(dbQueue: dbQueue)
-        } catch {
-            fatalError("Failed to initialize category store: \(error)")
-        }
+        SyncingCategoryStore(base: rawCategoryStore, syncStateStore: syncStateStore)
     }()
 
     lazy var expenseStore: ExpenseStore = {
-        do {
-            return try GRDBExpenseStore(dbQueue: dbQueue)
-        } catch {
-            fatalError("Failed to initialize expense store: \(error)")
-        }
+        SyncingExpenseStore(base: rawExpenseStore, syncStateStore: syncStateStore)
     }()
 
     lazy var subscriptionStore: SubscriptionStore = {
@@ -55,6 +49,31 @@ final class LocalStore {
         }
     }()
 
+    lazy var repositorySyncBridge: IOSRepositorySyncBridge = {
+        IOSRepositorySyncBridge(
+            expenseStore: rawExpenseStore,
+            categoryStore: rawCategoryStore,
+            syncStateStore: syncStateStore,
+            puller: NoopCloudSyncPuller()
+        )
+    }()
+
+    private lazy var rawCategoryStore: CategoryStore = {
+        do {
+            return try GRDBCategoryStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize category store: \(error)")
+        }
+    }()
+
+    private lazy var rawExpenseStore: ExpenseStore = {
+        do {
+            return try GRDBExpenseStore(dbQueue: dbQueue)
+        } catch {
+            fatalError("Failed to initialize expense store: \(error)")
+        }
+    }()
+
     private lazy var dbQueue: DatabaseQueue = {
         do {
             if ProcessInfo.processInfo.arguments.contains("UITEST_IN_MEMORY_DB") {
@@ -69,6 +88,14 @@ final class LocalStore {
             fatalError("Failed to initialize database queue: \(error)")
         }
     }()
+
+    private var hasPerformedInitialSyncPull = false
+
+    func performInitialSyncPullIfNeeded() {
+        guard !hasPerformedInitialSyncPull else { return }
+        hasPerformedInitialSyncPull = true
+        repositorySyncBridge.pullAndApplyOnce()
+    }
 
     private init() {}
 }

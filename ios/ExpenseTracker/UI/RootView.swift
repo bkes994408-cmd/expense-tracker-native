@@ -32,6 +32,9 @@ struct RootView: View {
                 }
             }
         }
+        .task {
+            LocalStore.shared.performInitialSyncPullIfNeeded()
+        }
     }
 }
 
