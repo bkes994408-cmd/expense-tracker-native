@@ -113,21 +113,21 @@ private final class FakeExpenseStoreForSync: ExpenseStore {
 }
 
 private final class FakeCategoryStoreForSync: CategoryStore {
-    private var items: [Category] = []
+    private var items: [ExpenseTracker.Category] = []
 
-    func fetchActive() throws -> [Category] {
+    func fetchActive() throws -> [ExpenseTracker.Category] {
         items.filter { !$0.isArchived }
     }
 
     func add(name: String) throws {
         let nextID = (items.map(\.id).max() ?? 0) + 1
         let nextSortOrder = (items.map(\.sortOrder).max() ?? -1) + 1
-        items.append(Category(id: nextID, name: name, isArchived: false, sortOrder: nextSortOrder))
+        items.append(ExpenseTracker.Category(id: nextID, name: name, isArchived: false, sortOrder: nextSortOrder))
     }
 
     func archive(id: Int64) throws {
         guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
-        items[idx] = Category(id: id, name: items[idx].name, isArchived: true, sortOrder: items[idx].sortOrder)
+        items[idx] = ExpenseTracker.Category(id: id, name: items[idx].name, isArchived: true, sortOrder: items[idx].sortOrder)
     }
 
     func move(from: Int, to: Int) throws {
