@@ -44,7 +44,7 @@ export class SyncEngine {
       deviceId: this.deviceId,
       lastSyncedAt: new Date().toISOString(),
       serverCursor: pullResult.nextCursor,
-      mutationWatermark: pullResult.mutations.at(-1)?.id ?? cursor.mutationWatermark,
+      mutationWatermark: pullResult.mutations[pullResult.mutations.length - 1]?.id ?? cursor.mutationWatermark,
     };
     await this.store.saveCursor(nextCursor);
 
