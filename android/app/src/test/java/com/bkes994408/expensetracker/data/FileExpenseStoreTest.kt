@@ -1,6 +1,7 @@
 package com.bkes994408.expensetracker.data
 
 import com.bkes994408.expensetracker.domain.Expense
+import com.bkes994408.expensetracker.domain.ExpenseCategory
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -47,12 +48,28 @@ class FileExpenseStoreTest {
             Expense(title = "Freelance", amount = BigDecimal("18000"), createdAt = Instant.parse("2026-03-01T09:00:00Z")),
             Expense(title = "Transport", amount = BigDecimal("-3200"), createdAt = Instant.parse("2026-03-02T09:00:00Z")),
         )
-        fileOps.writeText(persisted.toExpenseJson())
 
         val store = FileExpenseStore(fileOps)
+        store.writeAll(persisted)
         val loaded = store.readAll()
 
         assertEquals(persisted.map { Triple(it.title, it.amount, it.createdAt) }, loaded.map { Triple(it.title, it.amount, it.createdAt) })
+    }
+
+    @Test
+    fun writeAndReadCategoriesRoundTrip() = runTest {
+        val fileOps = FakeFileOps(exists = false, content = "")
+        val store = FileExpenseStore(fileOps)
+        val categories = listOf(
+            ExpenseCategory(name = "Food", updatedAt = Instant.parse("2026-03-05T09:00:00Z")),
+            ExpenseCategory(name = "Transport", updatedAt = Instant.parse("2026-03-06T09:00:00Z")),
+        )
+
+        store.writeAllCategories(categories)
+        val loaded = store.readAllCategories()
+
+        assertEquals(categories.map { it.name }, loaded.map { it.name })
+        assertEquals(categories.map { it.updatedAt }, loaded.map { it.updatedAt })
     }
 }
 
@@ -69,8 +86,3 @@ private class FakeFileOps(
         exists = true
     }
 }
-
-private fun List<Expense>.toExpenseJson(): String =
-    joinToString(prefix = "[", postfix = "]", separator = ",") { expense ->
-        "{\"title\":\"${expense.title}\",\"amount\":\"${expense.amount.toPlainString()}\",\"createdAt\":\"${expense.createdAt}\"}"
-    }
