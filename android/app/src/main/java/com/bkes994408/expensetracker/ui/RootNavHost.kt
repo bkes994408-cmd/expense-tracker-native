@@ -2,6 +2,7 @@ package com.bkes994408.expensetracker.ui
 
 import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
@@ -34,6 +35,10 @@ fun RootNavHost() {
     }
     val proEntitlementStore = remember(context, purchaseService) { ProEntitlementStore(context, purchaseService) }
     val expenseRepository = remember(context) { ExpenseRepositoryImpl(FileExpenseStore(context)) }
+
+    LaunchedEffect(expenseRepository) {
+        runCatching { expenseRepository.syncFromCloud() }
+    }
 
     val localStore = remember { LocalStore.getInstance(context) }
     val homeViewModel = remember { HomeViewModel(localStore.expenseLedger) }
