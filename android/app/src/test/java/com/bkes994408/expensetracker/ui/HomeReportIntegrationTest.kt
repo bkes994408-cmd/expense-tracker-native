@@ -1,6 +1,7 @@
 package com.bkes994408.expensetracker.ui
 
 import com.bkes994408.expensetracker.domain.Expense
+import com.bkes994408.expensetracker.domain.ExpenseCategory
 import com.bkes994408.expensetracker.domain.ExpenseRepository
 import com.bkes994408.expensetracker.pro.AdvancedReportCalculator
 import com.bkes994408.expensetracker.pro.ReportRange
@@ -47,6 +48,25 @@ private class MutableExpenseRepository(
     val items: MutableList<Expense>,
 ) : ExpenseRepository {
     override suspend fun fetchExpenses(): List<Expense> = items.toList()
+    override suspend fun fetchCategories(): List<ExpenseCategory> = emptyList()
+
+    override suspend fun addExpense(expense: Expense) {
+        items.add(expense)
+    }
+
+    override suspend fun updateExpense(expense: Expense) {
+        val index = items.indexOfFirst { it.id == expense.id }
+        if (index >= 0) items[index] = expense
+    }
+
+    override suspend fun deleteExpense(id: java.util.UUID) {
+        items.removeAll { it.id == id }
+    }
+
+    override suspend fun addCategory(category: ExpenseCategory) = Unit
+    override suspend fun updateCategory(category: ExpenseCategory) = Unit
+    override suspend fun deleteCategory(id: java.util.UUID) = Unit
+    override suspend fun syncFromCloud() = Unit
 
     fun fetchExpensesSync(): List<Expense> = items.toList()
 }
