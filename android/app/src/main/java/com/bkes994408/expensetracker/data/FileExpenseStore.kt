@@ -86,8 +86,8 @@ class FileExpenseStore internal constructor(
 
     private fun writePayload(payload: Payload) {
         val root = JSONObject()
-            .put("expenses", payload.expenses.toJsonArray())
-            .put("categories", payload.categories.toJsonArray())
+            .put("expenses", payload.expenses.toExpenseJsonArray())
+            .put("categories", payload.categories.toCategoryJsonArray())
         fileOps.writeText(root.toString())
     }
 
@@ -144,7 +144,7 @@ class FileExpenseStore internal constructor(
     )
 }
 
-private fun List<Expense>.toJsonArray(): JSONArray = JSONArray().apply {
+private fun List<Expense>.toExpenseJsonArray(): JSONArray = JSONArray().apply {
     forEach { expense ->
         put(
             JSONObject()
@@ -156,7 +156,7 @@ private fun List<Expense>.toJsonArray(): JSONArray = JSONArray().apply {
     }
 }
 
-private fun List<ExpenseCategory>.toJsonArray(): JSONArray = JSONArray().apply {
+private fun List<ExpenseCategory>.toCategoryJsonArray(): JSONArray = JSONArray().apply {
     forEach { category ->
         put(
             JSONObject()
