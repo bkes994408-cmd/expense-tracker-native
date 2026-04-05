@@ -3,11 +3,11 @@ package com.bkes994408.expensetracker.ui
 import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.bkes994408.expensetracker.data.ExpenseRepositoryImpl
 import com.bkes994408.expensetracker.data.FileExpenseStore
 import com.bkes994408.expensetracker.db.LocalStore
@@ -15,14 +15,15 @@ import com.bkes994408.expensetracker.pro.GooglePlayBillingClient
 import com.bkes994408.expensetracker.pro.GooglePlayBillingProPurchaseService
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
 
-private object Routes {
-    const val Home = "home"
-    const val Settings = "settings"
+enum class MainTab {
+    Dashboard,
+    Transactions,
+    Reports,
+    Settings,
 }
 
 @Composable
 fun RootNavHost() {
-    val navController = rememberNavController()
     val context = LocalContext.current
 
     val purchaseService = remember(context) {
@@ -42,18 +43,20 @@ fun RootNavHost() {
 
     val localStore = remember { LocalStore.getInstance(context) }
     val homeViewModel = remember { HomeViewModel(localStore.expenseLedger) }
+    var selectedTab by remember { mutableStateOf(MainTab.Dashboard) }
 
-    NavHost(navController = navController, startDestination = Routes.Home) {
-        composable(Routes.Home) {
-            HomeScreen(
-                homeViewModel = homeViewModel,
-                onOpenSettings = { navController.navigate(Routes.Settings) },
-                proEntitlementStore = proEntitlementStore,
-                expenseRepository = expenseRepository,
-            )
-        }
-        composable(Routes.Settings) {
-            SettingsScreen(proEntitlementStore = proEntitlementStore)
-        }
+    when (selectedTab) {
+        MainTab.Settings -> SettingsScreen(
+            proEntitlementStore = proEntitlementStore,
+        )
+
+        else -> HomeScreen(
+            homeViewModel = homeViewModel,
+            proEntitlementStore = proEntitlementStore,
+            expenseRepository = expenseRepository,
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            onFabClick = { selectedTab = MainTab.Transactions },
+        )
     }
 }
