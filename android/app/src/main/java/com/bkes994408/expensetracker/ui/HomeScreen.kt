@@ -3,17 +3,31 @@ package com.bkes994408.expensetracker.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -40,12 +54,15 @@ import com.bkes994408.expensetracker.pro.TrendPoint
 import java.math.BigDecimal
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
-    onOpenSettings: () -> Unit,
     proEntitlementStore: ProEntitlementStore,
     expenseRepository: ExpenseRepository,
+    selectedTab: MainTab,
+    onTabSelected: (MainTab) -> Unit,
+    onFabClick: () -> Unit,
 ) {
     val entries by homeViewModel.entries.collectAsState()
     val titleInput by homeViewModel.titleInput.collectAsState()
@@ -59,6 +76,8 @@ fun HomeScreen(
     var paywallTrigger by remember { mutableStateOf<String?>(null) }
     var entitlementVersion by remember { mutableStateOf(0) }
     var selectedRange by remember { mutableStateOf(ReportRange.ONE_MONTH) }
+
+    val reportRanges = remember { ReportRange.values().toList() }
 
     val report by produceState(
         initialValue = AdvancedReport(
@@ -81,133 +100,180 @@ fun HomeScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.Start,
-    ) {
-        item { Text(text = "Expense Tracker") }
-        item { Text(text = "目前方案：${proEntitlementStore.statusLabel}") }
-        item { Text(text = "本月支出：$${monthlySummary}") }
-
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = titleInput,
-                    onValueChange = homeViewModel::onTitleChanged,
-                    label = { Text("項目") },
-                    singleLine = true,
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onFabClick) {
+                Icon(Icons.Default.Add, contentDescription = "Add")
+            }
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.Dashboard,
+                    onClick = { onTabSelected(MainTab.Dashboard) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    label = { Text("Home") },
                 )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = amountInput,
-                    onValueChange = homeViewModel::onAmountChanged,
-                    label = { Text("支出金額") },
-                    singleLine = true,
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.Transactions,
+                    onClick = { onTabSelected(MainTab.Transactions) },
+                    icon = { Text("交") },
+                    label = { Text("交易") },
                 )
-                predictedCategory?.let {
-                    Text("AI 分類：${it.category}（信心 ${(it.confidence * 100).roundToInt()}%）")
-                }
-                Button(onClick = homeViewModel::addExpense) { Text("新增支出") }
-                Button(onClick = onOpenSettings) { Text("Go to Settings") }
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.Reports,
+                    onClick = { onTabSelected(MainTab.Reports) },
+                    icon = { Text("報") },
+                    label = { Text("報表") },
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { onTabSelected(MainTab.Settings) },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("設定") },
+                )
             }
-        }
+        },
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { Text("Expense Tracker", style = MaterialTheme.typography.headlineSmall) }
 
-        item { Text("預算智能建議") }
-        if (suggestions.isEmpty()) {
-            item { Text("資料不足，請先累積過往支出") }
-        } else {
-            items(suggestions.take(3)) {
-                Text("${it.category}: 建議 ${it.suggestedBudget}（基準 ${it.averageSpend}，趨勢 ${it.trend}）")
-            }
-        }
-
-        item { Text("超支預警") }
-        if (alerts.isEmpty()) {
-            item { Text("目前無預警") }
-        } else {
-            items(alerts) {
-                val prefix = if (it.danger) "🚨" else "⚠️"
-                Text("$prefix ${it.category}：${it.spent} / ${it.budget}")
-            }
-        }
-
-        item {
-            Button(onClick = {
-                openProFeature("budget_limit", ProFeature.UNLIMITED_BUDGETS, proEntitlementStore) { paywallTrigger = it }
-            }) {
-                Text(text = "建立第 3 個分類預算（示範）")
-            }
-        }
-
-        item { Text(text = "進階報表：區間 ${selectedRange.months}M") }
-        item {
-            Button(onClick = {
-                when (val result = HomeReportController.nextRange(
-                    selectedRange,
-                    proEntitlementStore.canAccess(ProFeature.ADVANCED_REPORTS),
-                )) {
-                    is RangeSelectionResult.RangeSelected -> selectedRange = result.range
-                    is RangeSelectionResult.PaywallRequired -> paywallTrigger = result.trigger
-                }
-            }) {
-                Text(text = "切換報表區間")
-            }
-        }
-        item { Text(text = "平均月收入：${report.averageIncome}") }
-        item { Text(text = "平均月支出：${report.averageExpense}") }
-        item { Text(text = "平均月淨額：${report.averageNet}") }
-
-        item {
-            Text(
-                text = "MoM（本月淨額較上月）：${report.momDelta?.toPlainString() ?: "暫無"}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        item {
-            Text(
-                text = "YoY（本月淨額較去年同月）：${report.yoyDelta?.toPlainString() ?: "暫無"}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-
-        if (report.monthlyTrend.isNotEmpty()) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("趨勢圖分析")
-                    TrendChart(report.monthlyTrend)
-                    report.monthlyTrend.forEach { point ->
-                        Text("${point.monthLabel} 收${point.income} / 支${point.expense} / 淨${point.net}")
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("本月總覽", style = MaterialTheme.typography.titleMedium)
+                        Text("方案：${proEntitlementStore.statusLabel}")
+                        Text("本月支出：$monthlySummary", style = MaterialTheme.typography.headlineSmall)
                     }
                 }
             }
-        }
 
-        if (report.pieSlices.isNotEmpty()) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("圓餅圖分析（收入/支出占比）")
-                    PieChart(report = report)
-                    report.pieSlices.forEachIndexed { index, slice ->
-                        val percent = piePercent(report, slice.value)
-                        Text("${chartColorName(index)} ${slice.label}：${slice.value}（${percent}%）")
+            when (selectedTab) {
+                MainTab.Dashboard -> {
+                    item {
+                        SectionCard("預算提醒") {
+                            if (alerts.isEmpty()) {
+                                Text("目前無預警", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                alerts.forEach {
+                                    val prefix = if (it.danger) "🚨" else "⚠️"
+                                    Text("$prefix ${it.category}：${it.spent} / ${it.budget}")
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        SectionCard("AI 建議") {
+                            if (suggestions.isEmpty()) {
+                                Text("資料不足，請先累積支出", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                suggestions.take(3).forEach {
+                                    Text("${it.category}：建議 ${it.suggestedBudget}（基準 ${it.averageSpend}）")
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        item {
-            Button(onClick = {
-                openProFeature("report_pdf_export", ProFeature.PDF_EXPORT, proEntitlementStore) { paywallTrigger = it }
-            }) {
-                Text(text = "匯出 PDF 報表（示範）")
-            }
-        }
+                MainTab.Transactions -> {
+                    item {
+                        SectionCard("新增交易") {
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = titleInput,
+                                onValueChange = homeViewModel::onTitleChanged,
+                                label = { Text("項目") },
+                                singleLine = true,
+                            )
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                value = amountInput,
+                                onValueChange = homeViewModel::onAmountChanged,
+                                label = { Text("支出金額") },
+                                singleLine = true,
+                            )
+                            predictedCategory?.let {
+                                Text("AI 分類：${it.category}（${(it.confidence * 100).roundToInt()}%）")
+                            }
+                            Button(onClick = homeViewModel::addExpense) { Text("新增支出") }
+                        }
+                    }
 
-        item { Text("最近帳目（${entries.size}）") }
-        items(entries.takeLast(5).reversed()) {
-            Text("• [${it.category}] ${it.title} ${it.amount}")
+                    item {
+                        SectionCard("最近交易") {
+                            if (entries.isEmpty()) {
+                                Text("尚無資料", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                entries.takeLast(10).reversed().forEach {
+                                    Text("• [${it.category}] ${it.title} ${it.amount}")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                MainTab.Reports -> {
+                    item {
+                        SectionCard("區間") {
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                reportRanges.forEachIndexed { index: Int, range: ReportRange ->
+                                    SegmentedButton(
+                                        selected = selectedRange == range,
+                                        onClick = {
+                                            if (range.months > 1 && !proEntitlementStore.canAccess(ProFeature.ADVANCED_REPORTS)) {
+                                                paywallTrigger = "advanced_report_3m"
+                                            } else {
+                                                selectedRange = range
+                                            }
+                                        },
+                                        shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = reportRanges.size,
+                                        ),
+                                    ) { Text("${range.months}M") }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        SectionCard("趨勢摘要") {
+                            Text("平均月收入：${report.averageIncome}")
+                            Text("平均月支出：${report.averageExpense}")
+                            Text("平均月淨額：${report.averageNet}")
+                            Text("MoM：${report.momDelta?.toPlainString() ?: "暫無"}")
+                            Text("YoY：${report.yoyDelta?.toPlainString() ?: "暫無"}")
+                        }
+                    }
+
+                    if (report.monthlyTrend.isNotEmpty()) {
+                        item {
+                            SectionCard("趨勢圖") { TrendChart(report.monthlyTrend) }
+                        }
+                    }
+
+                    if (report.pieSlices.isNotEmpty()) {
+                        item {
+                            SectionCard("收支占比") { PieChart(report = report) }
+                        }
+                    }
+                }
+
+                MainTab.Settings -> Unit
+            }
+
+            item {
+                Button(onClick = {
+                    openProFeature("budget_limit", ProFeature.UNLIMITED_BUDGETS, proEntitlementStore) { paywallTrigger = it }
+                }) { Text("建立第 3 個分類預算（示範）") }
+            }
         }
     }
 
@@ -218,6 +284,13 @@ fun HomeScreen(
             onDismiss = { paywallTrigger = null },
             onEntitlementChanged = { entitlementVersion++ },
         )
+    }
+}
+
+@Composable
+private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
 }
 
@@ -254,6 +327,7 @@ private fun TrendChart(points: List<TrendPoint>) {
         drawSeries(points.map { it.net }, Color(0xFF43A047))
     }
 
+    Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("🔵 收入")
         Text("🔴 支出")
@@ -287,19 +361,6 @@ private fun PieChart(report: AdvancedReport) {
 private fun chartColor(index: Int): Color {
     val palette = listOf(Color(0xFF1E88E5), Color(0xFFE53935), Color(0xFF43A047), Color(0xFFFDD835))
     return palette[index % palette.size]
-}
-
-private fun chartColorName(index: Int): String = when (index % 4) {
-    0 -> "🔵"
-    1 -> "🔴"
-    2 -> "🟢"
-    else -> "🟡"
-}
-
-private fun piePercent(report: AdvancedReport, value: BigDecimal): Int {
-    val total = report.pieSlices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
-    if (total == BigDecimal.ZERO) return 0
-    return ((value.toDouble() / total.toDouble()) * 100).roundToInt()
 }
 
 private fun openProFeature(
