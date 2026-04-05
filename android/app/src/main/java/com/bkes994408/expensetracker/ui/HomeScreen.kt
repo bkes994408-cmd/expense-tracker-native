@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BorderStroke
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -80,13 +82,16 @@ fun HomeScreen(
                 onClick = onFabClick,
                 containerColor = Color(0xFF2E2A73),
                 contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 12.dp),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "新增")
             }
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color.White,
+                tonalElevation = 4.dp,
+            ) {
                 NavigationBarItem(
                     selected = selectedTab == MainTab.Dashboard,
                     onClick = { onTabSelected(MainTab.Dashboard) },
@@ -139,7 +144,10 @@ fun HomeScreen(
                 Card(
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(12.dp, RoundedCornerShape(28.dp), clip = false),
                 ) {
                     Box(
                         modifier = Modifier
@@ -150,17 +158,22 @@ fun HomeScreen(
                             )
                             .padding(20.dp),
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("Total Balance", color = Color(0xFFDCE0FF))
-                            Text("NT$ $monthlyNet", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                "NT$ $monthlyNet",
+                                color = Color.White,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
                             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                                 Column {
                                     Text("Income", color = Color(0xFFCFD4FF), style = MaterialTheme.typography.labelMedium)
-                                    Text("$monthlyIncome", color = Color.White)
+                                    Text("$monthlyIncome", color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                                 Column {
                                     Text("Expense", color = Color(0xFFCFD4FF), style = MaterialTheme.typography.labelMedium)
-                                    Text("$monthlyExpense", color = Color.White)
+                                    Text("$monthlyExpense", color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -170,9 +183,11 @@ fun HomeScreen(
 
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CompactStatCard("交易", entries.size.toString(), Modifier.weight(1f))
-                    CompactStatCard("預警", homeViewModel.alerts().size.toString(), Modifier.weight(1f))
-                    CompactStatCard("建議", homeViewModel.suggestions().size.toString(), Modifier.weight(1f))
+                    CompactStatCard("交易", entries.size.toString(), Modifier.weight(1.35f), emphasized = true)
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CompactStatCard("預警", homeViewModel.alerts().size.toString(), emphasized = false)
+                        CompactStatCard("建議", homeViewModel.suggestions().size.toString(), emphasized = false)
+                    }
                 }
             }
 
@@ -187,6 +202,7 @@ fun HomeScreen(
                             selected = selectedTab == tab,
                             onClick = { onTabSelected(tab) },
                             label = { Text(label) },
+                            border = BorderStroke(1.dp, if (selectedTab == tab) Color(0xFF4A4FB4) else Color(0xFFD7DDED)),
                         )
                     }
                 }
@@ -220,11 +236,15 @@ fun HomeScreen(
                 MainTab.Transactions -> {
                     item {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("全部", "固定支出", "最近7天").forEach { chip ->
+                            listOf("全部", "固定支出", "最近7天", "Recurring").forEach { chip ->
                                 FilterChip(
                                     selected = transactionFilter == chip,
                                     onClick = { transactionFilter = chip },
                                     label = { Text(chip) },
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (transactionFilter == chip) Color(0xFF3D46A8) else Color(0xFFD7DDED),
+                                    ),
                                 )
                             }
                         }
@@ -270,6 +290,22 @@ fun HomeScreen(
                             }
                         }
                     }
+
+                    item {
+                        SectionCard("Recurring") {
+                            if (entries.isEmpty()) {
+                                Text("尚無固定交易", color = Color(0xFF7D8798))
+                            } else {
+                                entries.takeLast(3).reversed().forEach { entry ->
+                                    TransactionRow(
+                                        title = entry.title,
+                                        subtitle = "每月 · ${entry.category}",
+                                        amount = entry.amount.toPlainString(),
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 MainTab.Reports -> {
@@ -291,16 +327,26 @@ fun HomeScreen(
 }
 
 @Composable
-private fun CompactStatCard(title: String, value: String, modifier: Modifier = Modifier) {
+private fun CompactStatCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(if (emphasized) 22.dp else 18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (emphasized) 6.dp else 2.dp),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = if (emphasized) 18.dp else 12.dp)) {
             Text(title, color = Color(0xFF7B8393), style = MaterialTheme.typography.labelMedium)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                value,
+                style = if (emphasized) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (emphasized) Color(0xFF2E2A73) else Color.Unspecified,
+            )
         }
     }
 }
@@ -311,7 +357,7 @@ private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Un
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -328,15 +374,15 @@ private fun TransactionRow(title: String, subtitle: String, amount: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF8F9FD))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFFF7F8FF))
+            .padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFE1E6FF)),
             contentAlignment = Alignment.Center,
@@ -344,13 +390,14 @@ private fun TransactionRow(title: String, subtitle: String, amount: String) {
             Text(title.take(1), color = Color(0xFF2F3B91), fontWeight = FontWeight.Bold)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.SemiBold)
+            Text(title, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
             Text(subtitle, color = Color(0xFF7A8392), style = MaterialTheme.typography.bodySmall)
         }
         Text(
             text = if (amount.startsWith("-")) amount else "+$amount",
             color = if (amount.startsWith("-")) Color(0xFFE25353) else Color(0xFF2CA66A),
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.titleMedium,
         )
     }
 }
