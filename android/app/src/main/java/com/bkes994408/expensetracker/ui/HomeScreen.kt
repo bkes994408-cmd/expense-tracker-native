@@ -66,7 +66,6 @@ import com.bkes994408.expensetracker.domain.ExpenseRepository
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
 
 private val AppBackground = Color(0xFFF4F6FB)
-private val CardSurface = Color.White
 private val SubtleBorder = Color(0xFFE4E8F4)
 private val IconBubble = Color(0xFFE6EBFF)
 private val HeroStart = Color(0xFF1E255F)
@@ -423,18 +422,12 @@ fun HomeScreen(
 
                     item {
                         SectionCard("Edge States") {
-                            ReplicaStateBox(
-                                title = "Loading",
-                                message = "正在整理跨月份資料，請稍候...",
-                            )
-                            ReplicaStateBox(
-                                title = "Error",
-                                message = "報表資料暫時不可用，請稍後重試或檢查匯入資料格式。",
-                            )
-                            ReplicaListRow(
-                                title = "Long text preview",
-                                subtitle = "這是一段很長的設定說明文字，用於驗證 Android 與 iOS 在 row 高度、字重層級、換行間距是否維持一致。",
-                                trailing = "v0.0.1",
+                            ReplicaEdgeStates(
+                                loadingMessage = "正在整理跨月份資料，請稍候...",
+                                emptyMessage = "目前區間沒有可視化資料，請切換月份或新增交易。",
+                                errorMessage = "報表資料暫時不可用，請稍後重試或檢查匯入資料格式。",
+                                longTextMessage = "這是一段很長的設定說明文字，用於驗證 Android 與 iOS 在 row 高度、字重層級、換行間距是否維持一致。",
+                                denseContentHint = "當資料密度較高時，優先保留標題與金額資訊，其餘內容以省略號收斂。",
                             )
                         }
                     }
@@ -468,7 +461,7 @@ private fun CompactStatCard(
     Card(
         modifier = modifier.border(1.dp, SubtleBorder, RoundedCornerShape(if (emphasized) 22.dp else 18.dp)),
         shape = RoundedCornerShape(if (emphasized) 22.dp else 18.dp),
-        colors = CardDefaults.cardColors(containerColor = CardSurface),
+        colors = CardDefaults.cardColors(containerColor = ReplicaTokens.cardSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = if (emphasized) 9.dp else 2.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = if (emphasized) 18.dp else 12.dp)) {

@@ -179,12 +179,12 @@ fun SettingsScreen(
 
         item {
             ReplicaSectionCard(title = "Edge States") {
-                ReplicaStateBox(title = "Loading", message = "同步設定中，請稍候...")
-                ReplicaStateBox(title = "Error", message = "匯入資料解析失敗，請確認欄位與分隔符。")
-                ReplicaListRow(
-                    title = "Long text",
-                    subtitle = "這是一段很長的設定說明，用於驗證 Android / iOS 在 cell 換行、高度與分組間距的一致性。",
-                    trailing = "v0.0.1",
+                ReplicaEdgeStates(
+                    loadingMessage = "同步設定中，請稍候...",
+                    emptyMessage = "目前尚無偏好變更紀錄。",
+                    errorMessage = "匯入資料解析失敗，請確認欄位與分隔符。",
+                    longTextMessage = "這是一段很長的設定說明，用於驗證 Android / iOS 在 cell 換行、高度與分組間距的一致性。",
+                    denseContentHint = "在大量設定項同時出現時，優先顯示狀態與操作按鈕。",
                 )
             }
         }
