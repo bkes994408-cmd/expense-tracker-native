@@ -20,6 +20,8 @@ struct SettingsView: View {
     @State private var csvRows: [[String]] = []
     @State private var csvMapping: ExpenseImportExportService.CSVColumnMapping = .empty
     @State private var mergeSuggestions: [ExpenseImportExportService.DuplicateMergeSuggestion] = []
+    @State private var syncLoading = false
+    @State private var notificationEnabled = true
 
     init(
         categoryStore: CategoryStore,
@@ -37,7 +39,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section("Pro") {
+            Section("Settings / Pro") {
                 LabeledContent("目前方案", value: proEntitlementStore.statusText)
                 if proEntitlementStore.isPro {
                     Text("已解鎖 Pro 功能")
@@ -51,9 +53,10 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                settingsStateBox(title: "Loading", message: syncLoading ? "同步設定中..." : "設定同步已完成")
             }
 
-            Section("Category Management") {
+            Section("Settings / Category Management") {
                 HStack {
                     TextField("New category", text: $categoryViewModel.newCategoryName)
                     Button("Add") { categoryViewModel.addCategory() }
@@ -70,9 +73,13 @@ struct SettingsView: View {
                     }
                 }
                 .onMove(perform: categoryViewModel.move)
+
+                if categoryViewModel.categories.isEmpty {
+                    settingsStateBox(title: "Empty", message: "尚無分類，請先新增分類。")
+                }
             }
 
-            Section("訂閱管理") {
+            Section("Transaction / Recurring（訂閱管理）") {
                 TextField("名稱", text: $subscriptionViewModel.newName)
                 TextField("金額", text: $subscriptionViewModel.newAmount)
                     .keyboardType(.decimalPad)
@@ -80,6 +87,7 @@ struct SettingsView: View {
                     .keyboardType(.numberPad)
                 DatePicker("下次扣款", selection: $subscriptionViewModel.nextChargeAt, displayedComponents: .date)
                 Toggle("啟用提醒", isOn: $subscriptionViewModel.reminderEnabled)
+                Toggle("推播通知", isOn: $notificationEnabled)
                 TextField("提前提醒天數", text: $subscriptionViewModel.reminderDaysBefore)
                     .keyboardType(.numberPad)
                 Button("新增訂閱") { subscriptionViewModel.addPlan() }
@@ -97,7 +105,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section("分期管理") {
+            Section("Transaction / Recurring（分期管理）") {
                 TextField("名稱", text: $installmentViewModel.newName)
                 TextField("每期金額", text: $installmentViewModel.periodAmount)
                     .keyboardType(.decimalPad)
@@ -117,7 +125,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Export / Import") {
+            Section("Report / Budget + Settings（Export / Import）") {
                 Button("匯出 CSV") {
                     exportCSV()
                 }
@@ -148,11 +156,16 @@ struct SettingsView: View {
                 }
             }
 
-            Section("About") {
+            Section("Settings / About") {
                 LabeledContent("Version", value: "0.0.1")
+                settingsStateBox(
+                    title: "Long text",
+                    message: "這是一段較長的設定說明文字，用於驗證 iOS 與 Android 在 cell 間距、字級與換行策略的一致性。"
+                )
             }
         }
         .toolbar { EditButton() }
+        .listStyle(.insetGrouped)
         .navigationTitle("Settings")
         .fileImporter(
             isPresented: $isFileImporterPresented,
@@ -305,6 +318,21 @@ struct SettingsView: View {
             Telemetry.shared.track(.csvExportFailed)
             Telemetry.shared.record(error: error, metadata: ["operation": "export_csv"])
         }
+    }
+}
+
+private extension SettingsView {
+    @ViewBuilder
+    func settingsStateBox(title: String, message: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color(red: 59/255, green: 71/255, blue: 112/255))
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
     }
 }
 
