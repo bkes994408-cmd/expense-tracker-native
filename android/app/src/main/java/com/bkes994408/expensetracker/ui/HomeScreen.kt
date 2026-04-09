@@ -94,6 +94,7 @@ fun HomeScreen(
     val monthlyNet = monthlyIncome + monthlyExpense
 
     var transactionFilter by remember { mutableStateOf("全部") }
+    var reportRange by remember { mutableStateOf("1M") }
 
     Scaffold(
         containerColor = AppBackground,
@@ -358,8 +359,83 @@ fun HomeScreen(
 
                 MainTab.Reports -> {
                     item {
-                        SectionCard("Reports") {
-                            Text("Sprint 3 先聚焦 Home / Transactions，此處保留既有功能。", color = Color(0xFF687287))
+                        SectionCard("Reports", "Prototype parity Sprint 4") {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("1M", "3M", "6M", "12M").forEach { chip ->
+                                    FilterChip(
+                                        selected = reportRange == chip,
+                                        onClick = { reportRange = chip },
+                                        label = { Text(chip) },
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFF3E43A8),
+                                            selectedLabelColor = Color.White,
+                                        ),
+                                        border = BorderStroke(1.dp, if (reportRange == chip) Color(0xFF3E43A8) else SubtleBorder),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        SectionCard("摘要") {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                CompactStatCard("平均收入", monthlyIncome.toPlainString(), Modifier.weight(1f))
+                                CompactStatCard("平均支出", monthlyExpense.toPlainString(), Modifier.weight(1f))
+                            }
+                            val topCategory = entries.groupBy { it.category }.maxByOrNull { it.value.size }
+                            ReplicaListRow(
+                                title = "最多交易分類",
+                                subtitle = topCategory?.key ?: "尚無資料",
+                                trailing = topCategory?.value?.size?.toString() ?: "0",
+                            )
+                        }
+                    }
+
+                    item {
+                        SectionCard("圖表與洞察") {
+                            if (entries.isEmpty()) {
+                                EmptyState(text = "尚無資料，新增交易後即可生成趨勢圖")
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.Bottom,
+                                ) {
+                                    listOf(0.35f, 0.62f, 0.48f, 0.78f, 0.55f).forEach { ratio ->
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height((96 * ratio).dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(Color(0xFFDCE3FF)),
+                                        )
+                                    }
+                                }
+                                ReplicaStateBox(
+                                    title = "Insight",
+                                    message = "本月淨額 ${monthlyNet.toPlainString()}，較上月變化待接入實際趨勢資料。",
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        SectionCard("Edge States") {
+                            ReplicaStateBox(
+                                title = "Loading",
+                                message = "正在整理跨月份資料，請稍候...",
+                            )
+                            ReplicaStateBox(
+                                title = "Error",
+                                message = "報表資料暫時不可用，請稍後重試或檢查匯入資料格式。",
+                            )
+                            ReplicaListRow(
+                                title = "Long text preview",
+                                subtitle = "這是一段很長的設定說明文字，用於驗證 Android 與 iOS 在 row 高度、字重層級、換行間距是否維持一致。",
+                                trailing = "v0.0.1",
+                            )
                         }
                     }
                 }
@@ -408,20 +484,9 @@ private fun CompactStatCard(
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, SubtleBorder, RoundedCornerShape(22.dp)),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = CardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+private fun SectionCard(title: String, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
+    ReplicaSectionCard(title = title, subtitle = subtitle) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             content()
         }
     }
@@ -429,17 +494,7 @@ private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Un
 
 @Composable
 private fun EmptyState(text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFF6F8FF))
-            .border(1.dp, Color(0xFFE3E8F8), RoundedCornerShape(14.dp))
-            .padding(vertical = 18.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, color = Color(0xFF7D8798))
-    }
+    ReplicaStateBox(title = "Empty", message = text)
 }
 
 @Composable

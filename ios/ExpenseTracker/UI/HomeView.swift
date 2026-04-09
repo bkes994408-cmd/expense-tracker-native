@@ -57,6 +57,7 @@ struct HomeView: View {
     }
 
     @State private var selectedTransactionChip: String = "全部"
+    @State private var selectedReportRange: String = "1M"
 
     var body: some View {
         let summary = viewModel.monthlyOverview
@@ -197,8 +198,63 @@ struct HomeView: View {
                         }
                     } else {
                         sectionCard(title: "Reports") {
-                            Text("Sprint 1 先聚焦 Home / Transactions，報表畫面暫維持原功能。")
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                ForEach(["1M", "3M", "6M", "12M"], id: \.self) { range in
+                                    let selected = selectedReportRange == range
+                                    Button {
+                                        selectedReportRange = range
+                                    } label: {
+                                        Text(range)
+                                            .font(.caption.weight(.semibold))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(selected ? Color(red: 47/255, green: 60/255, blue: 150/255) : .white, in: Capsule())
+                                            .overlay(
+                                                Capsule()
+                                                    .stroke(selected ? Color.clear : Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+                                            )
+                                            .foregroundStyle(selected ? .white : Color(red: 76/255, green: 86/255, blue: 105/255))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                Spacer()
+                            }
+                        }
+
+                        sectionCard(title: "摘要") {
+                            HStack(spacing: 10) {
+                                miniStatCard(title: "平均收入", value: summary.income.formatted())
+                                miniStatCard(title: "平均支出", value: summary.expense.formatted())
+                            }
+                            let topCategory = summary.categoryTotals.max { abs($0.amount) < abs($1.amount) }
+                            transactionRow(
+                                title: "最多支出分類",
+                                subtitle: topCategory?.name ?? "尚無資料",
+                                amount: topCategory?.amount ?? 0,
+                                bubbleText: "#"
+                            )
+                        }
+
+                        sectionCard(title: "圖表與洞察") {
+                            if summary.categoryTotals.isEmpty {
+                                emptyState("尚無資料，新增交易後即可生成趨勢圖")
+                            } else {
+                                HStack(alignment: .bottom, spacing: 8) {
+                                    ForEach([0.35, 0.62, 0.48, 0.78, 0.55], id: \.self) { value in
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(Color(red: 220/255, green: 227/255, blue: 255/255))
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 96 * value)
+                                    }
+                                }
+                                HomeReplicaStateBox(title: "Insight", message: "本月淨額 \(summary.net.formatted())，較上月變化待接入正式資料。")
+                            }
+                        }
+
+                        sectionCard(title: "Edge States") {
+                            HomeReplicaStateBox(title: "Loading", message: "正在整理跨月份資料，請稍候...")
+                            HomeReplicaStateBox(title: "Error", message: "報表資料暫時不可用，請稍後重試。")
+                            HomeReplicaStateBox(title: "Long text", message: "這是一段很長的報表說明文字，用來驗證 iOS 與 Android 在字級、間距與換行策略的一致性。")
                         }
                     }
 
@@ -458,6 +514,31 @@ struct HomeView: View {
         case .warning: return .orange
         case .overspent: return .red
         }
+    }
+}
+
+private struct HomeReplicaStateBox: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color(red: 59/255, green: 71/255, blue: 112/255))
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color(red: 246/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+        )
     }
 }
 
