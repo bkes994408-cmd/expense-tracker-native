@@ -3,6 +3,21 @@ import Charts
 import UIKit
 
 struct HomeView: View {
+    enum ScreenTab: String, CaseIterable, Identifiable {
+        case dashboard
+        case transactions
+        case reports
+
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .dashboard: return "Home"
+            case .transactions: return "交易"
+            case .reports: return "報表"
+            }
+        }
+    }
+
     @StateObject private var viewModel: ExpenseListViewModel
     @StateObject private var budgetViewModel: BudgetViewModel
     @StateObject private var reportViewModel: AdvancedReportViewModel
@@ -17,6 +32,7 @@ struct HomeView: View {
     @State private var snapshotMessage: String?
     @State private var reportPDFURL: URL?
     @State private var reportPDFMessage: String?
+    @State private var selectedTab: ScreenTab
 
     private let expenseStore: ExpenseStore
 
@@ -26,6 +42,7 @@ struct HomeView: View {
         groupLedgerStore: GroupLedgerStore,
         categoryStore: CategoryStore? = nil,
         proEntitlementStore: ProEntitlementStore,
+        initialTab: ScreenTab = .dashboard,
         onOpenSettings: @escaping () -> Void
     ) {
         self.expenseStore = store
@@ -35,489 +52,331 @@ struct HomeView: View {
         _reportViewModel = StateObject(wrappedValue: AdvancedReportViewModel(expenseStore: store, proEntitlementStore: proEntitlementStore))
         _groupLedgerViewModel = StateObject(wrappedValue: GroupLedgerViewModel(store: groupLedgerStore))
         self.proEntitlementStore = proEntitlementStore
+        _selectedTab = State(initialValue: initialTab)
         self.onOpenSettings = onOpenSettings
     }
 
+    @State private var selectedTransactionChip: String = "全部"
+
     var body: some View {
-        List {
-            Section("每月總覽") {
-                LabeledContent("收入", value: viewModel.monthlyOverview.income.formatted())
-                LabeledContent("支出", value: viewModel.monthlyOverview.expense.formatted())
-                LabeledContent("淨額", value: viewModel.monthlyOverview.net.formatted())
+        let summary = viewModel.monthlyOverview
 
-                if viewModel.monthlyOverview.categoryTotals.isEmpty {
-                    Text("本月尚無分類彙總")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(viewModel.monthlyOverview.categoryTotals) { item in
-                        HStack {
-                            Text(item.name)
-                            Spacer()
-                            Text(item.amount.formatted())
-                                .foregroundStyle(item.amount < 0 ? .red : .green)
-                        }
-                        .font(.caption)
-                    }
-                }
-            }
+        ZStack(alignment: .bottom) {
+            Color(red: 244/255, green: 246/255, blue: 251/255)
+                .ignoresSafeArea()
 
-            Section("家庭/群組帳本") {
-                if let errorMessage = groupLedgerViewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                HStack {
-                    TextField("新帳本名稱（例如：家庭）", text: $groupLedgerViewModel.newLedgerName)
-                    Button("建立") { groupLedgerViewModel.createLedger() }
-                }
-
-                if groupLedgerViewModel.ledgers.isEmpty {
-                    Text("尚未建立群組帳本")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Picker("帳本", selection: Binding(
-                        get: { groupLedgerViewModel.selectedLedgerId ?? 0 },
-                        set: {
-                            groupLedgerViewModel.selectedLedgerId = $0
-                            groupLedgerViewModel.refreshOverview()
-                        }
-                    )) {
-                        ForEach(groupLedgerViewModel.ledgers) { ledger in
-                            Text(ledger.name).tag(ledger.id)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    if let overview = groupLedgerViewModel.overview {
-                        HStack {
-                            TextField("新增成員", text: $groupLedgerViewModel.newMemberName)
-                            Button("加入") { groupLedgerViewModel.addMember() }
-                        }
-
-                        if overview.members.isEmpty {
-                            Text("至少加入 1 位成員才能共享記帳")
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Good evening")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
-                        } else {
-                            Group {
-                                TextField("共享支出標題", text: $groupLedgerViewModel.expenseTitle)
-                                TextField("共享支出金額", text: $groupLedgerViewModel.expenseAmount)
-                                    .keyboardType(.decimalPad)
-
-                                Picker("由誰付款", selection: Binding(
-                                    get: { groupLedgerViewModel.selectedPayerId ?? overview.members.first?.id ?? 0 },
-                                    set: { groupLedgerViewModel.selectedPayerId = $0 }
-                                )) {
-                                    ForEach(overview.members) { member in
-                                        Text(member.name).tag(member.id)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-
-                                Picker("分攤規則", selection: $groupLedgerViewModel.splitRuleMode) {
-                                    ForEach(SplitRuleMode.allCases) { mode in
-                                        Text(mode.label).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .onChange(of: groupLedgerViewModel.splitRuleMode) { mode in
-                                    groupLedgerViewModel.setSplitRuleMode(mode)
-                                }
-
-                                if groupLedgerViewModel.splitRuleMode != .equal {
-                                    ForEach(overview.members) { member in
-                                        TextField(
-                                            groupLedgerViewModel.splitRuleMode == .proportion ? "\(member.name) 比例" : "\(member.name) 分攤金額",
-                                            text: Binding(
-                                                get: { groupLedgerViewModel.splitRuleInputs[member.id] ?? "" },
-                                                set: { groupLedgerViewModel.splitRuleInputs[member.id] = $0 }
-                                            )
-                                        )
-                                        .keyboardType(.decimalPad)
-                                    }
-                                }
-
-                                Button("新增共享支出") {
-                                    groupLedgerViewModel.addSharedExpense()
-                                }
-                            }
-
-                            Group {
-                                TextField("本月群組預算", text: $groupLedgerViewModel.monthlyBudgetAmount)
-                                    .keyboardType(.decimalPad)
-                                Button("儲存群組月預算") {
-                                    groupLedgerViewModel.saveMonthlyBudget()
-                                }
-                                .font(.footnote)
-
-                                LabeledContent("本月支出", value: overview.budgetSnapshot.spent.formatted())
-                                LabeledContent("預算剩餘", value: overview.budgetSnapshot.remaining.formatted())
-                            }
-
-                            if overview.balances.isEmpty {
-                                Text("尚無分攤紀錄")
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("成員淨額")
-                                    .font(.subheadline.bold())
-                                ForEach(overview.balances) { item in
-                                    HStack {
-                                        Text(item.member.name)
-                                        Spacer()
-                                        Text(item.net.formatted())
-                                            .foregroundStyle(item.net >= 0 ? .green : .red)
-                                    }
-                                    .font(.caption)
-                                }
-
-                                Text("建議結算（最少轉帳）")
-                                    .font(.subheadline.bold())
-                                if overview.settlements.isEmpty {
-                                    Text("目前無需互轉")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    ForEach(overview.settlements) { transfer in
-                                        Text("\(transfer.fromMember.name) → \(transfer.toMember.name)：\(transfer.amount.formatted())")
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("群組月報")
-                                    .font(.subheadline.bold())
-                                LabeledContent("本月筆數", value: "\(overview.monthlyReport.expenseCount)")
-                                LabeledContent("本月總支出", value: overview.monthlyReport.totalExpense.formatted())
-                                LabeledContent("平均每筆", value: overview.monthlyReport.averageExpense.formatted())
-                                LabeledContent("最大單筆", value: overview.monthlyReport.topExpenseTitle ?? "暫無")
-                            }
+                            Text("Expense Tracker")
+                                .font(.title3.bold())
+                        }
+                        Spacer()
+                        Button(action: onOpenSettings) {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundStyle(Color(red: 44/255, green: 48/255, blue: 120/255))
+                                .padding(10)
+                                .background(.white, in: Circle())
                         }
                     }
-                }
-            }
 
-            Section("Pro 預算系統") {
-                LabeledContent("方案狀態", value: proEntitlementStore.statusText)
-                    .font(.caption)
+                    heroCard(summary: summary)
 
-                if let errorMessage = budgetViewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                if budgetViewModel.expenseCategories.isEmpty {
-                    Text("先建立支出帳目後即可設定分類預算")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Picker("分類", selection: $budgetViewModel.selectedCategoryName) {
-                        ForEach(budgetViewModel.expenseCategories, id: \.self) { category in
-                            Text(category).tag(category)
+                    HStack(spacing: 10) {
+                        miniStatCard(title: "交易", value: "\(viewModel.expenses.count)", emphasized: true)
+                        VStack(spacing: 10) {
+                            miniStatCard(title: "分類", value: "\(summary.categoryTotals.count)")
+                            miniStatCard(title: "方案", value: proEntitlementStore.isPro ? "Pro" : "Free")
                         }
                     }
-                    .pickerStyle(.menu)
 
-                    TextField("預算金額", text: $budgetViewModel.amountText)
-                        .keyboardType(.decimalPad)
-
-                    Picker("結轉模式", selection: $budgetViewModel.carryOverMode) {
-                        Text("不結轉").tag(CarryOverMode.none)
-                        if proEntitlementStore.canAccess(.rolloverBudget) {
-                            Text("可結轉").tag(CarryOverMode.rollover)
-                        }
+                    Picker("頁面", selection: $selectedTab) {
+                        Text("Home").tag(ScreenTab.dashboard)
+                        Text("交易").tag(ScreenTab.transactions)
+                        Text("報表").tag(ScreenTab.reports)
                     }
                     .pickerStyle(.segmented)
+                    .tint(Color(red: 47/255, green: 60/255, blue: 150/255))
 
-                    Button("儲存本月分類預算") {
-                        let addingNewCategory = !budgetViewModel.hasBudget(for: budgetViewModel.selectedCategoryName)
-                        if !proEntitlementStore.canAccess(.unlimitedBudgets) && addingNewCategory && budgetViewModel.activeBudgetCount >= 2 {
-                            openProFeature(trigger: "budget_limit")
-                            return
-                        }
-                        budgetViewModel.saveBudget()
-                    }
-
-                    Button("快速複製上月預算") {
-                        let result = budgetViewModel.copyLastMonth(isPro: proEntitlementStore.canAccess(.unlimitedBudgets))
-                        if result == .requiresProUpgrade {
-                            openProFeature(trigger: "budget_limit_copy_last_month")
-                        }
-                    }
-                    .font(.footnote)
-                }
-
-                if budgetViewModel.progressItems.isEmpty {
-                    Text("本月尚未設定預算")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(budgetViewModel.progressItems) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(item.categoryName)
-                                Spacer()
-                                Text("剩餘 \(item.remaining.formatted())")
-                                    .foregroundStyle(item.remaining < 0 ? .red : .secondary)
+                    if selectedTab == .dashboard {
+                        sectionCard(title: "本月分類摘要") {
+                            if summary.categoryTotals.isEmpty {
+                                Text("本月尚無分類資料")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(summary.categoryTotals.prefix(4)) { item in
+                                    HStack {
+                                        Circle()
+                                            .fill(Color(red: 225/255, green: 230/255, blue: 255/255))
+                                            .frame(width: 28, height: 28)
+                                            .overlay {
+                                                Text(String(item.name.prefix(1)))
+                                                    .font(.caption.bold())
+                                            }
+                                        Text(item.name)
+                                        Spacer()
+                                        Text(item.amount.formatted())
+                                            .foregroundStyle(item.amount < 0 ? .red : .green)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
                             }
-
-                            ProgressView(value: min(item.ratio, 1.2), total: 1.0)
-                                .tint(progressColor(item.status))
-
-                            Text("已花費 \(item.spent.formatted()) / 預算 \(item.budget.formatted())")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .onDelete { indexSet in
-                        indexSet.map { budgetViewModel.progressItems[$0] }.forEach(budgetViewModel.deleteBudget)
-                    }
-                }
-            }
 
-            Section("進階報表與數據分析") {
-                Picker("區間", selection: $reportViewModel.selectedRange) {
-                    ForEach(ReportRange.allCases) { range in
-                        Text(range.label).tag(range)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: reportViewModel.selectedRange) { newValue in
-                    if !proEntitlementStore.canAccess(.advancedReports) && newValue.months > 1 {
-                        reportViewModel.selectedRange = .oneMonth
-                        openProFeature(trigger: "advanced_report_3m")
+                        sectionCard(title: "最近交易") {
+                            recentTransactionRows(limit: 5)
+                        }
+                    } else if selectedTab == .transactions {
+                        HStack(spacing: 8) {
+                            ForEach(["全部", "固定", "最近7天", "Recurring"], id: \.self) { chip in
+                                Button {
+                                    selectedTransactionChip = chip
+                                } label: {
+                                    Text(chip)
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            selectedTransactionChip == chip
+                                                ? Color(red: 47/255, green: 60/255, blue: 150/255)
+                                                : Color.white,
+                                            in: Capsule()
+                                        )
+                                        .foregroundStyle(selectedTransactionChip == chip ? .white : .primary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            Spacer()
+                        }
+
+                        sectionCard(title: "新增交易") {
+                            TextField("標題（例如：晚餐）", text: $viewModel.newTitle)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("金額", text: $viewModel.newAmount)
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(.roundedBorder)
+
+                            Picker("類型", selection: $viewModel.isIncome) {
+                                Text("支出").tag(false)
+                                Text("收入").tag(true)
+                            }
+                            .pickerStyle(.segmented)
+
+                            Button("新增") {
+                                viewModel.addExpense()
+                                budgetViewModel.refresh()
+                                reportViewModel.refresh()
+                            }
+                            .frame(maxWidth: .infinity)
+                            .buttonStyle(.borderedProminent)
+                        }
+
+                        sectionCard(title: "交易列表") {
+                            recentTransactionRows(limit: 20)
+                        }
+
+                        sectionCard(title: "Recurring") {
+                            recurringRows(limit: 3)
+                        }
                     } else {
-                        reportViewModel.refresh()
-                    }
-                }
-
-                Picker("圖表類型", selection: $reportViewModel.selectedChartType) {
-                    ForEach(ReportChartType.allCases) { type in
-                        Text(type.label).tag(type)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("資料篩選", selection: $reportViewModel.selectedMetricFilter) {
-                    ForEach(ReportMetricFilter.allCases) { filter in
-                        Text(filter.label).tag(filter)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                if let report = reportViewModel.report {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("趨勢摘要")
-                            .font(.subheadline.bold())
-                        LabeledContent("平均月收入", value: report.averageIncome.formatted())
-                        LabeledContent("平均月支出", value: report.averageExpense.formatted())
-                        LabeledContent("平均月淨額", value: report.averageNet.formatted())
-                        LabeledContent("MoM（本月淨額較上月）", value: report.momNetDelta?.formatted() ?? "暫無")
-                        LabeledContent("YoY（本月淨額較去年同月）", value: report.yoyNetDelta?.formatted() ?? "暫無")
-                    }
-
-                    let chartSeries = reportViewModel.chartSeries(for: report)
-                    if chartSeries.isEmpty {
-                        Text("資料不足，請先新增更多帳目")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        AdvancedReportTrendChart(series: chartSeries, chartType: reportViewModel.selectedChartType)
-                            .frame(height: 220)
-
-                        ForEach(report.monthlyTrend) { point in
-                            HStack {
-                                Text(point.monthLabel)
-                                Spacer()
-                                Text("收 \(point.income.formatted()) / 支 \(point.expense.formatted()) / 淨 \(point.net.formatted())")
-                                    .font(.caption)
-                            }
-                        }
-                    }
-
-                    if !report.pieSlices.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("圓餅圖分析（收入/支出占比）")
-                                .font(.subheadline.bold())
-                            AdvancedReportPieChart(slices: report.pieSlices)
-                                .frame(height: 220)
-                            ForEach(report.pieSlices) { slice in
-                                Text("• \(slice.label)：\(slice.value.formatted())")
-                                    .font(.caption)
-                            }
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("分類變化分析（MoM）")
-                            .font(.subheadline.bold())
-                        if let growth = report.topGrowth {
-                            Text("增長最多：\(growth.categoryName)（+\(growth.delta.formatted())）")
-                                .font(.caption)
-                        } else {
-                            Text("增長最多：暫無")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let decline = report.topDecline {
-                            Text("下降最多：\(decline.categoryName)（\(decline.delta.formatted())）")
-                                .font(.caption)
-                        } else {
-                            Text("下降最多：暫無")
-                                .font(.caption)
+                        sectionCard(title: "Reports") {
+                            Text("Sprint 1 先聚焦 Home / Transactions，報表畫面暫維持原功能。")
                                 .foregroundStyle(.secondary)
                         }
                     }
-                } else {
-                    Text("尚無可分析資料")
-                        .foregroundStyle(.secondary)
+
+                    Spacer(minLength: 96)
                 }
-
-                Button("匯出 PDF 月報") {
-                    guard let report = reportViewModel.report else {
-                        reportPDFMessage = "尚無可匯出資料"
-                        return
-                    }
-
-                    if !proEntitlementStore.canAccess(.pdfExport) {
-                        openProFeature(trigger: "report_pdf_export")
-                        return
-                    }
-
-                    do {
-                        reportPDFURL = try ReportPDFExporter().export(report: report, range: reportViewModel.selectedRange)
-                        reportPDFMessage = "PDF 產生完成"
-                    } catch {
-                        reportPDFMessage = "PDF 匯出失敗：\(error.localizedDescription)"
-                    }
-                }
-
-                if let reportPDFURL {
-                    ShareLink(item: reportPDFURL) {
-                        Label("分享 PDF 月報", systemImage: "square.and.arrow.up")
-                    }
-                }
-
-                if let reportPDFMessage {
-                    Text(reportPDFMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
 
-            Section("年度財務回顧（Wrapped）") {
-                Button("產生今年 Wrapped") {
-                    let year = Calendar.current.component(.year, from: Date())
-                    annualWrapped = AnnualWrappedReportBuilder(store: expenseStore).build(year: year)
-                }
-
-                if let annualWrapped {
-                    LabeledContent("年度淨額", value: annualWrapped.totalNet.formatted())
-                    LabeledContent("儲蓄率", value: "\(annualWrapped.savingRate.formatted())%")
-                    LabeledContent("支出最高分類", value: annualWrapped.topExpenseCategory?.name ?? "暫無")
-                    LabeledContent("最佳月份", value: annualWrapped.bestMonth?.month.formatted(date: .abbreviated, time: .omitted) ?? "暫無")
-                } else {
-                    Text("尚未產生 Wrapped")
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("歷史快照（Snapshot）") {
-                Button("匯出 Snapshot") {
-                    do {
-                        snapshotPayload = try ExpenseSnapshotService(store: expenseStore).exportSnapshot()
-                        snapshotMessage = "已產生快照，可直接貼上還原"
-                    } catch {
-                        snapshotMessage = error.localizedDescription
-                    }
-                }
-
-                TextEditor(text: $snapshotPayload)
-                    .frame(minHeight: 110)
-
-                Button("還原 Snapshot") {
-                    do {
-                        try ExpenseSnapshotService(store: expenseStore).restoreSnapshot(from: snapshotPayload)
-                        viewModel.reload()
-                        budgetViewModel.refresh()
-                        reportViewModel.refresh()
-                        snapshotMessage = "還原完成"
-                    } catch {
-                        snapshotMessage = error.localizedDescription
-                    }
-                }
-
-                if let snapshotMessage {
-                    Text(snapshotMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("訂閱挽留與續訂策略") {
-                if let retention = proEntitlementStore.retentionStrategy {
-                    Text(retention.headline)
-                        .font(.subheadline.bold())
-                    Text("CTA：\(retention.cta)")
-                        .font(.caption)
-                    Text("Offer：\(retention.offerCode)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("目前無需挽留策略")
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("新增帳目") {
-                TextField("標題（例如：晚餐）", text: $viewModel.newTitle)
-                TextField("金額", text: $viewModel.newAmount)
-                    .keyboardType(.decimalPad)
-                Picker("類型", selection: $viewModel.isIncome) {
-                    Text("支出").tag(false)
-                    Text("收入").tag(true)
-                }
-                .pickerStyle(.segmented)
-                Button("新增") {
-                    viewModel.addExpense()
-                    budgetViewModel.refresh()
-                    reportViewModel.refresh()
-                }
-            }
-
-            Section("帳目列表") {
-                if viewModel.expenses.isEmpty {
-                    Text("目前沒有資料")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(viewModel.expenses) { expense in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(expense.title)
-                            Text(expense.amount.formatted())
-                                .font(.caption)
-                                .foregroundStyle(expense.amount < 0 ? .red : .green)
-                        }
-                    }
-                    .onDelete { offsets in
-                        viewModel.deleteExpenses(at: offsets)
-                        budgetViewModel.refresh()
-                        reportViewModel.refresh()
-                    }
-                }
-            }
-        }
-        .searchable(text: $viewModel.searchText, prompt: "搜尋標題")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("設定", action: onOpenSettings)
-            }
+            bottomBar
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
         }
         .sheet(isPresented: $isPaywallPresented) {
             PaywallView(trigger: paywallTrigger, entitlementStore: proEntitlementStore) {
                 isPaywallPresented = false
             }
         }
-        .navigationTitle("Expense Tracker")
+    }
+
+    @ViewBuilder
+    private func heroCard(summary: MonthlyOverview) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Total Balance")
+                .foregroundStyle(Color.white.opacity(0.82))
+                .font(.callout)
+            Text(summary.net.formatted())
+                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+
+            HStack(spacing: 22) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Income").foregroundStyle(Color.white.opacity(0.78)).font(.caption)
+                    Text(summary.income.formatted()).foregroundStyle(.white).font(.footnote.weight(.semibold))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Expense").foregroundStyle(Color.white.opacity(0.78)).font(.caption)
+                    Text(summary.expense.formatted()).foregroundStyle(.white).font(.footnote.weight(.semibold))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 43/255, green: 51/255, blue: 133/255), Color(red: 107/255, green: 97/255, blue: 233/255)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .shadow(color: Color.black.opacity(0.14), radius: 16, y: 10)
+    }
+
+    @ViewBuilder
+    private func miniStatCard(title: String, value: String, emphasized: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(emphasized ? .title2.bold() : .headline.bold())
+                .foregroundStyle(emphasized ? Color(red: 46/255, green: 42/255, blue: 115/255) : .primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, emphasized ? 18 : 12)
+        .background(.white, in: RoundedRectangle(cornerRadius: emphasized ? 20 : 16, style: .continuous))
+        .shadow(color: .black.opacity(emphasized ? 0.08 : 0.04), radius: emphasized ? 10 : 4, y: 4)
+    }
+
+    @ViewBuilder
+    private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+    }
+
+    @ViewBuilder
+    private func recentTransactionRows(limit: Int) -> some View {
+        if viewModel.expenses.isEmpty {
+            Text("目前沒有資料")
+                .foregroundStyle(.secondary)
+        } else {
+            ForEach(viewModel.expenses.prefix(limit)) { expense in
+                transactionRow(
+                    title: expense.title,
+                    subtitle: expense.createdAt.formatted(date: .abbreviated, time: .omitted),
+                    amount: expense.amount,
+                    bubbleText: String(expense.title.prefix(1))
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func recurringRows(limit: Int) -> some View {
+        if viewModel.expenses.isEmpty {
+            Text("目前沒有固定交易")
+                .foregroundStyle(.secondary)
+        } else {
+            ForEach(viewModel.expenses.prefix(limit)) { expense in
+                transactionRow(
+                    title: expense.title,
+                    subtitle: "每月 · \(expense.createdAt.formatted(date: .abbreviated, time: .omitted))",
+                    amount: expense.amount,
+                    bubbleText: "R"
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func transactionRow(title: String, subtitle: String, amount: Decimal, bubbleText: String) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color(red: 225/255, green: 230/255, blue: 255/255))
+                .frame(width: 40, height: 40)
+                .overlay {
+                    Text(bubbleText)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color(red: 47/255, green: 60/255, blue: 150/255))
+                }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(amount.formatted())
+                .font(.title3.weight(.heavy))
+                .foregroundStyle(amount < 0 ? .red : .green)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(Color(red: 247/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var bottomBar: some View {
+        ZStack(alignment: .center) {
+            HStack {
+                bottomItem(icon: "house.fill", title: "Home", tab: .dashboard)
+                Spacer(minLength: 0)
+                bottomItem(icon: "list.bullet.rectangle", title: "交易", tab: .transactions)
+                Spacer(minLength: 0)
+                bottomItem(icon: "chart.bar.xaxis", title: "報表", tab: .reports)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 13)
+            .background(.ultraThinMaterial, in: Capsule())
+            .shadow(color: .black.opacity(0.08), radius: 12, y: 5)
+
+            Button {
+                selectedTab = .transactions
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 54, height: 54)
+                    .background(Color(red: 46/255, green: 42/255, blue: 115/255), in: Circle())
+                    .shadow(color: Color.black.opacity(0.14), radius: 10, y: 6)
+            }
+            .offset(y: -28)
+        }
+        .frame(height: 92)
+    }
+
+    @ViewBuilder
+    private func bottomItem(icon: String, title: String, tab: ScreenTab) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(selectedTab == tab ? Color(red: 50/255, green: 56/255, blue: 141/255) : .secondary)
+            .frame(width: 62)
+        }
+        .buttonStyle(.plain)
     }
 
     private func openProFeature(trigger: String) {
