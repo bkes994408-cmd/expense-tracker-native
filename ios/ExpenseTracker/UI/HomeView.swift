@@ -66,13 +66,13 @@ struct HomeView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
+                VStack(spacing: 16) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Good evening")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Text("Expense Tracker")
+                            Text("Bruce")
                                 .font(.title3.bold())
                         }
                         Spacer()
@@ -100,6 +100,12 @@ struct HomeView: View {
                         Text("報表").tag(ScreenTab.reports)
                     }
                     .pickerStyle(.segmented)
+                    .padding(4)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+                    )
                     .tint(Color(red: 47/255, green: 60/255, blue: 150/255))
 
                     if selectedTab == .dashboard {
@@ -133,20 +139,27 @@ struct HomeView: View {
                     } else if selectedTab == .transactions {
                         HStack(spacing: 8) {
                             ForEach(["全部", "固定", "最近7天", "Recurring"], id: \.self) { chip in
+                                let selected = selectedTransactionChip == chip
                                 Button {
-                                    selectedTransactionChip = chip
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                                        selectedTransactionChip = chip
+                                    }
                                 } label: {
                                     Text(chip)
-                                        .font(.caption.bold())
-                                        .padding(.horizontal, 12)
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.horizontal, 13)
                                         .padding(.vertical, 8)
                                         .background(
-                                            selectedTransactionChip == chip
+                                            selected
                                                 ? Color(red: 47/255, green: 60/255, blue: 150/255)
                                                 : Color.white,
                                             in: Capsule()
                                         )
-                                        .foregroundStyle(selectedTransactionChip == chip ? .white : .primary)
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(selected ? Color.clear : Color(red: 226/255, green: 231/255, blue: 244/255), lineWidth: 1)
+                                        )
+                                        .foregroundStyle(selected ? .white : Color(red: 78/255, green: 88/255, blue: 106/255))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -208,36 +221,41 @@ struct HomeView: View {
 
     @ViewBuilder
     private func heroCard(summary: MonthlyOverview) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Total Balance")
                 .foregroundStyle(Color.white.opacity(0.82))
-                .font(.callout)
+                .font(.callout.weight(.medium))
             Text(summary.net.formatted())
-                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .font(.system(size: 40, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
 
-            HStack(spacing: 22) {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 26) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Income").foregroundStyle(Color.white.opacity(0.78)).font(.caption)
-                    Text(summary.income.formatted()).foregroundStyle(.white).font(.footnote.weight(.semibold))
+                    Text(summary.income.formatted()).foregroundStyle(.white).font(.subheadline.weight(.semibold))
                 }
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Expense").foregroundStyle(Color.white.opacity(0.78)).font(.caption)
-                    Text(summary.expense.formatted()).foregroundStyle(.white).font(.footnote.weight(.semibold))
+                    Text(summary.expense.formatted()).foregroundStyle(.white).font(.subheadline.weight(.semibold))
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 24)
         .background(
             LinearGradient(
-                colors: [Color(red: 43/255, green: 51/255, blue: 133/255), Color(red: 107/255, green: 97/255, blue: 233/255)],
+                colors: [
+                    Color(red: 30/255, green: 37/255, blue: 95/255),
+                    Color(red: 62/255, green: 67/255, blue: 168/255),
+                    Color(red: 106/255, green: 95/255, blue: 240/255)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             ),
-            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+            in: RoundedRectangle(cornerRadius: 30, style: .continuous)
         )
-        .shadow(color: Color.black.opacity(0.14), radius: 16, y: 10)
+        .shadow(color: Color.black.opacity(0.16), radius: 18, y: 10)
     }
 
     @ViewBuilder
@@ -247,19 +265,23 @@ struct HomeView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(emphasized ? .title2.bold() : .headline.bold())
-                .foregroundStyle(emphasized ? Color(red: 46/255, green: 42/255, blue: 115/255) : .primary)
+                .font(emphasized ? .system(size: 30, weight: .bold, design: .rounded) : .title3.bold())
+                .foregroundStyle(emphasized ? Color(red: 46/255, green: 42/255, blue: 115/255) : Color(red: 33/255, green: 38/255, blue: 64/255))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, emphasized ? 18 : 12)
-        .background(.white, in: RoundedRectangle(cornerRadius: emphasized ? 20 : 16, style: .continuous))
-        .shadow(color: .black.opacity(emphasized ? 0.08 : 0.04), radius: emphasized ? 10 : 4, y: 4)
+        .background(.white, in: RoundedRectangle(cornerRadius: emphasized ? 22 : 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: emphasized ? 22 : 18, style: .continuous)
+                .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(emphasized ? 0.09 : 0.035), radius: emphasized ? 12 : 5, y: 4)
     }
 
     @ViewBuilder
     private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.headline)
             content()
@@ -267,14 +289,17 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+        )
         .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 
     @ViewBuilder
     private func recentTransactionRows(limit: Int) -> some View {
         if viewModel.expenses.isEmpty {
-            Text("目前沒有資料")
-                .foregroundStyle(.secondary)
+            emptyState("目前沒有資料")
         } else {
             ForEach(viewModel.expenses.prefix(limit)) { expense in
                 transactionRow(
@@ -290,8 +315,7 @@ struct HomeView: View {
     @ViewBuilder
     private func recurringRows(limit: Int) -> some View {
         if viewModel.expenses.isEmpty {
-            Text("目前沒有固定交易")
-                .foregroundStyle(.secondary)
+            emptyState("目前沒有固定交易")
         } else {
             ForEach(viewModel.expenses.prefix(limit)) { expense in
                 transactionRow(
@@ -305,11 +329,25 @@ struct HomeView: View {
     }
 
     @ViewBuilder
+    private func emptyState(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(red: 246/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+            )
+    }
+
+    @ViewBuilder
     private func transactionRow(title: String, subtitle: String, amount: Decimal, bubbleText: String) -> some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(Color(red: 225/255, green: 230/255, blue: 255/255))
-                .frame(width: 40, height: 40)
+                .fill(Color(red: 230/255, green: 235/255, blue: 255/255))
+                .frame(width: 44, height: 44)
                 .overlay {
                     Text(bubbleText)
                         .font(.subheadline.bold())
@@ -318,19 +356,29 @@ struct HomeView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.bold))
+                    .lineLimit(1)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             Text(amount.formatted())
                 .font(.title3.weight(.heavy))
                 .foregroundStyle(amount < 0 ? .red : .green)
+                .minimumScaleFactor(0.8)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
-        .background(Color(red: 247/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color(red: 247/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(red: 232/255, green: 236/255, blue: 246/255), lineWidth: 1)
+        )
+        .scaleEffect(1)
+        .animation(.easeOut(duration: 0.18), value: amount)
     }
 
     private var bottomBar: some View {
@@ -344,28 +392,36 @@ struct HomeView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 13)
-            .background(.ultraThinMaterial, in: Capsule())
+            .background(Color.white.opacity(0.95), in: Capsule())
+            .overlay(
+                Capsule().stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+            )
             .shadow(color: .black.opacity(0.08), radius: 12, y: 5)
 
             Button {
-                selectedTab = .transactions
+                withAnimation(.spring(response: 0.26, dampingFraction: 0.85)) {
+                    selectedTab = .transactions
+                }
             } label: {
                 Image(systemName: "plus")
                     .font(.headline.bold())
                     .foregroundStyle(.white)
-                    .frame(width: 54, height: 54)
+                    .frame(width: 56, height: 56)
                     .background(Color(red: 46/255, green: 42/255, blue: 115/255), in: Circle())
-                    .shadow(color: Color.black.opacity(0.14), radius: 10, y: 6)
+                    .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.15), radius: 11, y: 6)
             }
             .offset(y: -28)
         }
-        .frame(height: 92)
+        .frame(height: 94)
     }
 
     @ViewBuilder
     private func bottomItem(icon: String, title: String, tab: ScreenTab) -> some View {
         Button {
-            selectedTab = tab
+            withAnimation(.easeOut(duration: 0.2)) {
+                selectedTab = tab
+            }
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: icon)
