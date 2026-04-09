@@ -2,10 +2,12 @@ package com.bkes994408.expensetracker.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,10 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -124,14 +124,14 @@ fun HomeScreen(
                     selected = selectedTab == MainTab.Transactions,
                     onClick = { onTabSelected(MainTab.Transactions) },
                     colors = navItemColors(),
-                    icon = { Icon(Icons.Default.ReceiptLong, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text("交易") },
                 )
                 NavigationBarItem(
                     selected = selectedTab == MainTab.Reports,
                     onClick = { onTabSelected(MainTab.Reports) },
                     colors = navItemColors(),
-                    icon = { Icon(Icons.Default.Insights, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text("報表") },
                 )
                 NavigationBarItem(
@@ -454,7 +454,19 @@ private fun TransactionRow(title: String, subtitle: String, amount: String) {
             .fillMaxWidth()
             .scale(scale)
             .clip(RoundedCornerShape(18.dp))
-            .clickable(interactionSource = interaction, indication = null) {}
+            .pointerInput(interaction) {
+                detectTapGestures(
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+                        interaction.emit(press)
+                        if (tryAwaitRelease()) {
+                            interaction.emit(PressInteraction.Release(press))
+                        } else {
+                            interaction.emit(PressInteraction.Cancel(press))
+                        }
+                    },
+                )
+            }
             .background(bg)
             .border(1.dp, Color(0xFFE7EBF8), RoundedCornerShape(18.dp))
             .padding(horizontal = 14.dp, vertical = 14.dp),
