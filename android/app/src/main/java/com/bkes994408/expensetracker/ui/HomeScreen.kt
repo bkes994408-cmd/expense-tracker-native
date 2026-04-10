@@ -176,6 +176,7 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
+                            .fillMaxWidth()
                             .background(
                                 brush = Brush.linearGradient(
                                     listOf(HeroStart, HeroMiddle, HeroEnd),
@@ -191,7 +192,10 @@ fun HomeScreen(
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.ExtraBold,
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
                                 Column {
                                     Text("Income", color = Color(0xFFCFD4FF), style = MaterialTheme.typography.labelMedium)
                                     Text(
@@ -217,11 +221,15 @@ fun HomeScreen(
             }
 
             item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
                     CompactStatCard("交易", entries.size.toString(), Modifier.weight(1.35f), emphasized = true)
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        CompactStatCard("預警", homeViewModel.alerts().size.toString(), emphasized = false)
-                        CompactStatCard("建議", homeViewModel.suggestions().size.toString(), emphasized = false)
+                        CompactStatCard("預警", homeViewModel.alerts().size.toString(), Modifier.fillMaxWidth(), emphasized = false)
+                        CompactStatCard("建議", homeViewModel.suggestions().size.toString(), Modifier.fillMaxWidth(), emphasized = false)
                     }
                 }
             }
