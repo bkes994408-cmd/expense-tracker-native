@@ -9,3 +9,8 @@
 
 # OS
 .DS_Store
+
+# Android
+android/.gradle/
+android/**/build/
+android/local.properties
