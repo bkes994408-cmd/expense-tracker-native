@@ -57,18 +57,27 @@ struct SettingsView: View {
             }
 
             Section("Settings / Category Management") {
-                HStack {
-                    TextField("New category", text: $categoryViewModel.newCategoryName)
-                    Button("Add") { categoryViewModel.addCategory() }
+                ViewThatFits {
+                    HStack {
+                        TextField("New category", text: $categoryViewModel.newCategoryName)
+                        Button("Add") { categoryViewModel.addCategory() }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextField("New category", text: $categoryViewModel.newCategoryName)
+                        Button("Add") { categoryViewModel.addCategory() }
+                    }
                 }
 
                 ForEach(categoryViewModel.categories) { category in
-                    HStack {
+                    HStack(alignment: .top, spacing: 8) {
                         ReplicaListRow(title: category.name, subtitle: "分類設定", trailing: nil)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         Button("Archive") {
                             categoryViewModel.archive(category.id)
                         }
                         .buttonStyle(.borderless)
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                 }
                 .onMove(perform: categoryViewModel.move)

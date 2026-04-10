@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +62,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bkes994408.expensetracker.domain.ExpenseRepository
 import com.bkes994408.expensetracker.pro.ProEntitlementStore
@@ -539,15 +542,30 @@ private fun TransactionRow(title: String, subtitle: String, amount: String) {
             Text(title.take(1), color = Color(0xFF2F3B91), fontWeight = FontWeight.Bold)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Spacer(modifier = Modifier.height(2.dp))
-            Text(subtitle, color = Color(0xFF7A8392), style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = subtitle,
+                color = Color(0xFF7A8392),
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         Text(
             text = if (amount.startsWith("-")) amount else "+$amount",
             color = if (amount.startsWith("-")) Color(0xFFE25353) else Color(0xFF2CA66A),
             fontWeight = FontWeight.ExtraBold,
             style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            textAlign = TextAlign.End,
+            modifier = Modifier.widthIn(min = 96.dp),
         )
     }
 }

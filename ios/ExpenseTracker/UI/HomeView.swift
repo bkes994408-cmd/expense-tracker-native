@@ -35,17 +35,20 @@ struct HomeView: View {
     @State private var selectedTab: ScreenTab
 
     private let expenseStore: ExpenseStore
+    private let subscriptionStore: SubscriptionStore
 
     init(
         store: ExpenseStore,
         budgetStore: BudgetStore,
         groupLedgerStore: GroupLedgerStore,
+        subscriptionStore: SubscriptionStore = LocalStore.shared.subscriptionStore,
         categoryStore: CategoryStore? = nil,
         proEntitlementStore: ProEntitlementStore,
         initialTab: ScreenTab = .dashboard,
         onOpenSettings: @escaping () -> Void
     ) {
         self.expenseStore = store
+        self.subscriptionStore = subscriptionStore
         _ = categoryStore
         _viewModel = StateObject(wrappedValue: ExpenseListViewModel(store: store))
         _budgetViewModel = StateObject(wrappedValue: BudgetViewModel(budgetStore: budgetStore, expenseStore: store))
@@ -58,6 +61,8 @@ struct HomeView: View {
 
     @State private var selectedTransactionChip: String = "全部"
     @State private var selectedReportRange: String = "1M"
+    @State private var subscriptionPlans: [SubscriptionPlan] = []
+    @State private var recurringSourceReady = true
 
     var body: some View {
         let summary = viewModel.monthlyOverview
@@ -138,7 +143,8 @@ struct HomeView: View {
                             recentTransactionRows(limit: 5)
                         }
                     } else if selectedTab == .transactions {
-                        HStack(spacing: 8) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
                             ForEach(["全部", "固定", "最近7天", "Recurring"], id: \.self) { chip in
                                 let selected = selectedTransactionChip == chip
                                 Button {
@@ -164,7 +170,7 @@ struct HomeView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            Spacer()
+                            }
                         }
 
                         sectionCard(title: "新增交易") {
@@ -190,7 +196,7 @@ struct HomeView: View {
                         }
 
                         sectionCard(title: "交易列表") {
-                            recentTransactionRows(limit: 20)
+                            filteredTransactionRows(limit: 20)
                         }
 
                         sectionCard(title: "Recurring") {
@@ -222,32 +228,39 @@ struct HomeView: View {
                         }
 
                         sectionCard(title: "摘要") {
-                            HStack(spacing: 10) {
-                                miniStatCard(title: "平均收入", value: summary.income.formatted())
-                                miniStatCard(title: "平均支出", value: summary.expense.formatted())
+                            if let report = reportViewModel.report {
+                                HStack(spacing: 10) {
+                                    miniStatCard(title: "平均收入", value: report.averageIncome.formatted())
+                                    miniStatCard(title: "平均支出", value: report.averageExpense.formatted())
+                                }
+                                transactionRow(
+                                    title: "分類變化（近月）",
+                                    subtitle: report.topGrowth.map { "\($0.categoryName) +\($0.delta.formatted())" } ?? "尚無資料",
+                                    amount: report.topGrowth?.delta ?? 0,
+                                    bubbleText: "#"
+                                )
+                            } else {
+                                emptyState("目前區間沒有報表資料")
                             }
-                            let topCategory = summary.categoryTotals.max { abs($0.amount) < abs($1.amount) }
-                            transactionRow(
-                                title: "最多支出分類",
-                                subtitle: topCategory?.name ?? "尚無資料",
-                                amount: topCategory?.amount ?? 0,
-                                bubbleText: "#"
-                            )
                         }
 
                         sectionCard(title: "圖表與洞察") {
-                            if summary.categoryTotals.isEmpty {
-                                emptyState("尚無資料，新增交易後即可生成趨勢圖")
-                            } else {
+                            if let report = reportViewModel.report, !report.monthlyTrend.isEmpty {
+                                let netValues = report.monthlyTrend.map { abs($0.net) }
+                                let maxValue = netValues.max() ?? 1
                                 HStack(alignment: .bottom, spacing: 8) {
-                                    ForEach([0.35, 0.62, 0.48, 0.78, 0.55], id: \.self) { value in
+                                    ForEach(report.monthlyTrend) { point in
+                                        let ratio = maxValue == 0 ? 0.2 : max(0.2, decimalToDouble(abs(point.net) / maxValue))
                                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                                             .fill(Color(red: 220/255, green: 227/255, blue: 255/255))
                                             .frame(maxWidth: .infinity)
-                                            .frame(height: 96 * value)
+                                            .frame(height: 96 * ratio)
                                     }
                                 }
-                                ReplicaStateBox(title: "Insight", message: "本月淨額 \(summary.net.formatted())，較上月變化待接入正式資料。")
+                                let momText = report.momNetDelta?.formatted() ?? "暫無"
+                                ReplicaStateBox(title: "Insight", message: "區間淨額平均 \(report.averageNet.formatted())，MoM 變化 \(momText)。")
+                            } else {
+                                emptyState("尚無資料，新增交易後即可生成趨勢圖")
                             }
                         }
 
@@ -275,6 +288,27 @@ struct HomeView: View {
         .sheet(isPresented: $isPaywallPresented) {
             PaywallView(trigger: paywallTrigger, entitlementStore: proEntitlementStore) {
                 isPaywallPresented = false
+            }
+        }
+        .task {
+            loadSubscriptionPlans()
+            selectedReportRange = reportViewModel.selectedRange.label
+        }
+        .onChange(of: selectedReportRange) { newValue in
+            guard let newRange = reportRange(from: newValue) else { return }
+            guard reportViewModel.selectedRange != newRange else { return }
+            reportViewModel.selectedRange = newRange
+            reportViewModel.refresh()
+        }
+        .onChange(of: reportViewModel.selectedRange) { newValue in
+            let newLabel = newValue.label
+            if selectedReportRange != newLabel {
+                selectedReportRange = newLabel
+            }
+        }
+        .onChange(of: selectedTab) { newValue in
+            if newValue == .transactions {
+                loadSubscriptionPlans()
             }
         }
     }
@@ -373,16 +407,43 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func recurringRows(limit: Int) -> some View {
-        if viewModel.expenses.isEmpty {
-            emptyState("目前沒有固定交易")
+    private func filteredTransactionRows(limit: Int) -> some View {
+        let rows = filteredTransactionDisplayRows().prefix(limit)
+        if rows.isEmpty {
+            switch selectedTransactionChip {
+            case "最近7天":
+                emptyState("最近 7 天沒有交易")
+            case "固定", "Recurring":
+                emptyState("目前沒有 recurring / subscription 資料")
+            default:
+                emptyState("目前沒有資料")
+            }
         } else {
-            ForEach(viewModel.expenses.prefix(limit)) { expense in
+            ForEach(Array(rows)) { row in
                 transactionRow(
-                    title: expense.title,
-                    subtitle: "每月 · \(expense.createdAt.formatted(date: .abbreviated, time: .omitted))",
-                    amount: expense.amount,
-                    bubbleText: "R"
+                    title: row.title,
+                    subtitle: row.subtitle,
+                    amount: row.amount,
+                    bubbleText: row.bubbleText
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func recurringRows(limit: Int) -> some View {
+        let rows = recurringDisplayRows(limit: limit)
+        if !recurringSourceReady {
+            emptyState("Recurring 資料來源尚未就緒")
+        } else if rows.isEmpty {
+            emptyState("目前沒有 recurring / subscription 資料")
+        } else {
+            ForEach(rows) { row in
+                transactionRow(
+                    title: row.title,
+                    subtitle: row.subtitle,
+                    amount: row.amount,
+                    bubbleText: row.bubbleText
                 )
             }
         }
@@ -402,6 +463,83 @@ struct HomeView: View {
             )
     }
 
+    private struct DisplayTransactionRow: Identifiable {
+        let id: String
+        let title: String
+        let subtitle: String
+        let amount: Decimal
+        let bubbleText: String
+    }
+
+    private func filteredTransactionDisplayRows() -> [DisplayTransactionRow] {
+        switch selectedTransactionChip {
+        case "最近7天":
+            let threshold = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            return viewModel.expenses
+                .filter { $0.createdAt >= threshold }
+                .map {
+                    DisplayTransactionRow(
+                        id: "expense-\($0.id)",
+                        title: $0.title,
+                        subtitle: $0.createdAt.formatted(date: .abbreviated, time: .omitted),
+                        amount: $0.amount,
+                        bubbleText: String($0.title.prefix(1))
+                    )
+                }
+        case "固定", "Recurring":
+            return recurringDisplayRows(limit: Int.max)
+        default:
+            return viewModel.expenses.map {
+                DisplayTransactionRow(
+                    id: "expense-\($0.id)",
+                    title: $0.title,
+                    subtitle: $0.createdAt.formatted(date: .abbreviated, time: .omitted),
+                    amount: $0.amount,
+                    bubbleText: String($0.title.prefix(1))
+                )
+            }
+        }
+    }
+
+    private func recurringDisplayRows(limit: Int) -> [DisplayTransactionRow] {
+        subscriptionPlans
+            .sorted(by: { $0.nextChargeAt < $1.nextChargeAt })
+            .prefix(limit)
+            .map { plan in
+                DisplayTransactionRow(
+                    id: "subscription-\(plan.id)",
+                    title: plan.name,
+                    subtitle: "每 \(plan.cycleDays) 天 · 下次 \(plan.nextChargeAt.formatted(date: .abbreviated, time: .omitted))",
+                    amount: -abs(plan.amount),
+                    bubbleText: "R"
+                )
+            }
+    }
+
+    private func reportRange(from label: String) -> ReportRange? {
+        switch label {
+        case "1M": return .oneMonth
+        case "3M": return .threeMonths
+        case "6M": return .sixMonths
+        case "12M": return .twelveMonths
+        default: return nil
+        }
+    }
+
+    private func loadSubscriptionPlans() {
+        do {
+            subscriptionPlans = try subscriptionStore.fetchAll()
+            recurringSourceReady = true
+        } catch {
+            subscriptionPlans = []
+            recurringSourceReady = false
+        }
+    }
+
+    private func decimalToDouble(_ value: Decimal) -> Double {
+        NSDecimalNumber(decimal: value).doubleValue
+    }
+
     @ViewBuilder
     private func transactionRow(title: String, subtitle: String, amount: Decimal, bubbleText: String) -> some View {
         HStack(spacing: 12) {
@@ -418,17 +556,24 @@ struct HomeView: View {
                 Text(title)
                     .font(.subheadline.weight(.bold))
                     .lineLimit(1)
+                    .truncationMode(.tail)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
             }
+            .layoutPriority(1)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(amount.formatted())
                 .font(.title3.weight(.heavy))
                 .foregroundStyle(amount < 0 ? .red : .green)
+                .monospacedDigit()
+                .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: 104, alignment: .trailing)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
@@ -527,6 +672,7 @@ struct HomeView: View {
             store: PreviewExpenseStore(),
             budgetStore: PreviewBudgetStore(),
             groupLedgerStore: PreviewGroupLedgerStore(),
+            subscriptionStore: PreviewHomeSubscriptionStore(),
             proEntitlementStore: ProEntitlementStore(),
             onOpenSettings: {}
         )
@@ -1019,6 +1165,17 @@ private final class PreviewBudgetStore: BudgetStore {
     func upsert(monthKey: String, categoryName: String, amount: Decimal, carryOverMode: CarryOverMode) throws {}
     func delete(id: Int64) throws {}
     func copy(from fromMonthKey: String, to toMonthKey: String) throws {}
+}
+
+private final class PreviewHomeSubscriptionStore: SubscriptionStore {
+    func fetchAll() throws -> [SubscriptionPlan] {
+        [
+            SubscriptionPlan(id: 1, name: "Netflix", amount: 390, cycleDays: 30, nextChargeAt: Date(), reminderDaysBefore: 1, reminderEnabled: true),
+            SubscriptionPlan(id: 2, name: "iCloud", amount: 90, cycleDays: 30, nextChargeAt: Date().addingTimeInterval(86_400 * 3), reminderDaysBefore: 2, reminderEnabled: true)
+        ]
+    }
+
+    func add(name: String, amount: Decimal, cycleDays: Int, nextChargeAt: Date, reminderDaysBefore: Int, reminderEnabled: Bool) throws {}
 }
 
 private final class PreviewGroupLedgerStore: GroupLedgerStore {
