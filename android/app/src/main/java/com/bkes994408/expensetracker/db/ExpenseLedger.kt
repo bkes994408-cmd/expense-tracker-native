@@ -137,7 +137,10 @@ class ExpenseLedger(
         return _entries.value
             .asSequence()
             .filter { it.amount < BigDecimal.ZERO }
-            .filter { LocalDate.ofInstant(it.createdAt, zone).year == now.year && LocalDate.ofInstant(it.createdAt, zone).month == now.month }
+            .filter {
+                val entryDate = it.createdAt.atZone(zone).toLocalDate()
+                entryDate.year == now.year && entryDate.month == now.month
+            }
             .fold(BigDecimal.ZERO) { acc, entry -> acc + entry.amount.abs() }
     }
 
