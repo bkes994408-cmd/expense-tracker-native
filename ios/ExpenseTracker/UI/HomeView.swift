@@ -62,6 +62,7 @@ struct HomeView: View {
     @State private var selectedTransactionChip: String = "全部"
     @State private var selectedReportRange: String = "1M"
     @State private var subscriptionPlans: [SubscriptionPlan] = []
+    @State private var recurringSourceReady = true
 
     var body: some View {
         let summary = viewModel.monthlyOverview
@@ -142,7 +143,8 @@ struct HomeView: View {
                             recentTransactionRows(limit: 5)
                         }
                     } else if selectedTab == .transactions {
-                        HStack(spacing: 8) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
                             ForEach(["全部", "固定", "最近7天", "Recurring"], id: \.self) { chip in
                                 let selected = selectedTransactionChip == chip
                                 Button {
@@ -168,7 +170,7 @@ struct HomeView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            Spacer()
+                            }
                         }
 
                         sectionCard(title: "新增交易") {
@@ -431,7 +433,9 @@ struct HomeView: View {
     @ViewBuilder
     private func recurringRows(limit: Int) -> some View {
         let rows = recurringDisplayRows(limit: limit)
-        if rows.isEmpty {
+        if !recurringSourceReady {
+            emptyState("Recurring 資料來源尚未就緒")
+        } else if rows.isEmpty {
             emptyState("目前沒有 recurring / subscription 資料")
         } else {
             ForEach(rows) { row in
@@ -523,7 +527,13 @@ struct HomeView: View {
     }
 
     private func loadSubscriptionPlans() {
-        subscriptionPlans = (try? subscriptionStore.fetchAll()) ?? []
+        do {
+            subscriptionPlans = try subscriptionStore.fetchAll()
+            recurringSourceReady = true
+        } catch {
+            subscriptionPlans = []
+            recurringSourceReady = false
+        }
     }
 
     private func decimalToDouble(_ value: Decimal) -> Double {
