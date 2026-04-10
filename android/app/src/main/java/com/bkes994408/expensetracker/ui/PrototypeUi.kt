@@ -17,12 +17,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-val ReplicaCardRadius = 22.dp
-val ReplicaCardBorder = Color(0xFFE4E8F4)
-val ReplicaCardSurface = Color.White
+object ReplicaTokens {
+    val cardRadius = 22.dp
+    val cardBorder = Color(0xFFE4E8F4)
+    val cardSurface = Color.White
+
+    val rowRadius = 16.dp
+    val rowBg = Color(0xFFF7F8FF)
+    val rowBorder = Color(0xFFE8ECF8)
+
+    val stateRadius = 14.dp
+    val stateBg = Color(0xFFF6F8FF)
+    val stateBorder = Color(0xFFE3E8F8)
+    val stateTitle = Color(0xFF3B4770)
+    val stateBody = Color(0xFF707A8D)
+}
 
 @Composable
 fun ReplicaSectionCard(
@@ -34,9 +47,9 @@ fun ReplicaSectionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, ReplicaCardBorder, RoundedCornerShape(ReplicaCardRadius)),
-        shape = RoundedCornerShape(ReplicaCardRadius),
-        colors = CardDefaults.cardColors(containerColor = ReplicaCardSurface),
+            .border(1.dp, ReplicaTokens.cardBorder, RoundedCornerShape(ReplicaTokens.cardRadius)),
+        shape = RoundedCornerShape(ReplicaTokens.cardRadius),
+        colors = CardDefaults.cardColors(containerColor = ReplicaTokens.cardSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
     ) {
         Column(
@@ -61,15 +74,21 @@ fun ReplicaListRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF7F8FF), RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xFFE8ECF8), RoundedCornerShape(16.dp))
+            .background(ReplicaTokens.rowBg, RoundedCornerShape(ReplicaTokens.rowRadius))
+            .border(1.dp, ReplicaTokens.rowBorder, RoundedCornerShape(ReplicaTokens.rowRadius))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             subtitle?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF727C90))
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF727C90),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
         trailing?.let {
@@ -79,17 +98,38 @@ fun ReplicaListRow(
 }
 
 @Composable
-fun ReplicaStateBox(title: String, message: String) {
+fun ReplicaStateBox(title: String, message: String, maxLines: Int = 3) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF6F8FF), RoundedCornerShape(14.dp))
-            .border(1.dp, Color(0xFFE3E8F8), RoundedCornerShape(14.dp))
+            .background(ReplicaTokens.stateBg, RoundedCornerShape(ReplicaTokens.stateRadius))
+            .border(1.dp, ReplicaTokens.stateBorder, RoundedCornerShape(ReplicaTokens.stateRadius))
             .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF3B4770))
-            Text(message, style = MaterialTheme.typography.bodySmall, color = Color(0xFF707A8D))
+            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = ReplicaTokens.stateTitle)
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = ReplicaTokens.stateBody,
+                maxLines = maxLines,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
+}
+
+@Composable
+fun ReplicaEdgeStates(
+    loadingMessage: String,
+    emptyMessage: String,
+    errorMessage: String,
+    longTextMessage: String,
+    denseContentHint: String,
+) {
+    ReplicaStateBox(title = "Loading", message = loadingMessage)
+    ReplicaStateBox(title = "Empty", message = emptyMessage)
+    ReplicaStateBox(title = "Error", message = errorMessage)
+    ReplicaStateBox(title = "Long text", message = longTextMessage, maxLines = 4)
+    ReplicaStateBox(title = "Dense content", message = denseContentHint)
 }

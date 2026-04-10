@@ -247,14 +247,18 @@ struct HomeView: View {
                                             .frame(height: 96 * value)
                                     }
                                 }
-                                HomeReplicaStateBox(title: "Insight", message: "本月淨額 \(summary.net.formatted())，較上月變化待接入正式資料。")
+                                ReplicaStateBox(title: "Insight", message: "本月淨額 \(summary.net.formatted())，較上月變化待接入正式資料。")
                             }
                         }
 
                         sectionCard(title: "Edge States") {
-                            HomeReplicaStateBox(title: "Loading", message: "正在整理跨月份資料，請稍候...")
-                            HomeReplicaStateBox(title: "Error", message: "報表資料暫時不可用，請稍後重試。")
-                            HomeReplicaStateBox(title: "Long text", message: "這是一段很長的報表說明文字，用來驗證 iOS 與 Android 在字級、間距與換行策略的一致性。")
+                            ReplicaEdgeStates(
+                                loadingMessage: "正在整理跨月份資料，請稍候...",
+                                emptyMessage: "目前區間沒有可視化資料，請切換月份或新增交易。",
+                                errorMessage: "報表資料暫時不可用，請稍後重試。",
+                                longTextMessage: "這是一段很長的報表說明文字，用來驗證 iOS 與 Android 在字級、間距與換行策略的一致性。",
+                                denseContentHint: "當資料密度較高時，優先保留標題與金額資訊，其餘內容以省略方式呈現。"
+                            )
                         }
                     }
 
@@ -343,13 +347,13 @@ struct HomeView: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(ReplicaDesign.cardPadding)
+        .background(.white, in: RoundedRectangle(cornerRadius: ReplicaDesign.cardRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
+            RoundedRectangle(cornerRadius: ReplicaDesign.cardRadius, style: .continuous)
+                .stroke(ReplicaDesign.cardBorder, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .shadow(color: ReplicaDesign.cardShadow, radius: 8, y: 4)
     }
 
     @ViewBuilder
@@ -514,31 +518,6 @@ struct HomeView: View {
         case .warning: return .orange
         case .overspent: return .red
         }
-    }
-}
-
-private struct HomeReplicaStateBox: View {
-    let title: String
-    let message: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(red: 59/255, green: 71/255, blue: 112/255))
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(Color(red: 246/255, green: 248/255, blue: 255/255), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color(red: 228/255, green: 233/255, blue: 245/255), lineWidth: 1)
-        )
     }
 }
 

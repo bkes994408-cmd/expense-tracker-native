@@ -53,7 +53,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                settingsStateBox(title: "Loading", message: syncLoading ? "同步設定中..." : "設定同步已完成")
+                ReplicaStateBox(title: "Loading", message: syncLoading ? "同步設定中..." : "設定同步已完成")
             }
 
             Section("Settings / Category Management") {
@@ -64,8 +64,7 @@ struct SettingsView: View {
 
                 ForEach(categoryViewModel.categories) { category in
                     HStack {
-                        Text(category.name)
-                        Spacer()
+                        ReplicaListRow(title: category.name, subtitle: "分類設定", trailing: nil)
                         Button("Archive") {
                             categoryViewModel.archive(category.id)
                         }
@@ -75,7 +74,7 @@ struct SettingsView: View {
                 .onMove(perform: categoryViewModel.move)
 
                 if categoryViewModel.categories.isEmpty {
-                    settingsStateBox(title: "Empty", message: "尚無分類，請先新增分類。")
+                    ReplicaStateBox(title: "Empty", message: "尚無分類，請先新增分類。")
                 }
             }
 
@@ -158,9 +157,12 @@ struct SettingsView: View {
 
             Section("Settings / About") {
                 LabeledContent("Version", value: "0.0.1")
-                settingsStateBox(
-                    title: "Long text",
-                    message: "這是一段較長的設定說明文字，用於驗證 iOS 與 Android 在 cell 間距、字級與換行策略的一致性。"
+                ReplicaEdgeStates(
+                    loadingMessage: "同步設定中，請稍候...",
+                    emptyMessage: "目前尚無偏好變更紀錄。",
+                    errorMessage: "匯入資料解析失敗，請確認欄位與分隔符。",
+                    longTextMessage: "這是一段較長的設定說明文字，用於驗證 iOS 與 Android 在 cell 間距、字級與換行策略的一致性。",
+                    denseContentHint: "在大量設定項同時出現時，優先顯示狀態與操作按鈕。"
                 )
             }
         }
@@ -318,21 +320,6 @@ struct SettingsView: View {
             Telemetry.shared.track(.csvExportFailed)
             Telemetry.shared.record(error: error, metadata: ["operation": "export_csv"])
         }
-    }
-}
-
-private extension SettingsView {
-    @ViewBuilder
-    func settingsStateBox(title: String, message: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(red: 59/255, green: 71/255, blue: 112/255))
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 6)
     }
 }
 
